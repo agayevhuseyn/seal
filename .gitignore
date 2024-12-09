@@ -1,0 +1,7 @@
+*.seal
+*.txt
+seal
+starttime
+syntaxlang/
+testparse/
+vgcore*
