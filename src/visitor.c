@@ -199,10 +199,8 @@ ast_t* visitor_visit_func_call(visitor_t* visitor, scope_t* scope, ast_t* node)
 
       size_t field_size = odef->obj_def.field_size;
       obj->object.field_size = field_size;
-      obj->object.field_names = calloc(field_size, sizeof(char*));
       obj->object.field_vars  = calloc(field_size, sizeof(ast_t*));
       for (int j = 0; j < field_size; j++) {
-        obj->object.field_names[j] = odef->obj_def.fields[j]->name;
         if (odef->obj_def.fields[j]->is_defined) {
           obj->object.field_vars[j] = visitor_visit(visitor, loc_scope, odef->obj_def.fields[j]->def);
         } else {
@@ -280,7 +278,7 @@ ast_t* visitor_visit_mem_acc(visitor_t* visitor, scope_t* scope, ast_t* node)
   }
 
   for (int i = 0; i < main->object.field_size; i++) {
-    if (strcmp(node->mem_acc.mem->var_ref.name, main->object.field_names[i]) == 0) {
+    if (strcmp(node->mem_acc.mem->var_ref.name, main->object.def->obj_def.fields[i]->name) == 0) {
       return main->object.field_vars[i];
     }
   }
@@ -612,7 +610,7 @@ ast_t* visitor_visit_assign(visitor_t* visitor, scope_t* scope, ast_t* node)
       }
       bool is_found = false;
       for (int i = 0; i < var->object.field_size; i++) {
-        if (strcmp(mem->var_ref.name, var->object.field_names[i]) == 0) {
+        if (strcmp(mem->var_ref.name, var->object.def->obj_def.fields[i]->name) == 0) {
           var->object.field_vars[i] = assign_expr;
           is_found = true;
           break;

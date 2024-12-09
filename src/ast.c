@@ -89,7 +89,7 @@ void print_ast(ast_t* ast)
     case AST_OBJECT:
       printf("%s, field size: %lu, fields:\n", ast_name(ast), ast->object.field_size);
       for (int i = 0; i < ast->object.field_size; i++) {
-        printf("\tfield name: %s\n\t", ast->object.field_names[i]);
+        printf("\tfield name: %s\n\t", ast->object.def->obj_def.fields[i]->name);
         print_ast(ast->object.field_vars[i]);
       }
       break;

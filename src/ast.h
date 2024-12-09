@@ -78,7 +78,6 @@ typedef struct ast {
 
     struct {
       struct ast* def;
-      const char** field_names;
       struct ast** field_vars;
       size_t field_size;
     } object;

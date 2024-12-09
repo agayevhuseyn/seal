@@ -33,7 +33,7 @@ ast_t* builtin_write(ast_t** args, size_t arg_size)
         printf("object %s: {\n", arg->object.def->obj_def.oname);
         for (int j = 0; j < arg->object.field_size; j++) {
           printf("\t");
-          printf("%s: ", arg->object.field_names[j]);
+          printf("%s: ", arg->object.def->obj_def.fields[j]->name);
           builtin_write(&arg->object.field_vars[j], 1);
         }
         printf("}");
