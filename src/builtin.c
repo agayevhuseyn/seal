@@ -20,11 +20,11 @@ ast_t* builtin_write(ast_t** args, size_t arg_size)
         printf("%s ", arg->boolean.val ? "true" : "false");
         break;
       case AST_LIST:  
-        printf("[");
-        for (int j = 0; i < arg->list.mem_size; i++) {
+        printf("[\n");
+        for (int j = 0; j < arg->list.mem_size; j++) {
           builtin_write(&arg->list.mems[j], 1);
         }
-        printf("]");
+        printf("\n]");
         break;
       case AST_NULL:  
         printf("%s ", "null");

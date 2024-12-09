@@ -48,6 +48,7 @@ const char* token_name(Token_Type type)
     case TOK_COMMA: return "TOK_COMMA";
     case TOK_COLON: return "TOK_COLON";
     case TOK_DCOLON: return "TOK_DCOLON";
+    case TOK_IN: return "TOK_IN";
     // blocks
     case TOK_NEWL: return "TOK_NEWL";
     case TOK_INDENT: return "TOK_INDENT";
