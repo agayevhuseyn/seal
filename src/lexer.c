@@ -260,6 +260,7 @@ void lexer_get_id(lexer_t* lexer)
   else if (strcmp(s, "skip") == 0) lexer_add_token(lexer, init_token(TOK_SKIP, s, lexer->line));
   else if (strcmp(s, "stop") == 0) lexer_add_token(lexer, init_token(TOK_STOP, s, lexer->line));
   else if (strcmp(s, "include") == 0) lexer_add_token(lexer, init_token(TOK_INCLUDE, s, lexer->line));
+  else if (strcmp(s, "in") == 0) lexer_add_token(lexer, init_token(TOK_IN, s, lexer->line));
   else lexer_add_token(lexer, init_token(TOK_ID, s, lexer->line));
 }
 
