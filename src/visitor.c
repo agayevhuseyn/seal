@@ -88,6 +88,7 @@ ast_t* visitor_visit(visitor_t* visitor, scope_t* scope, ast_t* node)
     case AST_IF: return visitor_visit_if(visitor, scope, node);
     case AST_ELSE: return visitor_visit_else(visitor, scope, node);
     case AST_WHILE: return visitor_visit_while(visitor, scope, node);
+    case AST_FOR: return visitor_visit_for(visitor, scope, node);
     case AST_RETURN: return visitor_visit_return(visitor, scope, node);
     case AST_RETURN_VAL: return node->return_val.val;
     default: {
@@ -705,6 +706,66 @@ ast_t* visitor_visit_while(visitor_t* visitor, scope_t* scope, ast_t* node)
         default:
           break;
       }
+      goto loop;
+    }
+  }
+
+  return ast_noop();
+}
+
+ast_t* visitor_visit_for(visitor_t* visitor, scope_t* scope, ast_t* node)
+{
+  ast_t* iterated = visitor_visit(visitor, scope, node->__for.iterated);
+  int max_index;
+  switch (iterated->type) {
+    case AST_STRING:
+      max_index = strlen(iterated->string.val);
+      break;
+    case AST_LIST:
+      max_index = iterated->list.mem_size;
+      break;
+    default: {
+      char msg[128];
+      sprintf(msg, "\"%s\" is not iterable", ast_name(iterated));
+      return visitor_error(visitor, msg);
+    }
+  }
+
+  scope_t* for_scope = init_scope();
+  for_scope->prev_scope = scope;
+  scope = for_scope;
+  ast_t* iterator_var = init_var(node->__for.name_iterator, (void*)0, false);
+  scope_add_var(scope, iterator_var);
+  int index = 0;
+  ast_t* cur_iter = (void*)0;
+  loop: {
+    switch (iterated->type) {
+      case AST_STRING:
+        cur_iter = init_ast(AST_STRING);
+        cur_iter->string.val = calloc(2, sizeof(char));
+        cur_iter->string.val[0] = iterated->string.val[index];
+        cur_iter->string.val[1] = '\0';
+        break;
+      case AST_LIST:
+        cur_iter = iterated->list.mems[index];
+        break;
+      default:
+        break;
+    }
+    iterator_var->variable.val = cur_iter;
+    if (index < max_index) {
+      scope_t* loc_scope = init_scope();
+      loc_scope->prev_scope = scope;
+      ast_t* visited = visitor_visit(visitor, loc_scope, node->__for.body);
+      switch (visited->type) {
+        case AST_RETURN_VAL:
+          return visited;
+        case AST_STOP:
+          return ast_noop();
+        default:
+          break;
+      }
+      index++;
       goto loop;
     }
   }

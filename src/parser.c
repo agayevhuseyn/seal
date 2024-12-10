@@ -109,6 +109,8 @@ ast_t* parser_parse_statement(parser_t* parser, bool is_func, bool is_ifelse, bo
       return parser_parse_vardef(parser);
     case TOK_WHILE:
       return parser_parse_while(parser, is_func);
+    case TOK_FOR:
+      return parser_parse_for(parser, is_func);
     case TOK_IF:
       return parser_parse_if(parser, is_func, is_loop);
     case TOK_DEFINE:
@@ -762,6 +764,23 @@ ast_t* parser_parse_while(parser_t* parser, bool is_func)
   parser_eat(parser, TOK_NEWL);
   parser_eat(parser, TOK_INDENT);
   ast->__while.body = parser_parse_statements(parser, is_func, false, true);
+  parser_eat(parser, TOK_DEDENT);
+
+  return ast;
+}
+
+ast_t* parser_parse_for(parser_t* parser, bool is_func)
+{
+  ast_t* ast = init_ast(AST_FOR);
+  parser_eat(parser, TOK_FOR);
+  ast->__for.name_iterator = parser_eat(parser, TOK_ID)->value;
+  parser_eat(parser, TOK_IN);
+
+  ast->__for.iterated = parser_parse_expr(parser);
+  
+  parser_eat(parser, TOK_NEWL);
+  parser_eat(parser, TOK_INDENT);
+  ast->__for.body = parser_parse_statements(parser, is_func, false, true);
   parser_eat(parser, TOK_DEDENT);
 
   return ast;

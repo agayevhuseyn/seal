@@ -57,6 +57,7 @@ const char* token_name(Token_Type type)
     case TOK_IF: return "TOK_IF";
     case TOK_ELSE: return "TOK_ELSE";
     case TOK_WHILE: return "TOK_WHILE";
+    case TOK_FOR: return "TOK_FOR";
     // flow op
     case TOK_RETURN: return "TOK_RETURN";
     case TOK_SKIP: return "TOK_SKIP";

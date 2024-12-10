@@ -53,5 +53,6 @@ ast_t* parser_parse_include(parser_t*);
 ast_t* parser_parse_if(parser_t*, bool is_func, bool is_loop);
 ast_t* parser_parse_else(parser_t*, bool is_func, bool is_loop);
 ast_t* parser_parse_while(parser_t*, bool is_func);
+ast_t* parser_parse_for(parser_t*, bool is_func);
 
 #endif
