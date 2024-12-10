@@ -24,7 +24,7 @@ ast_t* builtin_write(ast_t** args, size_t arg_size)
         for (int j = 0; j < arg->list.mem_size; j++) {
           builtin_write(&arg->list.mems[j], 1);
         }
-        printf("\n]");
+        printf("]");
         break;
       case AST_NULL:  
         printf("%s ", "null");
