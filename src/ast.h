@@ -26,6 +26,7 @@ typedef enum {
   AST_IF,
   AST_ELSE,
   AST_WHILE,
+  AST_FOR,
   AST_SKIP,
   AST_STOP,
   AST_INCLUDE,
@@ -175,6 +176,12 @@ typedef struct ast {
       struct ast* cond;
       struct ast* body;
     } __while;
+
+    struct {
+      const char* name_iterator; // var i
+      struct ast* iterated; // LIST OR STRING
+      struct ast* body;
+    } __for;
 
     struct {
       const char* module_name;

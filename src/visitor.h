@@ -37,6 +37,7 @@ ast_t* visitor_visit_assign(visitor_t*, scope_t*, ast_t*);
 ast_t* visitor_visit_if(visitor_t*, scope_t*, ast_t*);
 ast_t* visitor_visit_else(visitor_t*, scope_t*, ast_t*);
 ast_t* visitor_visit_while(visitor_t*, scope_t*, ast_t*);
+ast_t* visitor_visit_for(visitor_t*, scope_t*, ast_t*);
 ast_t* visitor_visit_return(visitor_t*, scope_t*, ast_t*);
 
 #endif

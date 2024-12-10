@@ -18,6 +18,13 @@ void print_ast(ast_t* ast)
     case AST_INCLUDE:
       printf("%s, name: %s\n", ast_name(ast), ast->include.module_name);
       break;
+    case AST_FOR:
+      printf("%s\n", ast_name(ast));
+      printf("\titerator name: %s, iterated:\n", ast->__for.name_iterator);
+      print_ast(ast->__for.iterated);
+      printf("\tbody:\n");
+      print_ast(ast->__for.body);
+      break;
     case AST_WHILE:
       printf("%s\n", ast_name(ast));
       printf("\tcond:\n");
@@ -211,6 +218,7 @@ const char* ast_name(ast_t* ast)
     case AST_IF: return "AST_IF";
     case AST_ELSE: return "AST_ELSE";
     case AST_WHILE: return "AST_WHILE";
+    case AST_FOR: return "AST_FOR";
     case AST_SKIP: return "AST_SKIP";
     case AST_STOP: return "AST_STOP";
     case AST_OBJ_DEF: return "AST_OBJ_DEF";
