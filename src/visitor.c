@@ -717,6 +717,8 @@ ast_t* visitor_visit_for(visitor_t* visitor, scope_t* scope, ast_t* node)
 {
   ast_t* iterated = visitor_visit(visitor, scope, node->__for.iterated);
   int max_index;
+  int index = 0;
+
   switch (iterated->type) {
     case AST_STRING:
       max_index = strlen(iterated->string.val);
@@ -736,7 +738,6 @@ ast_t* visitor_visit_for(visitor_t* visitor, scope_t* scope, ast_t* node)
   scope = for_scope;
   ast_t* iterator_var = init_var(node->__for.name_iterator, (void*)0, false);
   scope_add_var(scope, iterator_var);
-  int index = 0;
   ast_t* cur_iter = (void*)0;
   loop: {
     switch (iterated->type) {
@@ -769,7 +770,6 @@ ast_t* visitor_visit_for(visitor_t* visitor, scope_t* scope, ast_t* node)
       goto loop;
     }
   }
-
   return ast_noop();
 }
 
