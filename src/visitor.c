@@ -81,7 +81,6 @@ ast_t* visitor_visit(visitor_t* visitor, scope_t* scope, ast_t* node)
     case AST_UNARY: return visitor_visit_unary(visitor, scope, node);
     case AST_VARDEF: return visitor_visit_vardef(visitor, scope, node);
     case AST_VAR_REF: return visitor_visit_var_ref(visitor, scope, node);
-//    case AST_VAR_ASSIGN: return visitor_visit_var_assign(visitor, scope, node);
     case AST_ASSIGN: return visitor_visit_assign(visitor, scope, node);
     case AST_MEM_ACC: return visitor_visit_mem_acc(visitor, scope, node);
     case AST_SUBSCRIPT: return visitor_visit_subscript(visitor, scope, node);
@@ -754,21 +753,19 @@ ast_t* visitor_visit_for(visitor_t* visitor, scope_t* scope, ast_t* node)
         break;
     }
     iterator_var->variable.val = cur_iter;
-    if (index < max_index) {
-      scope_t* loc_scope = init_scope();
-      loc_scope->prev_scope = scope;
-      ast_t* visited = visitor_visit(visitor, loc_scope, node->__for.body);
-      switch (visited->type) {
-        case AST_RETURN_VAL:
-          return visited;
-        case AST_STOP:
-          return ast_noop();
-        default:
-          break;
-      }
-      index++;
-      goto loop;
+
+    scope_t* loc_scope = init_scope();
+    loc_scope->prev_scope = scope;
+    ast_t* visited = visitor_visit(visitor, loc_scope, node->__for.body);
+    switch (visited->type) {
+      case AST_RETURN_VAL:
+        return visited;
+      case AST_STOP:
+        return ast_noop();
+      default:
+        break;
     }
+    if (++index < max_index) goto loop;
   }
   return ast_noop();
 }
