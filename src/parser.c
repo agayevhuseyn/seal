@@ -774,7 +774,12 @@ ast_t* parser_parse_for(parser_t* parser, bool is_func)
   ast_t* ast = init_ast(AST_FOR);
   parser_eat(parser, TOK_FOR);
   ast->__for.name_iterator = parser_eat(parser, TOK_ID)->value;
-  parser_eat(parser, TOK_IN);
+
+  if (parser_peek(parser)->type == TOK_COLON) {
+    parser_eat(parser, TOK_COLON);
+  } else {
+    parser_eat(parser, TOK_IN);
+  }
 
   ast->__for.iterated = parser_parse_expr(parser);
   
