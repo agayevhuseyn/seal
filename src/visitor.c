@@ -16,6 +16,8 @@ visitor_t* init_visitor(parser_t* parser)
   visitor->func_size = parser->func_size;
   visitor->obj_defs = parser->obj_defs;
   visitor->obj_size = parser->obj_size;
+  visitor->modules = (void*)0;
+  visitor->module_size = 0;
 
   return visitor;
 }
@@ -76,6 +78,7 @@ ast_t* visitor_visit(visitor_t* visitor, scope_t* scope, ast_t* node)
     case AST_NULL: return visitor_visit_null(visitor, scope, node);
     case AST_SKIP: return visitor_visit_skip(visitor, scope, node);
     case AST_STOP: return visitor_visit_skip(visitor, scope, node);
+    case AST_INCLUDE: return visitor_visit_include(visitor, scope, node);
     case AST_LIST: return visitor_visit_list(visitor, scope, node);
     case AST_BINARY: return visitor_visit_binary(visitor, scope, node);
     case AST_UNARY: return visitor_visit_unary(visitor, scope, node);
@@ -84,6 +87,7 @@ ast_t* visitor_visit(visitor_t* visitor, scope_t* scope, ast_t* node)
     case AST_ASSIGN: return visitor_visit_assign(visitor, scope, node);
     case AST_MEM_ACC: return visitor_visit_mem_acc(visitor, scope, node);
     case AST_SUBSCRIPT: return visitor_visit_subscript(visitor, scope, node);
+    case AST_MODULE_FCALL: return visitor_visit_module_fcall(visitor, scope, node);
     case AST_IF: return visitor_visit_if(visitor, scope, node);
     case AST_ELSE: return visitor_visit_else(visitor, scope, node);
     case AST_WHILE: return visitor_visit_while(visitor, scope, node);
@@ -251,6 +255,22 @@ ast_t* visitor_visit_stop(visitor_t* visitor, scope_t* scope, ast_t* node)
   return node;
 }
 
+ast_t* visitor_visit_include(visitor_t* visitor, scope_t* scope, ast_t* node)
+{
+  for (int i = 0; i < visitor->module_size; i++) {
+    if (strcmp(node->include.module_name, visitor->modules[i]->name) == 0) {
+      char msg[128];
+      sprintf(msg, "module \"%s\" has already been included", node->include.module_name);
+      return visitor_error(visitor, msg);
+    }
+  }
+  visitor->module_size++;
+  visitor->modules = realloc(visitor->modules, visitor->module_size * sizeof(module_t*));
+  visitor->modules[visitor->module_size - 1] = init_module(node->include.module_name);
+
+  return ast_noop();
+}
+
 ast_t* visitor_visit_list(visitor_t* visitor, scope_t* scope, ast_t* node)
 {
   ast_t* ast = init_ast(AST_LIST);
@@ -314,6 +334,36 @@ ast_t* visitor_visit_subscript(visitor_t* visitor, scope_t* scope, ast_t* node)
   }
 
   return result;
+}
+
+ast_t* visitor_visit_module_fcall(visitor_t* visitor, scope_t* scope, ast_t* node)
+{
+  ast_t* module = node->module_fcall.module;
+  if (module->type != AST_VAR_REF) {
+    char msg[128];
+    sprintf(msg, "unexpected type at module function call module: \"%s\"", ast_name(module));
+    return visitor_error(visitor, msg);
+  }
+  if (node->module_fcall.func_call->type != AST_FUNC_CALL) {
+    char msg[128];
+    sprintf(msg, "unexpected type at module function call function: \"%s\"", ast_name(node->module_fcall.func_call));
+    return visitor_error(visitor, msg);
+  }
+
+  for (int i = 0; i < visitor->module_size; i++) {
+    if (strcmp(module->var_ref.name, visitor->modules[i]->name) == 0) {
+      size_t arg_size = node->module_fcall.func_call->func_call.arg_size;
+      ast_t** args = calloc(arg_size, sizeof(ast_t*));
+      for (int i = 0; i < arg_size; i++) {
+        args[i] = visitor_visit(visitor, scope, node->module_fcall.func_call->func_call.args[i]);
+      }
+      return module_function_call(visitor->modules[i], node->module_fcall.func_call->func_call.fname, args, arg_size);
+    }
+  }
+
+  char msg[128];
+  sprintf(msg, "module \"%s\" is not included", module->var_ref.name);
+  return visitor_error(visitor, msg);
 }
 
 ast_t* visitor_visit_binary(visitor_t* visitor, scope_t* scope, ast_t* node)
