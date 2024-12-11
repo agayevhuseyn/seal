@@ -40,6 +40,10 @@ void lexer_collect_token(lexer_t* lexer)
   char c = lexer_advance(lexer);
 
   switch (c) {
+    case '\\':
+      while (lexer_advance(lexer) != '\n');
+      lexer->line++;
+      break;
     case '(':
       lexer_add_token(lexer, init_token(TOK_LPAREN, "(", lexer->line));
       break;
