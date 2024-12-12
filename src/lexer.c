@@ -112,7 +112,12 @@ void lexer_collect_token(lexer_t* lexer)
       lexer_add_token(lexer, init_token(TOK_MUL, "*", lexer->line));
       break;
     case '/':
-      lexer_add_token(lexer, init_token(TOK_DIV, "/", lexer->line));
+      if (lexer_peek(lexer) == '/') {
+        while (lexer_peek(lexer) != '\n')
+          lexer_advance(lexer);
+        lexer->line++;
+      } else
+        lexer_add_token(lexer, init_token(TOK_DIV, "/", lexer->line));
       break;
     case '%':
       lexer_add_token(lexer, init_token(TOK_MOD, "%", lexer->line));

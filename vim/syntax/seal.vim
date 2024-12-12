@@ -7,11 +7,13 @@ syntax match sealNumber "\<\d*"
 syntax match sealNumber "\<\d*\.d*"
 
 syntax match sealString "\"[^\"\\]*\""
+syntax match sealComment "//.*"
 
 highlight def link sealKeyword Keyword
 highlight def link sealType Type
 highlight def link sealBoolean Boolean
 highlight def link sealNumber Number
 highlight def link sealString String
+highlight def link sealComment Comment
 
 setlocal autoindent
