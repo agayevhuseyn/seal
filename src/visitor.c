@@ -794,6 +794,8 @@ ast_t* visitor_visit_for(visitor_t* visitor, scope_t* scope, ast_t* node)
     }
   }
 
+  if (max_index == 0) return ast_noop();
+
   scope_t* for_scope = init_scope();
   for_scope->prev_scope = scope;
   scope = for_scope;
