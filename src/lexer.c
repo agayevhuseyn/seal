@@ -328,13 +328,25 @@ void lexer_get_string(lexer_t* lexer)
 
   char c;
   while ((c = lexer_peek(lexer)) != '\n' && c != '\"') {
+    lexer_advance(lexer);
     len++;
     s = realloc(s, (len + 1) * sizeof(char));
+    if (c == '\\') {
+      switch (lexer_advance(lexer)) {
+        case '\\': break;
+        case 'n': c = '\n'; break;
+        case 't': c = '\t'; break;
+        case '\"': c = '\"'; break;
+        default: {
+          char msg[128];
+          sprintf(msg, "invalid escape sequence: \'%c%c\'", '\\', lexer_peek_offset(lexer, -1));
+          lexer_error(lexer, msg);
+        }
+      }
+    }
     s[len - 1] = c;
-    s[len] = '\0';   
-    lexer_advance(lexer);
+    s[len] = '\0';
   }
-  
   if (c != '\"') {
     char msg[128];
     sprintf(msg, "unterminated string \"%s\"", s);
