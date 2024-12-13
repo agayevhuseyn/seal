@@ -266,7 +266,9 @@ ast_t* visitor_visit_include(visitor_t* visitor, scope_t* scope, ast_t* node)
   }
   visitor->module_size++;
   visitor->modules = realloc(visitor->modules, visitor->module_size * sizeof(module_t*));
-  visitor->modules[visitor->module_size - 1] = init_module(node->include.module_name);
+  visitor->modules[visitor->module_size - 1] = init_module(node->include.module_name,
+                                                           node->include.has_alias,
+                                                           node->include.alias_name);
 
   return ast_noop();
 }

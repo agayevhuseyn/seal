@@ -708,6 +708,13 @@ ast_t* parser_parse_include(parser_t* parser)
   parser_eat(parser, TOK_INCLUDE);
   ast_t* ast = init_ast(AST_INCLUDE);
   ast->include.module_name = parser_eat(parser, TOK_ID)->value;
+  ast->include.has_alias = false;
+  ast->include.alias_name = (void*)0;
+  if (parser_peek(parser)->type == TOK_AS) {
+    parser_advance(parser);
+    ast->include.has_alias = true;
+    ast->include.alias_name = parser_eat(parser, TOK_ID)->value;
+  }
   return ast;
 }
 
