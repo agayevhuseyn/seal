@@ -10,6 +10,7 @@ const char* token_name(Token_Type type)
     case TOK_OBJECT: return "TOK_OBJECT";
     case TOK_DEFINE: return "TOK_DEFINE";
     case TOK_INCLUDE: return "TOK_INCLUDE";
+    case TOK_AS: return "TOK_AS";
     // parens
     case TOK_LPAREN: return "TOK_LPAREN";
     case TOK_RPAREN: return "TOK_RPAREN";

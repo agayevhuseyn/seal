@@ -16,7 +16,8 @@ void print_ast(ast_t* ast)
       print_ast(ast->module_fcall.func_call);
       break;
     case AST_INCLUDE:
-      printf("%s, name: %s\n", ast_name(ast), ast->include.module_name);
+      printf("%s, name: %s, alias: %s\n", ast_name(ast), ast->include.module_name,
+                                                         ast->include.has_alias ? ast->include.alias_name : "none");
       break;
     case AST_FOR:
       printf("%s\n", ast_name(ast));

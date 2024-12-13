@@ -185,6 +185,8 @@ typedef struct ast {
 
     struct {
       const char* module_name;
+      bool has_alias;
+      const char* alias_name;
     } include;
   };
 } ast_t;

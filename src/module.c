@@ -19,11 +19,10 @@ static void module_error()
   exit(1);
 }
 
-module_t* init_module(const char* name)
+module_t* init_module(const char* name, bool has_alias, const char* alias_name)
 {
   module_t* module = calloc(1, sizeof(module_t));
 
-  module->name = name;
   char path[256];
 #ifdef _WIN32
   sprintf(path, "./%s.dll", name);
@@ -41,6 +40,8 @@ module_t* init_module(const char* name)
   module->functions = (void*)0;
   module->function_names = (void*)0;
   module->function_size = 0;
+
+  module->name = has_alias ? alias_name : name;
   
   return module;
 }
