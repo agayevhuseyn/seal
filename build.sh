@@ -3,6 +3,25 @@ OUT="seal"
 DIR="src"
 OBJ="obj"
 
+usage() {
+  echo "Usage: $0 [--windows]"
+  echo "  --windows    Compile for Windows (using MinGW)"
+  echo "  (default)    Compile for Linux"
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --windows)
+      CC="x86_64-w64-mingw32-gcc"
+      shift
+      ;;
+    *)
+      usage
+      exit 1
+      ;;
+  esac
+done
+
 mkdir -p $OBJ
 
 for c in $DIR/*.c; do
