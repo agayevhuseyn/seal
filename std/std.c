@@ -5,6 +5,12 @@
 
 static const char* libname = "std";
 
+sealobj* _initlib(sealobj** args, size_t arg_size)
+{
+  init_const_asts();
+  return ast_noop();
+}
+
 sealobj* _writeln(sealobj** args, size_t arg_size)
 {
   for (int i = 0; i < arg_size; i++) {

@@ -42,6 +42,23 @@ module_t* init_module(const char* name, bool has_alias, const char* alias_name)
   module->function_size = 0;
 
   module->name = has_alias ? alias_name : name;
+
+  // call initlib func in included lib
+  const char initlib_fname[] = "_initlib";
+#ifdef _WIN32
+    FARPROC function = GetProcAddress(module->handle, initlib_fname);
+    if (!function) {
+      fprintf(stderr, "%s function is not found in module: %s\n", initlib_fname, module->name);
+      module_error();
+    }
+    ast_t* (*function_ptr)(ast_t**, size_t) = (ast_t* (*)(ast_t**, size_t))function;
+#else
+    ast_t* (*function_ptr)(ast_t**, size_t) = (ast_t* (*)(ast_t**, size_t))dlsym(module->handle, initlib_fname);
+    if (!function_ptr) {
+      module_error();
+    }
+#endif
+  function_ptr((void*)0, 0);
   
   return module;
 }

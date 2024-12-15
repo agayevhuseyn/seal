@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include "visitor.h"
 #include "ast.h"
-#include "builtin.h"
 #include "scope.h"
 
 visitor_t* init_visitor(parser_t* parser)
