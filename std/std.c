@@ -38,6 +38,45 @@ sealobj* _writeln(sealobj** args, size_t arg_size)
   return ast_noop();
 }
 
+sealobj* _read(sealobj** args, size_t arg_size)
+{
+  seal_type expected_types[1];
+  size_t type_size;
+  switch (arg_size) {
+    case 0:
+      type_size = 0;
+      break;
+    default:
+      expected_types[0] = SEAL_STRING;
+      type_size = 1;
+      break;
+  }
+  seal_check_args(libname, "read", expected_types, type_size, args, arg_size);
+
+  sealobj* sobj = init_sealobj(AST_STRING);
+  sobj->string.val = (void*)0;
+  
+  size_t len = 0;
+
+  switch (type_size) {
+    case 0:
+      break;
+    default:
+      printf("%s", args[0]->string.val);
+      break;
+  }
+
+  char c;
+  while ((c = getchar()) != '\n' && c != EOF) {
+    len++;
+    sobj->string.val = realloc(sobj->string.val, (len + 1) * sizeof(char));
+    sobj->string.val[len - 1] = c;
+  }
+  sobj->string.val[len] = '\0';
+
+  return sobj;
+}
+
 sealobj* _len(sealobj** args, size_t arg_size)
 {
   seal_type expected_types[] = { SEAL_ITERABLE };
