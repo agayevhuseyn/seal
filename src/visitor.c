@@ -519,6 +519,18 @@ ast_t* visitor_visit_binary(visitor_t* visitor, scope_t* scope, ast_t* node)
         return visitor_error(visitor, msg);
       }
     }
+  } else if (bin_left->type == AST_OBJECT && bin_right->type == AST_OBJECT) {
+    switch (node->binary.op) {
+      case TOK_EQ:
+        return &bin_left->object == &bin_right->object ? ast_true() : ast_false();
+      case TOK_NE:
+        return &bin_left->object != &bin_right->object ? ast_true() : ast_false();
+      default: {
+        char msg[128];
+        sprintf(msg, "%s operator cannot be applied to object", token_name(node->binary.op));
+        return visitor_error(visitor, msg);
+      }
+    }
   } else if (bin_left->type == AST_NULL || bin_right->type == AST_NULL) {
     switch (node->binary.op) {
       case TOK_EQ:
