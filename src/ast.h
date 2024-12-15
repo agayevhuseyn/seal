@@ -194,6 +194,7 @@ typedef struct ast {
 void print_ast(ast_t*);
 const char* ast_name(ast_t*);
 ast_t* init_ast(AST_Type);
+void init_const_asts();
 ast_t* ast_noop();
 ast_t* ast_true();
 ast_t* ast_false();

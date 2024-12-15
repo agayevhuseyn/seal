@@ -240,36 +240,32 @@ ast_t* init_ast(AST_Type type)
   return ast;
 }
 
+void init_const_asts()
+{
+  g_ast_noop = init_ast(AST_NOOP);
+  g_ast_true = init_ast(AST_BOOL);
+  g_ast_true->boolean.val = true;
+  g_ast_false = init_ast(AST_BOOL);
+  g_ast_false->boolean.val = false;
+  g_ast_null = init_ast(AST_NULL);
+}
+
 ast_t* ast_noop()
 {
-  if (!g_ast_noop) {
-    g_ast_noop = init_ast(AST_NOOP);
-  }
   return g_ast_noop;
 }
 
 ast_t* ast_true()
 {
-  if (!g_ast_true) {
-    g_ast_true = init_ast(AST_BOOL);
-    g_ast_true->boolean.val = true;
-  }
   return g_ast_true;
 }
 
 ast_t* ast_false()
 {
-  if (!g_ast_false) {
-    g_ast_false = init_ast(AST_BOOL);
-    g_ast_false->boolean.val = false;
-  }
   return g_ast_false;
 }
 
 ast_t* ast_null()
 {
-  if (!g_ast_null) {
-    g_ast_null = init_ast(AST_NULL);
-  }
   return g_ast_null;
 }

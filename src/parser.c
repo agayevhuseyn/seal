@@ -8,6 +8,9 @@ parser_t* init_parser(lexer_t* lexer)
 {
   parser_t* parser = calloc(1, sizeof(parser_t));
 
+  // init asts before using
+  init_const_asts();
+
   parser->tokens = lexer->tokens;
   parser->token_size = lexer->token_size;
   parser->i = 0;
