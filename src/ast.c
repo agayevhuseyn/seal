@@ -16,8 +16,12 @@ void print_ast(ast_t* ast)
       print_ast(ast->module_fcall.func_call);
       break;
     case AST_INCLUDE:
-      printf("%s, name: %s, alias: %s\n", ast_name(ast), ast->include.module_name,
-                                                         ast->include.has_alias ? ast->include.alias_name : "none");
+      if (ast->include.type == INC_SRC_FILE) {
+        printf("%s, filename: %s\n", ast_name(ast), ast->include.source_file.file_name);
+      } else {
+        printf("%s, name: %s, alias: %s\n", ast_name(ast), ast->include.module.name,
+                                                           ast->include.module.has_alias ? ast->include.module.alias_name : "none");
+      }
       break;
     case AST_FOR:
       printf("%s\n", ast_name(ast));

@@ -4,6 +4,7 @@
 #include "visitor.h"
 #include "ast.h"
 #include "scope.h"
+#include "io.h"
 
 visitor_t* init_visitor(parser_t* parser)
 {
@@ -236,18 +237,49 @@ ast_t* visitor_visit_stop(visitor_t* visitor, scope_t* scope, ast_t* node)
 
 ast_t* visitor_visit_include(visitor_t* visitor, scope_t* scope, ast_t* node)
 {
-  for (int i = 0; i < visitor->module_size; i++) {
-    if (strcmp(node->include.module_name, visitor->modules[i]->name) == 0) {
+  if (node->include.type == INC_SRC_FILE) {
+    // read content from file
+    const char* included_src = read_file(node->include.source_file.file_name);
+    if (!included_src) {
       char msg[128];
-      sprintf(msg, "module \"%s\" has already been included", node->include.module_name);
+      sprintf(msg, "\"%s\" could not be included", node->include.source_file.file_name);
       return visitor_error(visitor, msg);
     }
+
+    // tokenize content
+    lexer_t* included_lexer = init_lexer(included_src);
+    lexer_collect_tokens(included_lexer);
+
+    // generate ast
+    parser_t* included_parser = init_parser(included_lexer);
+    parser_parse(included_parser);
+
+    // merge arrays
+    visitor->func_defs = realloc(visitor->func_defs, (visitor->func_size + included_parser->func_size) * sizeof(ast_t*));
+    for (int i = 0; i < included_parser->func_size; i++) {
+      visitor->func_defs[visitor->func_size + i] = included_parser->func_defs[i];
+    }
+    visitor->func_size += included_parser->func_size;
+    visitor->obj_defs = realloc(visitor->obj_defs, (visitor->obj_size + included_parser->obj_size) * sizeof(ast_t*));
+    for (int i = 0; i < included_parser->obj_size; i++) {
+      visitor->obj_defs[visitor->obj_size + i] = included_parser->obj_defs[i];
+    }
+    visitor->obj_size += included_parser->obj_size;
+
+  } else if (node->include.type == INC_MODULE) {
+    for (int i = 0; i < visitor->module_size; i++) {
+      if (strcmp(node->include.module.name, visitor->modules[i]->name) == 0) {
+        char msg[128];
+        sprintf(msg, "module \"%s\" has already been included", node->include.module.name);
+        return visitor_error(visitor, msg);
+      }
+    }
+    visitor->module_size++;
+    visitor->modules = realloc(visitor->modules, visitor->module_size * sizeof(module_t*));
+    visitor->modules[visitor->module_size - 1] = init_module(node->include.module.name,
+                                                             node->include.module.has_alias,
+                                                             node->include.module.alias_name);
   }
-  visitor->module_size++;
-  visitor->modules = realloc(visitor->modules, visitor->module_size * sizeof(module_t*));
-  visitor->modules[visitor->module_size - 1] = init_module(node->include.module_name,
-                                                           node->include.has_alias,
-                                                           node->include.alias_name);
 
   return ast_noop();
 }
