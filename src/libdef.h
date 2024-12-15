@@ -13,10 +13,11 @@ typedef enum {
   SEAL_BOOL = AST_BOOL,
   SEAL_LIST = AST_LIST,
   SEAL_OBJECT = AST_OBJECT,
-  SEAL_NULL = AST_NULL,
   SEAL_NUMBER,
   SEAL_ITERABLE,
+  SEAL_DATA,
   SEAL_NOOP = AST_NOOP,
+  SEAL_NULL = AST_NULL,
 } seal_type;
 
 const char* seal_type_name(seal_type type);

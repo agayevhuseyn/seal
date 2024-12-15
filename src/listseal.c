@@ -1,4 +1,4 @@
-#include "list.h"
+#include "listseal.h"
 #include <stdio.h>
 
 ast_t* list_push(ast_t* list, ast_t* element)
