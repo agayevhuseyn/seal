@@ -121,26 +121,6 @@ ast_t* visitor_visit_comp(visitor_t* visitor, scope_t* scope, ast_t* node)
 
 ast_t* visitor_visit_func_call(visitor_t* visitor, scope_t* scope, ast_t* node)
 {
-  // write
-  if (strcmp(node->func_call.fname, "write") == 0) {
-    size_t arg_size = node->func_call.arg_size;
-    ast_t** args = calloc(arg_size, sizeof(ast_t*));
-    for (int i = 0; i < arg_size; i++) {
-      args[i] = visitor_visit(visitor, scope, node->func_call.args[i]);
-    }
-    return builtin_write(args, arg_size);
-  }
-
-  // len
-  if (strcmp(node->func_call.fname, "len") == 0) {
-    size_t arg_size = node->func_call.arg_size;
-    ast_t** args = calloc(arg_size, sizeof(ast_t*));
-    for (int i = 0; i < arg_size; i++) {
-      args[i] = visitor_visit(visitor, scope, node->func_call.args[i]);
-    }
-    return builtin_len(args, arg_size);
-  }
-  
   // user defined functions
   for (int i = 0; i < visitor->func_size; i++) {
     if (strcmp(node->func_call.fname, visitor->func_defs[i]->func_def.fname) == 0) {
