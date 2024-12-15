@@ -14,6 +14,7 @@ const char* seal_type_name(seal_type type)
     case SEAL_OBJECT: return "SEAL_OBJECT";
     case SEAL_NULL: return "SEAL_NULL";
     case SEAL_NOOP: return "SEAL_NOOP";
+    case SEAL_DATA: return "SEAL_DATA";
   }
 }
 
@@ -38,7 +39,11 @@ void seal_check_args(const char* libname,
   for (int i = 0; i < type_size; i++) {
     if ((expected_types[i] == SEAL_NUMBER && ((seal_type)args[i]->type != SEAL_INT && (seal_type)args[i]->type != SEAL_FLOAT)) ||
     (expected_types[i] == SEAL_ITERABLE && ((seal_type)args[i]->type != SEAL_LIST && (seal_type)args[i]->type != SEAL_STRING)) ||
-    (expected_types[i] != SEAL_NUMBER && expected_types[i] != SEAL_ITERABLE && (seal_type)args[i]->type != expected_types[i])) {
+    (expected_types[i] != SEAL_NUMBER &&
+      expected_types[i] != SEAL_ITERABLE &&
+      expected_types[i] != SEAL_DATA &&
+      (seal_type)args[i]->type != expected_types[i]) ||
+    (expected_types[i] == SEAL_DATA && (seal_type)args[i]->type == SEAL_NOOP)) {
       char msg[256];
       sprintf(msg, "\'%s\' function expected arg %i to be %s, got %s",
              func_name, i + 1, seal_type_name(expected_types[i]), seal_type_name((seal_type)args[i]->type));
