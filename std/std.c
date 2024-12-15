@@ -1,5 +1,6 @@
 #include "../src/libdef.h"
 #include "../src/ast.h"
+#include "../src/list.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -139,19 +140,15 @@ sealobj* _span(sealobj** args, size_t arg_size)
 
   if (start < end && step > 0) {
     for (int i = start; i < end; i += step) {
-      sobj->list.mem_size++;
-      sobj->list.mems = realloc(sobj->list.mems, sobj->list.mem_size * sizeof(ast_t*));
       ast_t* mem = init_ast(AST_INT);
       mem->integer.val = i;
-      sobj->list.mems[sobj->list.mem_size - 1] = mem;
+      list_push(sobj, mem);
     }
   } else if (start > end && step < 0) {
     for (int i = start; i > end; i += step) {
-      sobj->list.mem_size++;
-      sobj->list.mems = realloc(sobj->list.mems, sobj->list.mem_size * sizeof(ast_t*));
       ast_t* mem = init_ast(AST_INT);
       mem->integer.val = i;
-      sobj->list.mems[sobj->list.mem_size - 1] = mem;
+      list_push(sobj, mem);
     }
   }
 
