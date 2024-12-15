@@ -184,9 +184,22 @@ typedef struct ast {
     } __for;
 
     struct {
-      const char* module_name;
-      bool has_alias;
-      const char* alias_name;
+      enum {
+        INC_MODULE,
+        INC_SRC_FILE,
+      } type;
+
+      union {
+        struct {
+          const char* name;
+          bool has_alias;
+          const char* alias_name;
+        } module;
+
+        struct {
+          const char* file_name;
+        } source_file;
+      };
     } include;
   };
 } ast_t;
