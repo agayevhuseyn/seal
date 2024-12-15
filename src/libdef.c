@@ -41,7 +41,7 @@ void seal_check_args(const char* libname,
     (expected_types[i] != SEAL_NUMBER && expected_types[i] != SEAL_ITERABLE && (seal_type)args[i]->type != expected_types[i])) {
       char msg[256];
       sprintf(msg, "\'%s\' function expected arg %i to be %s, got %s",
-             func_name, i, seal_type_name(expected_types[i]), seal_type_name((seal_type)args[i]->type));
+             func_name, i + 1, seal_type_name(expected_types[i]), seal_type_name((seal_type)args[i]->type));
       liberror(libname, msg);
     }
   }
