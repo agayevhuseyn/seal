@@ -1,5 +1,7 @@
 #include "libdef.h"
+#include "ast.h"
 #include <stdio.h>
+#include <string.h>
 
 const char* seal_type_name(seal_type type)
 {
@@ -50,4 +52,21 @@ void seal_check_args(const char* libname,
       liberror(libname, msg);
     }
   }
+}
+
+sealobj* get_obj_mem(ast_t* obj, const char* mem_name)
+{
+  if (obj->type != (AST_Type)SEAL_OBJECT) {
+    printf("Required object, not \"%s\", by %s\n", seal_type_name((seal_type)obj->type), mem_name);
+    exit(1);
+  }
+  for (int i = 0; i < obj->object.field_size; i++) {
+    if (strcmp(mem_name, obj->object.def->obj_def.fields[i]->name) == 0) {
+      return obj->object.field_vars[i];
+    }
+  }
+ 
+  printf("no member named %s in %s\n", mem_name, obj->object.def->obj_def.oname);
+  exit(1);
+  return (void*)0;
 }
