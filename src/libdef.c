@@ -54,7 +54,7 @@ void seal_check_args(const char* libname,
   }
 }
 
-sealobj* get_obj_mem(ast_t* obj, const char* mem_name)
+sealobj* get_obj_mem(ast_t* obj, const char* mem_name, seal_type type)
 {
   if (obj->type != (AST_Type)SEAL_OBJECT) {
     printf("Required object, not \"%s\", by %s\n", seal_type_name((seal_type)obj->type), mem_name);
@@ -62,7 +62,21 @@ sealobj* get_obj_mem(ast_t* obj, const char* mem_name)
   }
   for (int i = 0; i < obj->object.field_size; i++) {
     if (strcmp(mem_name, obj->object.def->obj_def.fields[i]->name) == 0) {
-      return obj->object.field_vars[i];
+      sealobj* mem = obj->object.field_vars[i];
+      
+      if ((type == SEAL_NUMBER && ((seal_type)mem->type != SEAL_INT && (seal_type)mem->type != SEAL_FLOAT)) ||
+      (type == SEAL_ITERABLE && ((seal_type)mem->type != SEAL_LIST && (seal_type)mem->type != SEAL_STRING)) ||
+      (type != SEAL_NUMBER &&
+        type != SEAL_ITERABLE &&
+        type != SEAL_DATA &&
+        (seal_type)mem->type != type) ||
+      (type == SEAL_DATA && (seal_type)mem->type == SEAL_NOOP)) {
+        printf("Object \'%s\' member \'%s\' is not type \'%s\', but \'%s\'\n",
+               obj->object.def->obj_def.oname, mem_name, seal_type_name(type), seal_type_name((seal_type)mem->type));
+        exit(1);
+      }
+
+      return mem; // successful return
     }
   }
  
