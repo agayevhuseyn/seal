@@ -6,3 +6,4 @@ syntaxlang/
 testparse/
 vgcore*
 seal.exe
+.clangd
