@@ -9,18 +9,18 @@ ast_t* g_ast_null  = (void*)0;
 void print_ast(ast_t* ast)
 {
   switch (ast->type) {
-    case AST_MODULE_FCALL:
-      printf("%s, module:\n", ast_name(ast));
-      print_ast(ast->module_fcall.module);
+    case AST_LIBSEAL_FCALL:
+      printf("%s, lib:\n", ast_name(ast));
+      print_ast(ast->libseal_fcall.libseal);
       printf("%s, fcall:\n", ast_name(ast));
-      print_ast(ast->module_fcall.func_call);
+      print_ast(ast->libseal_fcall.func_call);
       break;
     case AST_INCLUDE:
       if (ast->include.type == INC_SRC_FILE) {
         printf("%s, filename: %s\n", ast_name(ast), ast->include.source_file.file_name);
       } else {
-        printf("%s, name: %s, alias: %s\n", ast_name(ast), ast->include.module.name,
-                                                           ast->include.module.has_alias ? ast->include.module.alias_name : "none");
+        printf("%s, name: %s, alias: %s\n", ast_name(ast), ast->include.libseal.name,
+                                                           ast->include.libseal.has_alias ? ast->include.libseal.alias_name : "none");
       }
       break;
     case AST_FOR:
@@ -228,7 +228,7 @@ const char* ast_name(ast_t* ast)
     case AST_STOP: return "AST_STOP";
     case AST_OBJ_DEF: return "AST_OBJ_DEF";
     case AST_INCLUDE: return "AST_INCLUDE";
-    case AST_MODULE_FCALL: return "AST_MODULE_FCALL";
+    case AST_LIBSEAL_FCALL: return "AST_LIBSEAL_FCALL";
     case AST_VAR_REF: return "AST_VAR_REF";
     case AST_RETURN_VAL: return "AST_RETURN_VAL";
     case AST_OBJECT: return "AST_OBJECT";

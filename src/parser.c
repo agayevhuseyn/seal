@@ -349,10 +349,10 @@ ast_t* parser_parse_primary(parser_t* parser)
     } else if (t == TOK_DCOLON) {
       parser_eat(parser, TOK_DCOLON);
 
-      ast_t* mfcall = init_ast(AST_MODULE_FCALL);
+      ast_t* mfcall = init_ast(AST_LIBSEAL_FCALL);
       
-      mfcall->module_fcall.module = ast;
-      mfcall->module_fcall.func_call = parser_parse_func_call(parser);
+      mfcall->libseal_fcall.libseal = ast;
+      mfcall->libseal_fcall.func_call = parser_parse_func_call(parser);
 
       ast = mfcall;
     }
@@ -714,14 +714,14 @@ ast_t* parser_parse_include(parser_t* parser)
     ast->include.type = INC_SRC_FILE;
     ast->include.source_file.file_name = parser_eat(parser, TOK_STRING)->value;
   } else {
-    ast->include.type = INC_MODULE;
-    ast->include.module.name = parser_eat(parser, TOK_ID)->value;
-    ast->include.module.has_alias = false;
-    ast->include.module.alias_name = (void*)0;
+    ast->include.type = INC_LIBSEAL;
+    ast->include.libseal.name = parser_eat(parser, TOK_ID)->value;
+    ast->include.libseal.has_alias = false;
+    ast->include.libseal.alias_name = (void*)0;
     if (parser_peek(parser)->type == TOK_AS) {
       parser_advance(parser);
-      ast->include.module.has_alias = true;
-      ast->include.module.alias_name = parser_eat(parser, TOK_ID)->value;
+      ast->include.libseal.has_alias = true;
+      ast->include.libseal.alias_name = parser_eat(parser, TOK_ID)->value;
     }
   }
   return ast;

@@ -38,7 +38,7 @@ typedef enum {
   // unaries
   AST_MEM_ACC,
   AST_SUBSCRIPT,
-  AST_MODULE_FCALL,
+  AST_LIBSEAL_FCALL,
 } AST_Type;
 
 typedef struct ast {
@@ -129,8 +129,8 @@ typedef struct ast {
     } subscript;
 
     struct {
-      struct ast* module, *func_call;
-    } module_fcall;
+      struct ast* libseal, *func_call;
+    } libseal_fcall;
 
     struct {
       const char* fname;
@@ -185,7 +185,7 @@ typedef struct ast {
 
     struct {
       enum {
-        INC_MODULE,
+        INC_LIBSEAL,
         INC_SRC_FILE,
       } type;
 
@@ -194,7 +194,7 @@ typedef struct ast {
           const char* name;
           bool has_alias;
           const char* alias_name;
-        } module;
+        } libseal;
 
         struct {
           const char* file_name;
