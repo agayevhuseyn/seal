@@ -1,6 +1,6 @@
-#include "../src/libdef.h"
-#include "../src/ast.h"
-#include "../src/listseal.h"
+#include <seal/src/libdef.h>
+#include <seal/src/ast.h>
+#include <seal/src/listseal.h>
 #include <stdio.h>
 #include <string.h>
 
