@@ -172,3 +172,57 @@ sealobj* _span(sealobj** args, size_t arg_size)
 
   return sobj;
 }
+
+sealobj* _tostr(sealobj** args, size_t arg_size)
+{
+  seal_type expected_types[] = { SEAL_DATA };
+  const char* func_name = "tostr";
+  seal_check_args(libname, func_name, expected_types, sizeof(expected_types) / sizeof(expected_types[0]), args, arg_size);
+
+  sealobj* str = init_ast(AST_STRING);
+
+  sealobj* arg = args[0];
+  char buffer[128];
+  switch (arg->type) {
+    case SEAL_INT:
+      sprintf(buffer, "%d", arg->integer.val);
+      break;
+    case SEAL_FLOAT:
+      sprintf(buffer, "%f", arg->floating.val);
+      break;
+    case SEAL_STRING: {
+      char msg[128];
+      sprintf(msg, "cannot get string as arg");
+      seal_func_err(libname, func_name, msg);
+    }
+      break;
+    case SEAL_BOOL:
+      sprintf(buffer, "%s", arg->boolean.val ? "true" : "false");
+      break;
+    case SEAL_NULL:
+      sprintf(buffer, "%s", "null");
+      break;
+    case SEAL_LIST: {
+      char msg[128];
+      sprintf(msg, "cannot get list as arg");
+      seal_func_err(libname, func_name, msg);
+    }
+      break;
+    case SEAL_OBJECT: {
+      char msg[128];
+      sprintf(msg, "cannot get obj as arg");
+      seal_func_err(libname, func_name, msg);
+    }
+      break;
+    default: {
+      char errmsg[256];
+      sprintf(errmsg, "unexpected arg: \"%s\"", seal_type_name((seal_type)arg->type));
+      seal_func_err(libname, func_name, errmsg);
+    }
+  }
+
+  str->string.val = calloc(strlen(buffer) + 1, sizeof(char));
+  strcpy(str->string.val, buffer);
+
+  return str;
+}
