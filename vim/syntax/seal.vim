@@ -1,4 +1,4 @@
-syntax keyword sealKeyword if else while skip stop define return and or not for include
+syntax keyword sealKeyword if else while skip stop define return and or not for include as
 syntax keyword sealType var object
 syntax keyword sealBoolean true false null
 
