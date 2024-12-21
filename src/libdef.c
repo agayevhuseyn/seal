@@ -84,3 +84,11 @@ sealobj* get_obj_mem(ast_t* obj, const char* mem_name, seal_type type)
   exit(1);
   return (void*)0;
 }
+
+void seal_func_err(const char* libname, const char* func_name, const char* msg)
+{
+  // no need newline
+  char fmsg[512];
+  sprintf(fmsg, "function %s: %s", func_name, msg);
+  liberror(libname, fmsg);
+}
