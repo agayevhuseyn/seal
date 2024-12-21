@@ -39,8 +39,9 @@ static inline void write(sealobj* arg)
       printf("%s: %p", arg->object.def->obj_def.oname, &(arg->object));
       break;
     default: {
-      printf("function writeln: unexpected arg: \"%s\"\n", seal_type_name((seal_type)arg->type));
-      exit(1);
+      char errmsg[256];
+      sprintf(errmsg, "unexpected arg: \"%s\"", seal_type_name((seal_type)arg->type));
+      seal_func_err(libname, "writeln", errmsg);
     }
   }
 }
