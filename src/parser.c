@@ -140,7 +140,19 @@ ast_t* parser_parse_statement(parser_t* parser, bool is_func, bool is_ifelse, bo
 
 ast_t* parser_parse_expr(parser_t* parser)
 {
-  return parser_parse_or(parser);
+  ast_t* main = parser_parse_or(parser);
+  if (parser_peek(parser)->type == TOK_QUESTION) {
+    parser_advance(parser); // ?
+    ast_t* ternary = init_ast(AST_TERNARY);
+    ternary->ternary.cond = main;
+    ternary->ternary.true_branch = parser_parse_expr(parser);
+    parser_eat(parser, TOK_COLON);
+    ternary->ternary.false_branch = parser_parse_expr(parser);
+
+    main = ternary;
+  }
+
+  return main;
 }
 
 ast_t* parser_parse_or(parser_t* parser)
