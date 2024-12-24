@@ -267,6 +267,7 @@ void lexer_get_id(lexer_t* lexer)
   else if (strcmp(s, "null") == 0) lexer_add_token(lexer, init_token(TOK_NULL, s, lexer->line));
   else if (strcmp(s, "return") == 0) lexer_add_token(lexer, init_token(TOK_RETURN, s, lexer->line));
   else if (strcmp(s, "if") == 0) lexer_add_token(lexer, init_token(TOK_IF, s, lexer->line));
+  else if (strcmp(s, "then") == 0) lexer_add_token(lexer, init_token(TOK_THEN, s, lexer->line));
   else if (strcmp(s, "else") == 0) lexer_add_token(lexer, init_token(TOK_ELSE, s, lexer->line));
   else if (strcmp(s, "while") == 0) lexer_add_token(lexer, init_token(TOK_WHILE, s, lexer->line));
   else if (strcmp(s, "for") == 0) lexer_add_token(lexer, init_token(TOK_FOR, s, lexer->line));
