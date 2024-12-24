@@ -82,6 +82,7 @@ ast_t* visitor_visit(visitor_t* visitor, scope_t* scope, ast_t* node)
     case AST_LIST: return visitor_visit_list(visitor, scope, node);
     case AST_BINARY: return visitor_visit_binary(visitor, scope, node);
     case AST_UNARY: return visitor_visit_unary(visitor, scope, node);
+    case AST_TERNARY: return visitor_visit_ternary(visitor, scope, node);
     case AST_VARDEF: return visitor_visit_vardef(visitor, scope, node);
     case AST_VAR_REF: return visitor_visit_var_ref(visitor, scope, node);
     case AST_ASSIGN: return visitor_visit_assign(visitor, scope, node);
@@ -648,6 +649,30 @@ ast_t* visitor_visit_unary(visitor_t* visitor, scope_t* scope, ast_t* node)
   }
 
   return ast;
+}
+
+ast_t* visitor_visit_ternary(visitor_t* visitor, scope_t* scope, ast_t* node)
+{
+  ast_t* cond = visitor_visit(visitor, scope, node->ternary.cond);
+  bool should_ev;
+  switch (cond->type) {
+    case AST_BOOL:
+      should_ev = cond->boolean.val == true;
+      break;
+    case AST_INT:
+      should_ev = cond->integer.val != 0;
+      break;
+    case AST_FLOAT:
+      should_ev = cond->floating.val != 0;
+      break;
+    default: {
+      char msg[128];
+      sprintf(msg, "unexpected type at ternary condition: \"%s\"", ast_name(cond));
+      return visitor_error(visitor, msg);
+    }
+  }
+
+  return visitor_visit(visitor, scope, should_ev ? node->ternary.true_branch : node->ternary.false_branch);
 }
 
 ast_t* visitor_visit_vardef(visitor_t* visitor, scope_t* scope, ast_t* node)

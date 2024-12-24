@@ -36,6 +36,7 @@ ast_t* visitor_visit_subscript(visitor_t*, scope_t*, ast_t*);
 ast_t* visitor_visit_libseal_fcall(visitor_t*, scope_t*, ast_t*);
 ast_t* visitor_visit_binary(visitor_t*, scope_t*, ast_t*);
 ast_t* visitor_visit_unary(visitor_t*, scope_t*, ast_t*);
+ast_t* visitor_visit_ternary(visitor_t*, scope_t*, ast_t*);
 ast_t* visitor_visit_vardef(visitor_t*, scope_t*, ast_t*);
 ast_t* visitor_visit_var_ref(visitor_t*, scope_t*, ast_t*);
 ast_t* visitor_visit_assign(visitor_t*, scope_t*, ast_t*);
