@@ -157,6 +157,15 @@ void print_ast(ast_t* ast)
       printf("%s expr:\n", ast_name(ast));
       print_ast(ast->unary.expr);
       break;
+    case AST_TERNARY:
+      printf("%s\n", ast_name(ast));
+      printf("%s cond:\n", ast_name(ast));
+      print_ast(ast->ternary.cond);
+      printf("%s true branch:\n", ast_name(ast));
+      print_ast(ast->ternary.true_branch);
+      printf("%s false branch:\n", ast_name(ast));
+      print_ast(ast->ternary.false_branch);
+      break;
     case AST_COMP:
       printf("%s, size: %lu\n", ast_name(ast), ast->comp.stmt_size);
       for (int i = 0; i < ast->comp.stmt_size; i++) {
@@ -210,6 +219,7 @@ const char* ast_name(ast_t* ast)
     case AST_STRING: return "AST_STRING";
     case AST_BINARY: return "AST_BINARY";
     case AST_UNARY: return "AST_UNARY";
+    case AST_TERNARY: return "AST_TERNARY";
     case AST_MEM_ACC: return "AST_MEM_ACC";
     case AST_SUBSCRIPT: return "AST_SUBSCRIPT";
     case AST_FLOAT: return "AST_FLOAT";

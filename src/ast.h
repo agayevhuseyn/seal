@@ -18,6 +18,7 @@ typedef enum {
   AST_OBJECT,
   AST_BINARY,
   AST_UNARY,
+  AST_TERNARY,
   AST_VARIABLE,
   AST_VAR_REF,
   AST_ASSIGN,
@@ -92,6 +93,10 @@ typedef struct ast {
       struct ast* expr;
       Token_Type op;
     } unary;
+
+    struct {
+      struct ast *cond, *true_branch, *false_branch;
+    } ternary;
 
     struct {
       const char* name;
