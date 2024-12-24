@@ -150,6 +150,15 @@ ast_t* parser_parse_expr(parser_t* parser)
     ternary->ternary.false_branch = parser_parse_expr(parser);
 
     main = ternary;
+  } else if (parser_peek(parser)->type == TOK_THEN) {
+    parser_advance(parser); // then
+    ast_t* ternary = init_ast(AST_TERNARY);
+    ternary->ternary.cond = main;
+    ternary->ternary.true_branch = parser_parse_expr(parser);
+    parser_eat(parser, TOK_ELSE);
+    ternary->ternary.false_branch = parser_parse_expr(parser);
+
+    main = ternary;
   }
 
   return main;
