@@ -62,6 +62,9 @@ void lexer_collect_token(lexer_t* lexer)
     case '}':
       lexer_add_token(lexer, init_token(TOK_RBRACE, "}", lexer->line));
       break;
+    case '?':
+      lexer_add_token(lexer, init_token(TOK_QUESTION, "?", lexer->line));
+      break;
     case '=':
       if (lexer_peek(lexer) == '=') {
         lexer_advance(lexer);
