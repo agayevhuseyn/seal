@@ -379,6 +379,13 @@ ast_t* visitor_visit_libseal_fcall(visitor_t* visitor, scope_t* scope, ast_t* no
   return visitor_error(visitor, msg);
 }
 
+static ast_t* binary_op_error(visitor_t* visitor, const char* type_name, Token_Type op)
+{
+  char msg[128];
+  sprintf(msg, "%s operator cannot be applied to %s", token_name(op), type_name);
+  return visitor_error(visitor, msg);
+}
+
 ast_t* visitor_visit_binary(visitor_t* visitor, scope_t* scope, ast_t* node)
 {
   ast_t* bin_left  = visitor_visit(visitor, scope, node->binary.left);
@@ -418,9 +425,7 @@ ast_t* visitor_visit_binary(visitor_t* visitor, scope_t* scope, ast_t* node)
       case TOK_LE:
         return left <= right ? ast_true() : ast_false();
       default: {
-        char msg[128];
-        sprintf(msg, "%s operator cannot be applied to int", token_name(node->binary.op));
-        return visitor_error(visitor, msg);
+        binary_op_error(visitor, "int", node->binary.op);
       }
     }
     ast_t* ast = init_ast(AST_INT);
@@ -457,9 +462,7 @@ ast_t* visitor_visit_binary(visitor_t* visitor, scope_t* scope, ast_t* node)
       case TOK_LE:
         return left <= right ? ast_true() : ast_false();
       default: {
-        char msg[128];
-        sprintf(msg, "%s operator cannot be applied to float", token_name(node->binary.op));
-        return visitor_error(visitor, msg);
+        binary_op_error(visitor, "float", node->binary.op);
       }
     }
     ast_t* ast = init_ast(AST_FLOAT);
@@ -497,9 +500,7 @@ ast_t* visitor_visit_binary(visitor_t* visitor, scope_t* scope, ast_t* node)
       case TOK_LE:
         return left <= right ? ast_true() : ast_false();
       default: {
-        char msg[128];
-        sprintf(msg, "%s operator cannot be applied to float", token_name(node->binary.op));
-        return visitor_error(visitor, msg);
+        binary_op_error(visitor, "float", node->binary.op);
       }
     }
     ast_t* ast = init_ast(AST_FLOAT);
@@ -524,9 +525,7 @@ ast_t* visitor_visit_binary(visitor_t* visitor, scope_t* scope, ast_t* node)
       case TOK_NE:
         return strcmp(left, right) != 0 ? ast_true() : ast_false();
       default: {
-        char msg[128];
-        sprintf(msg, "%s operator cannot be applied to string", token_name(node->binary.op));
-        return visitor_error(visitor, msg);
+        binary_op_error(visitor, "string", node->binary.op);
       }
     }
     ast_t* ast = init_ast(AST_STRING);
@@ -546,9 +545,7 @@ ast_t* visitor_visit_binary(visitor_t* visitor, scope_t* scope, ast_t* node)
       case TOK_NE:
         return left != right ? ast_true() : ast_false();
       default: {
-        char msg[128];
-        sprintf(msg, "%s operator cannot be applied to bool", token_name(node->binary.op));
-        return visitor_error(visitor, msg);
+        binary_op_error(visitor, "bool", node->binary.op);
       }
     }
   } else if (bin_left->type == AST_OBJECT && bin_right->type == AST_OBJECT) {
@@ -558,9 +555,7 @@ ast_t* visitor_visit_binary(visitor_t* visitor, scope_t* scope, ast_t* node)
       case TOK_NE:
         return &bin_left->object != &bin_right->object ? ast_true() : ast_false();
       default: {
-        char msg[128];
-        sprintf(msg, "%s operator cannot be applied to object", token_name(node->binary.op));
-        return visitor_error(visitor, msg);
+        binary_op_error(visitor, "object", node->binary.op);
       }
     }
   } else if (bin_left->type == AST_NULL || bin_right->type == AST_NULL) {
@@ -570,9 +565,7 @@ ast_t* visitor_visit_binary(visitor_t* visitor, scope_t* scope, ast_t* node)
       case TOK_NE:
         return bin_left->type != bin_right->type ? ast_true() : ast_false();
       default: {
-        char msg[128];
-        sprintf(msg, "%s operator cannot be applied to null", token_name(node->binary.op));
-        return visitor_error(visitor, msg);
+        binary_op_error(visitor, "null", node->binary.op);
       }
     }
   }
