@@ -388,6 +388,40 @@ static ast_t* binary_op_error(visitor_t* visitor, const char* type_name, Token_T
 
 ast_t* visitor_visit_binary(visitor_t* visitor, scope_t* scope, ast_t* node)
 {
+  if (node->binary.op == TOK_AND || node->binary.op == TOK_OR) {
+    ast_t* bin_left = visitor_visit(visitor, scope, node->binary.left);
+    if (bin_left->type != AST_BOOL) {
+      char msg[128];
+      sprintf(msg, "%s operator expected left to be %s instead of \"%s\"",
+              token_name(node->binary.op), "bool", ast_name(bin_left));
+      return visitor_error(visitor, msg);
+    }
+    bool left = bin_left->boolean.val;
+    if (node->binary.op == TOK_AND) {
+      if (!left) {
+        return ast_false();
+      }
+    } else { // or
+      if (left) {
+        return ast_true();
+      }
+    }
+    ast_t* bin_right = visitor_visit(visitor, scope, node->binary.right);
+    if (bin_right->type != AST_BOOL) {
+      char msg[128];
+      sprintf(msg, "%s operator expected right to be %s instead of \"%s\"",
+              token_name(node->binary.op), "bool", ast_name(bin_right));
+      return visitor_error(visitor, msg);
+    }
+    bool right = bin_right->boolean.val;
+
+    if (node->binary.op == TOK_AND) {
+      return left && right ? ast_true() : ast_false();
+    } else { // or
+      return left || right ? ast_true() : ast_false();
+    }
+  }
+
   ast_t* bin_left  = visitor_visit(visitor, scope, node->binary.left);
   ast_t* bin_right = visitor_visit(visitor, scope, node->binary.right);
 
@@ -536,10 +570,6 @@ ast_t* visitor_visit_binary(visitor_t* visitor, scope_t* scope, ast_t* node)
     bool right = bin_right->boolean.val;
 
     switch (node->binary.op) {
-      case TOK_AND:
-        return left && right ? ast_true() : ast_false();
-      case TOK_OR:
-        return left || right ? ast_true() : ast_false();
       case TOK_EQ:
         return left == right ? ast_true() : ast_false();
       case TOK_NE:
