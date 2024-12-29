@@ -404,14 +404,6 @@ ast_t* parser_parse_string(parser_t* parser)
 {
   ast_t* ast = init_ast(AST_STRING);
   ast->string.val = parser_eat(parser, TOK_STRING)->value;
-  if (parser_peek(parser)->type == TOK_LBRACK) {
-    ast_t* subscript = init_ast(AST_SUBSCRIPT);
-    parser_eat(parser, TOK_LBRACK);
-    subscript->subscript.main = ast;
-    subscript->subscript.index = parser_parse_expr(parser);
-    parser_eat(parser, TOK_RBRACK);
-    ast = subscript;
-  }
   return ast;
 }
 
