@@ -261,9 +261,11 @@ void init_const_asts()
   g_ast_noop = init_ast(AST_NOOP);
   g_ast_true = init_ast(AST_BOOL);
   g_ast_true->boolean.val = true;
+  g_ast_true->is_static = true;
   g_ast_false = init_ast(AST_BOOL);
-  g_ast_false->boolean.val = false;
+  g_ast_false->is_static = true;
   g_ast_null = init_ast(AST_NULL);
+  g_ast_null->is_static = true;
 }
 
 ast_t* ast_noop()
