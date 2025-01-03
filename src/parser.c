@@ -404,6 +404,7 @@ ast_t* parser_parse_string(parser_t* parser)
 {
   ast_t* ast = init_ast(AST_STRING);
   ast->string.val = parser_eat(parser, TOK_STRING)->value;
+  ast->is_static = true;
   return ast;
 }
 
@@ -411,6 +412,7 @@ ast_t* parser_parse_int(parser_t* parser)
 {
   ast_t* ast = init_ast(AST_INT);
   ast->integer.val = atoi(parser_eat(parser, TOK_INT)->value);
+  ast->is_static = true;
   return ast;
 }
 
@@ -418,6 +420,7 @@ ast_t* parser_parse_float(parser_t* parser)
 {
   ast_t* ast = init_ast(AST_FLOAT);
   ast->floating.val = atof(parser_eat(parser, TOK_FLOAT)->value);
+  ast->is_static = true;
   return ast;
 }
 

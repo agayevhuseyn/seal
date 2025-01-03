@@ -250,6 +250,8 @@ ast_t* init_ast(AST_Type type)
   ast_t* ast = calloc(1, sizeof(ast_t));
 
   ast->type = type;
+  ast->ref_counter = 0;
+  ast->is_static = 0;
 
   return ast;
 }

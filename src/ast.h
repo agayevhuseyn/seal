@@ -207,6 +207,9 @@ typedef struct ast {
       };
     } include;
   };
+
+  int ref_counter;
+  bool is_static;
 } ast_t;
 
 void print_ast(ast_t*);
