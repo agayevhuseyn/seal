@@ -7,3 +7,4 @@ testparse/
 vgcore*
 seal.exe
 .clangd
+old_versions/

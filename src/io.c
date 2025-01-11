@@ -1,6 +1,18 @@
 #include "io.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
+bool check_if_seal_file(const char* path)
+{
+  if (strlen(path) <= 5) return false;
+  const char ext[] = ".seal";
+  int pathlen = strlen(path), extlen = 5;
+  for (int i = pathlen - extlen, j = 0; i < pathlen; i++, j++) {
+    if (path[i] != ext[j]) return false;
+  }
+  return true;
+}
 
 const char* read_file(const char* path)
 {

@@ -17,6 +17,10 @@ int main(int argc, char** argv)
     printf("Usage: %s file_path -pt --noparse -pa --novisit\n", argv[0]);
     return -1;
   }
+  if (!check_if_seal_file(argv[1])) {
+    fprintf(stderr, "\"%s\" is not seal file format\n", argv[1]);
+    return 1;
+  }
   const char* src = read_file(argv[1]);
   for (int i = 2; i < argc; i++) {
     if (strcmp(argv[i], "-pt") == 0) {
@@ -33,9 +37,6 @@ int main(int argc, char** argv)
       fprintf(stderr, "invalid option -- \'%s\'\n", argv[i]);
       return 1;
     }
-  }
-  if (!src) {
-    return 1;
   }
   lexer_t* lexer = init_lexer(src);
   lexer_collect_tokens(lexer);
