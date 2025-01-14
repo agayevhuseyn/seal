@@ -14,7 +14,7 @@ ast_t* init_var(const char* name, ast_t* val, bool is_defined)
   ast->variable.name = name;
   ast->variable.is_defined = is_defined;
   if (is_defined) {
-/*    ast_t* copied = (void*)0;
+    ast_t* copied = (void*)0;
     switch (val->type) {
       case AST_INT:
         copied = init_ast(AST_INT);
@@ -27,12 +27,10 @@ ast_t* init_var(const char* name, ast_t* val, bool is_defined)
       default:
         copied = val;
     }
-    ast->variable.val = copied; */
-    ast->variable.val = val;
+    ast->variable.val = copied;
+    //ast->variable.val = val;
   } else {
-    ast_t* null = init_ast(AST_NULL);
-    ast->variable.val = null;
-    ast_null();
+    ast->variable.val = ast_null();
   }
   return ast;
 }
@@ -60,6 +58,7 @@ void scope_add_var(scope_t* scope, ast_t* var)
   scope->var_size++;
   scope->vars = realloc(scope->vars, scope->var_size * sizeof(ast_t*));
   scope->vars[scope->var_size - 1] = var;
+  var->variable.val->ref_counter++;
 }
 
 ast_t* scope_get_var(scope_t* scope, const char* name)

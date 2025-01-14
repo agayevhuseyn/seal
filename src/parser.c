@@ -447,6 +447,8 @@ ast_t* parser_parse_list(parser_t* parser)
   }
 
   parser_eat(parser, TOK_RBRACK);
+
+  ast->is_static = true;
   return ast;
 }
 

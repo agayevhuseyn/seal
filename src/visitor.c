@@ -5,6 +5,7 @@
 #include "ast.h"
 #include "scope.h"
 #include "io.h"
+#include "gc.h"
 
 visitor_t* init_visitor(parser_t* parser)
 {
@@ -137,7 +138,7 @@ ast_t* visitor_visit_func_call(visitor_t* visitor, scope_t* scope, ast_t* node)
       }
       // visit args
       size_t arg_size = node->func_call.arg_size;
-      ast_t** args = calloc(arg_size, sizeof(ast_t*));
+      ast_t* args[arg_size];
       for (int j = 0; j < arg_size; j++) {
         args[j] = visitor_visit(visitor, scope, node->func_call.args[j]);
       }
@@ -149,6 +150,8 @@ ast_t* visitor_visit_func_call(visitor_t* visitor, scope_t* scope, ast_t* node)
         scope_add_var(loc_scope, init_var(fdef->func_def.args[j], args[j], true));
       }
       ast_t* return_val = visitor_visit(visitor, loc_scope, fdef->func_def.body);
+      gc_free_scope(loc_scope); // free local scope after func call ends
+      gc_free_visited_args(args, arg_size); // free visited args
       return visitor_visit(visitor, scope, return_val);
     }
   }
@@ -168,7 +171,7 @@ ast_t* visitor_visit_func_call(visitor_t* visitor, scope_t* scope, ast_t* node)
       }
       // visit args
       size_t arg_size = node->func_call.arg_size;
-      ast_t** args = calloc(arg_size, sizeof(ast_t*));
+      ast_t* args[arg_size];
       for (int j = 0; j < arg_size; j++) {
         args[j] = visitor_visit(visitor, scope, node->func_call.args[j]);
       }
@@ -192,6 +195,7 @@ ast_t* visitor_visit_func_call(visitor_t* visitor, scope_t* scope, ast_t* node)
           obj->object.field_vars[j] = ast_null();
         }
       }
+      gc_free_scope(loc_scope); // free local scope after object returns
       return obj;
     }
   }
@@ -293,6 +297,7 @@ ast_t* visitor_visit_list(visitor_t* visitor, scope_t* scope, ast_t* node)
   for (int i = 0; i < node->list.mem_size; i++) {
     ast->list.mems[i] = visitor_visit(visitor, scope, node->list.mems[i]);
   }
+//  ast->is_static = true;
 
   return ast;
 }
@@ -367,11 +372,19 @@ ast_t* visitor_visit_libseal_fcall(visitor_t* visitor, scope_t* scope, ast_t* no
   for (int i = 0; i < visitor->libseal_size; i++) {
     if (strcmp(libseal->var_ref.name, visitor->libseals[i]->name) == 0) {
       size_t arg_size = node->libseal_fcall.func_call->func_call.arg_size;
-      ast_t** args = calloc(arg_size, sizeof(ast_t*));
+      ast_t* args[arg_size];
       for (int i = 0; i < arg_size; i++) {
         args[i] = visitor_visit(visitor, scope, node->libseal_fcall.func_call->func_call.args[i]);
       }
-      return libseal_function_call(visitor->libseals[i], node->libseal_fcall.func_call->func_call.fname, args, arg_size);
+      ast_t* res = libseal_function_call(visitor->libseals[i], node->libseal_fcall.func_call->func_call.fname, args, arg_size);
+      gc_free_visited_args(args, arg_size);
+     /* for (int j = 0; j < arg_size; j++) {
+        //free(args[j]);
+      }
+      free(args);
+      args = (void*)0; */
+      //printf("%d\n", args);
+      return res;
     }
   }
 
@@ -713,6 +726,7 @@ ast_t* visitor_visit_assign(visitor_t* visitor, scope_t* scope, ast_t* node)
 {
   ast_t* var;
   ast_t* assign_expr = visitor_visit(visitor, scope, node->assign.right);
+  assign_expr->ref_counter++; // increment reference counter
   switch (node->assign.var->type) {
     case AST_VAR_REF:
       var = scope_get_var(scope, node->assign.var->var_ref.name);
@@ -790,11 +804,11 @@ ast_t* visitor_visit_if(visitor_t* visitor, scope_t* scope, ast_t* node)
   if (should_ev) {
     scope_t* loc_scope = init_scope();
     loc_scope->prev_scope = scope;
-    return visitor_visit(visitor, loc_scope, node->__if.body);
+    ast_t* res = visitor_visit(visitor, loc_scope, node->__if.body);
+    gc_free_scope(loc_scope); // free local scope after if block ends
+    return res;
   } else if (node->__if.has_else) {
-    scope_t* loc_scope = init_scope();
-    loc_scope->prev_scope = scope;
-    return visitor_visit(visitor, loc_scope, node->__if.else_part);
+    return visitor_visit(visitor, scope, node->__if.else_part);
   }
 
   return ast_noop();
@@ -804,7 +818,9 @@ ast_t* visitor_visit_else(visitor_t* visitor, scope_t* scope, ast_t* node)
 {
   scope_t* loc_scope = init_scope();
   loc_scope->prev_scope = scope;
-  return visitor_visit(visitor, loc_scope, node->__else.body);
+  ast_t* res = visitor_visit(visitor, loc_scope, node->__else.body);
+  gc_free_scope(loc_scope); // free local scope after else block ends
+  return res;
 }
 
 ast_t* visitor_visit_while(visitor_t* visitor, scope_t* scope, ast_t* node)
@@ -832,6 +848,7 @@ ast_t* visitor_visit_while(visitor_t* visitor, scope_t* scope, ast_t* node)
       scope_t* loc_scope = init_scope();
       loc_scope->prev_scope = scope;
       ast_t* visited = visitor_visit(visitor, loc_scope, node->__while.body);
+      gc_free_scope(loc_scope); // free local scope after while block ends
       switch (visited->type) {
         case AST_RETURN_VAL:
           return visited;
@@ -889,6 +906,7 @@ ast_t* visitor_visit_for(visitor_t* visitor, scope_t* scope, ast_t* node)
       default:
         break;
     }
+    cur_iter->ref_counter++; // increment iterator val
     iterator_var->variable.val = cur_iter;
 
     scope_t* loc_scope = init_scope();
@@ -902,8 +920,13 @@ ast_t* visitor_visit_for(visitor_t* visitor, scope_t* scope, ast_t* node)
       default:
         break;
     }
+    cur_iter->ref_counter--; // decrement iterator val
+    //gc_free_scope(loc_scope);
     if (++index < max_index) goto loop;
   }
+  iterator_var->variable.val = ast_null();
+  gc_free_scope(for_scope);
+  gc_free_node(iterated);
   return ast_noop();
 }
 
