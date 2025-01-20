@@ -253,12 +253,15 @@ ast_t* init_ast(AST_Type type)
   ast->ref_counter = 0;
   ast->is_static = 0;
 
+  printf("Allocated AST: %s\n", ast_name(ast));
+
   return ast;
 }
 
 void init_const_asts()
 {
   g_ast_noop = init_ast(AST_NOOP);
+  g_ast_noop->is_static = true;
   g_ast_true = init_ast(AST_BOOL);
   g_ast_true->boolean.val = true;
   g_ast_true->is_static = true;

@@ -14,6 +14,7 @@ ast_t* init_var(const char* name, ast_t* val, bool is_defined)
   ast->variable.name = name;
   ast->variable.is_defined = is_defined;
   if (is_defined) {
+    /*
     ast_t* copied = (void*)0;
     switch (val->type) {
       case AST_INT:
@@ -28,7 +29,8 @@ ast_t* init_var(const char* name, ast_t* val, bool is_defined)
         copied = val;
     }
     ast->variable.val = copied;
-    //ast->variable.val = val;
+    */
+    ast->variable.val = val;
   } else {
     ast->variable.val = ast_null();
   }

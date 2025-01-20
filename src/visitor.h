@@ -5,6 +5,7 @@
 #include "scope.h"
 #include "parser.h"
 #include "libseal.h"
+#include "gc.h"
 
 typedef struct {
   scope_t*   g_scope;
@@ -14,6 +15,7 @@ typedef struct {
   size_t    obj_size;
   libseal_t** libseals;
   size_t libseal_size;
+  gc_t* gc;
 } visitor_t;
 
 visitor_t* init_visitor(parser_t*);

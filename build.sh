@@ -2,6 +2,7 @@ CC="gcc"
 OUT="seal"
 DIR="src"
 OBJ="obj"
+FLAGS="-g"
 
 usage() {
   echo "Usage: $0 [--windows]"
@@ -25,9 +26,9 @@ done
 mkdir -p $OBJ
 
 for c in $DIR/*.c; do
-	$CC -c $c -I$DIR -o "$OBJ/$(basename $c ".c").o"
+	$CC -c $c -I$DIR -o "$OBJ/$(basename $c ".c").o" $FLAGS
 done
 
-$CC $OBJ/* -o $OUT
+$CC $OBJ/* -o $OUT $FLAGS
 
 rm -rf $OBJ

@@ -1,13 +1,11 @@
 #include "listseal.h"
 #include <stdio.h>
 
-ast_t* list_push(ast_t* list, ast_t* element)
+void list_push(ast_t* list, ast_t* element)
 {
   list->list.mem_size++;
   list->list.mems = realloc(list->list.mems, list->list.mem_size * sizeof(ast_t*));
   list->list.mems[list->list.mem_size - 1] = element;
-
-  return ast_noop();
 }
 
 ast_t* list_pop(ast_t* list)

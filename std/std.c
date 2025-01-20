@@ -109,6 +109,23 @@ sealobj* _len(sealobj** args, size_t arg_size)
 
 sealobj* _span(sealobj** args, size_t arg_size)
 {
+  /*
+  {
+    sealobj* sobj = init_sealobj(AST_LIST);
+    size_t size = 2000000;
+    sobj->list.mem_size = size;
+    sobj->list.mems = calloc(size, sizeof(ast_t*));
+    for (int i = 0; i < size; i++) {
+      ast_t* mem = init_ast(AST_STRING);
+      char* str = calloc(6, sizeof(char));
+      strcpy(str, "hello");
+      mem->string.val = str;
+      sobj->list.mems[i] = mem;
+    }
+    return sobj;
+  }
+  */
+
   seal_type expected_types[3];
   size_t type_size;
   switch (arg_size) {
