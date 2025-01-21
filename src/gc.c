@@ -2,9 +2,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-void gc_free_node(ast_t* node)
+bool gc_free_node(ast_t* node)
 {
-  if (node->ref_counter > 0 || node->is_static) return;
+  if (node->ref_counter > 0 || node->is_static) return false;
   switch (node->type) {
     case AST_INT:
       free(node);
@@ -18,14 +18,15 @@ void gc_free_node(ast_t* node)
       break;
     case AST_LIST:
       for (int i = 0; i < node->list.mem_size; i++) {
+        node->list.mems[i]->ref_counter--;
         gc_free_node(node->list.mems[i]);
-        //free(node->list.mems[i]);
       }
       free(node->list.mems);
       free(node);
       break;
     case AST_OBJECT:
       for (int i = 0; i < node->object.field_size; i++) {
+        node->object.field_vars[i]->ref_counter--;
         gc_free_node(node->object.field_vars[i]);
       }
       free(node->object.field_vars);
@@ -34,11 +35,12 @@ void gc_free_node(ast_t* node)
     default:
       break;
   }
+
+  return true; // freed successfully
 }
 
 void gc_free_scope(scope_t* scope)
 {
-  print_scope(scope);
   for (int i = 0; i < scope->var_size; i++) {
     gc_free_var(scope->vars[i]);
   }
@@ -50,12 +52,12 @@ void gc_free_var(ast_t* var)
 {
   if (var->variable.val->ref_counter > 0)
     var->variable.val->ref_counter--;
-  gc_free_node(var->variable.val);
   free(var);
 }
 
 void gc_free_visited_args(ast_t** args, size_t arg_size)
 {
+  return;
   for (int i = 0; i < arg_size; i++) {
     gc_free_node(args[i]);
   }
@@ -65,38 +67,20 @@ void gc_free_visited_args(ast_t** args, size_t arg_size)
 
 void gc_add_tracked_node(gc_t* gc, ast_t* node)
 {
-  if (!gc->tracked_node) {
-    gc->tracked_node = calloc(1, sizeof(tracked_node_t));
-    gc->tracked_node->node = node;
-    return;
+  if (gc->tracked_node_size++ > 10000) {
+    printf("LIMIT EXCEEDED\n");
+    exit(1);
   }
-  tracked_node_t* tracked = gc->tracked_node;
-  while (tracked->next) tracked = tracked->next;
-  tracked->next = calloc(1, sizeof(tracked_node_t));
-  tracked->next->node = node;
+  gc->tracked_nodes = realloc(gc->tracked_nodes, gc->tracked_node_size * sizeof(ast_t*));
+  gc->tracked_nodes[gc->tracked_node_size - 1] = node;
 }
 
 void gc_flush_garbage(gc_t* gc)
 {
-  tracked_node_t* head = gc->tracked_node, *prev = NULL;
-  while (gc->tracked_node->next) {
-    if (gc->tracked_node->node->ref_counter <= 0 && !gc->tracked_node->node->is_static) {
-      if (prev) {
-        prev->next = gc->tracked_node->next;
-        gc_free_node(gc->tracked_node->node);
-        free(gc->tracked_node);
-        gc->tracked_node = prev;
-      } else {
-        tracked_node_t* next = gc->tracked_node->next;
-        gc_free_node(gc->tracked_node->node);
-        free(gc->tracked_node);
-        gc->tracked_node = next;
-        head = next;
-        continue;
-      }
+  for (int i = 0; i < gc->tracked_node_size; i++) {
+    if (gc->tracked_nodes[i] == NULL) continue;
+    if (gc_free_node(gc->tracked_nodes[i])) {
+      gc->tracked_nodes[i] = NULL;
     }
-    prev = gc->tracked_node;
-    gc->tracked_node = gc->tracked_node->next;
   }
-  gc->tracked_node = head;
 }

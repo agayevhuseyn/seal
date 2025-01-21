@@ -5,7 +5,7 @@
 #include "ast.h"
 #include "scope.h"
 #include "io.h"
-//#include "gc.h"
+#include "gc.h"
 
 visitor_t* init_visitor(parser_t* parser)
 {
@@ -121,9 +121,39 @@ ast_t* visitor_visit_comp(visitor_t* visitor, scope_t* scope, ast_t* node)
   return ast_noop();
 }
 
+static ast_t* builtin_span(ast_t* count)
+{
+  ast_t* list = init_ast(AST_LIST);
+  list->list.mem_size = count->integer.val;
+  list->list.mems = calloc(count->integer.val, sizeof(ast_t*));
+  for (int i = 0; i < count->integer.val; i++) {
+    ast_t* mem = init_ast(AST_INT);
+    mem->integer.val = i;
+    list->list.mems[i] = mem;
+    //list_push(list, mem);
+  }
+
+  for (int i = 0; i < count->integer.val; i++) {
+    free(list->list.mems[i]);
+  }
+  printf("FREED ELEMENTS\n");
+  getchar();
+  free(list->list.mems);
+  free(list);
+  printf("FREED LIST\n");
+  getchar();
+
+  return list;
+}
+
 ast_t* visitor_visit_func_call(visitor_t* visitor, scope_t* scope, ast_t* node)
 {
   // user defined functions
+  /*
+  if (strcmp(node->func_call.fname, "span") == 0) {
+    return builtin_span(node->func_call.args[0]);
+  }
+  */
   for (int i = 0; i < visitor->func_size; i++) {
     if (strcmp(node->func_call.fname, visitor->func_defs[i]->func_def.fname) == 0) {
       ast_t* fdef = visitor->func_defs[i];
@@ -150,8 +180,8 @@ ast_t* visitor_visit_func_call(visitor_t* visitor, scope_t* scope, ast_t* node)
         scope_add_var(loc_scope, init_var(fdef->func_def.args[j], args[j], true));
       }
       ast_t* return_val = visitor_visit(visitor, loc_scope, fdef->func_def.body);
-      //gc_free_scope(loc_scope); // free local scope after func call ends
-      //gc_free_visited_args(args, arg_size); // free visited args
+      gc_free_scope(loc_scope); // free local scope after func call ends
+      gc_free_visited_args(args, arg_size); // free visited args
       return visitor_visit(visitor, scope, return_val);
     }
   }
@@ -191,11 +221,12 @@ ast_t* visitor_visit_func_call(visitor_t* visitor, scope_t* scope, ast_t* node)
       for (int j = 0; j < field_size; j++) {
         if (odef->obj_def.fields[j]->is_defined) {
           obj->object.field_vars[j] = visitor_visit(visitor, loc_scope, odef->obj_def.fields[j]->def);
+          obj->object.field_vars[j]->ref_counter++;
         } else {
           obj->object.field_vars[j] = ast_null();
         }
       }
-      //gc_free_scope(loc_scope); // free local scope after object returns
+      gc_free_scope(loc_scope); // free local scope after object returns
       return obj;
     }
   }
@@ -307,7 +338,7 @@ ast_t* visitor_visit_mem_acc(visitor_t* visitor, scope_t* scope, ast_t* node)
   ast_t* main = visitor_visit(visitor, scope, node->mem_acc.main);
   if (main->type != AST_OBJECT) {
     char msg[128];
-    sprintf(msg, "unexpected type at member access main: \"%s\"", ast_name(main));
+    sprintf(msg, "unexpected type at member access main: \"%s\" %s", ast_name(main), node->mem_acc.main->var_ref.name);
     return visitor_error(visitor, msg);
   }
   if (node->mem_acc.mem->type != AST_VAR_REF) {
@@ -377,13 +408,26 @@ ast_t* visitor_visit_libseal_fcall(visitor_t* visitor, scope_t* scope, ast_t* no
         args[i] = visitor_visit(visitor, scope, node->libseal_fcall.func_call->func_call.args[i]);
       }
       ast_t* res = libseal_function_call(visitor->libseals[i], node->libseal_fcall.func_call->func_call.fname, args, arg_size);
-      //gc_free_visited_args(args, arg_size);
+      gc_free_visited_args(args, arg_size);
      /* for (int j = 0; j < arg_size; j++) {
         //free(args[j]);
       }
       free(args);
       args = (void*)0; */
       //printf("%d\n", args);
+      
+      /*
+      printf("%s: %zu", ast_name(res), res->list.mem_size);
+      for (int i = 0; i < res->list.mem_size; i++) {
+        free(res->list.mems[i]);
+        res->list.mems[i] = NULL;
+      }
+      free(res->list.mems);
+      res->list.mems = NULL;
+      free(res);
+      res = NULL;
+      getchar();
+      */
       return res;
     }
   }
@@ -730,6 +774,7 @@ ast_t* visitor_visit_assign(visitor_t* visitor, scope_t* scope, ast_t* node)
   switch (node->assign.var->type) {
     case AST_VAR_REF:
       var = scope_get_var(scope, node->assign.var->var_ref.name);
+      var->variable.val->ref_counter--;
       var->variable.val = assign_expr;
       break;
     case AST_SUBSCRIPT: {
@@ -741,6 +786,7 @@ ast_t* visitor_visit_assign(visitor_t* visitor, scope_t* scope, ast_t* node)
         sprintf(msg, "unexpected var type at visit assign: \"%s\"", ast_name(var));
         return visitor_error(visitor, msg);
       }
+      var->list.mems[ast_index->integer.val]->ref_counter--;
       var->list.mems[ast_index->integer.val] = assign_expr;
       break;
     }
@@ -760,6 +806,7 @@ ast_t* visitor_visit_assign(visitor_t* visitor, scope_t* scope, ast_t* node)
       bool is_found = false;
       for (int i = 0; i < var->object.field_size; i++) {
         if (strcmp(mem->var_ref.name, var->object.def->obj_def.fields[i]->name) == 0) {
+          var->object.field_vars[i]->ref_counter--;
           var->object.field_vars[i] = assign_expr;
           is_found = true;
           break;
@@ -805,7 +852,7 @@ ast_t* visitor_visit_if(visitor_t* visitor, scope_t* scope, ast_t* node)
     scope_t* loc_scope = init_scope();
     loc_scope->prev_scope = scope;
     ast_t* res = visitor_visit(visitor, loc_scope, node->__if.body);
-    //gc_free_scope(loc_scope); // free local scope after if block ends
+    gc_free_scope(loc_scope); // free local scope after if block ends
     return res;
   } else if (node->__if.has_else) {
     return visitor_visit(visitor, scope, node->__if.else_part);
@@ -819,7 +866,7 @@ ast_t* visitor_visit_else(visitor_t* visitor, scope_t* scope, ast_t* node)
   scope_t* loc_scope = init_scope();
   loc_scope->prev_scope = scope;
   ast_t* res = visitor_visit(visitor, loc_scope, node->__else.body);
-  //gc_free_scope(loc_scope); // free local scope after else block ends
+  gc_free_scope(loc_scope); // free local scope after else block ends
   return res;
 }
 
@@ -843,13 +890,13 @@ ast_t* visitor_visit_while(visitor_t* visitor, scope_t* scope, ast_t* node)
         sprintf(msg, "unexpected type at while condition: \"%s\"", ast_name(cond));
         return visitor_error(visitor, msg);
       }
-      //gc_free_node(cond);
+      gc_free_node(cond);
     }
     if (should_ev) {
       scope_t* loc_scope = init_scope();
       loc_scope->prev_scope = scope;
       ast_t* visited = visitor_visit(visitor, loc_scope, node->__while.body);
-      //gc_free_scope(loc_scope); // free local scope after while block ends
+      gc_free_scope(loc_scope); // free local scope after while block ends
       switch (visited->type) {
         case AST_RETURN_VAL:
           return visited;
@@ -913,6 +960,8 @@ ast_t* visitor_visit_for(visitor_t* visitor, scope_t* scope, ast_t* node)
     scope_t* loc_scope = init_scope();
     loc_scope->prev_scope = scope;
     ast_t* visited = visitor_visit(visitor, loc_scope, node->__for.body);
+
+    cur_iter->ref_counter--; // decrement iterator val
     switch (visited->type) {
       case AST_RETURN_VAL:
         return visited;
@@ -921,13 +970,12 @@ ast_t* visitor_visit_for(visitor_t* visitor, scope_t* scope, ast_t* node)
       default:
         break;
     }
-    cur_iter->ref_counter--; // decrement iterator val
-    //gc_free_scope(loc_scope);
+    gc_free_scope(loc_scope);
     if (++index < max_index) goto loop;
   }
   iterator_var->variable.val = ast_null();
-  //gc_free_scope(for_scope);
-  //gc_free_node(iterated);
+  gc_free_scope(for_scope);
+  gc_free_node(iterated);
   return ast_noop();
 }
 

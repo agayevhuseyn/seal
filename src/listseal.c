@@ -6,6 +6,7 @@ void list_push(ast_t* list, ast_t* element)
   list->list.mem_size++;
   list->list.mems = realloc(list->list.mems, list->list.mem_size * sizeof(ast_t*));
   list->list.mems[list->list.mem_size - 1] = element;
+  element->ref_counter++;
 }
 
 ast_t* list_pop(ast_t* list)
@@ -18,5 +19,6 @@ ast_t* list_pop(ast_t* list)
   list->list.mem_size--;
   list->list.mems = realloc(list->list.mems, list->list.mem_size * sizeof(ast_t*));
 
+  popped->ref_counter--;
   return popped;
 }

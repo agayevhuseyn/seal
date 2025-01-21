@@ -253,8 +253,6 @@ ast_t* init_ast(AST_Type type)
   ast->ref_counter = 0;
   ast->is_static = 0;
 
-  printf("Allocated AST: %s\n", ast_name(ast));
-
   return ast;
 }
 

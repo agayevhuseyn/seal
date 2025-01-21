@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include "lexer.h"
 #include "parser.h"
 #include "io.h"
@@ -7,6 +8,45 @@
 
 int main(int argc, char** argv)
 {
+  /*
+  {
+    size_t count = 10000000;
+    ast_t* list = calloc(1, sizeof(ast_t));
+    list->list.mem_size = count;
+    list->list.mems = calloc(count, sizeof(ast_t*));
+    for (int i = 0; i < count; i++) {
+      list->list.mems[i] = calloc(1, sizeof(ast_t));
+    }
+
+    for (int i = 0; i < count; i++) {
+      free(list->list.mems[i]);
+    }
+    free(list->list.mems);
+    free(list);
+    printf("FREED 1\n");
+    getchar();
+  }
+  {
+    size_t count = 10000000;
+    ast_t* list = calloc(1, sizeof(ast_t));
+    list->list.mem_size = count;
+    list->list.mems = calloc(count, sizeof(ast_t*));
+    for (int i = 0; i < count; i++) {
+      list->list.mems[i] = calloc(1, sizeof(ast_t));
+    }
+
+    for (int i = 0; i < count; i++) {
+      free(list->list.mems[i]);
+    }
+    free(list->list.mems);
+    free(list);
+    printf("FREED 2\n");
+    getchar();
+  }
+  */
+
+  //return 0;
+
   bool PRINT_TOKENS = false;
   bool PARSE        = true;
   bool PRINT_AST    = false;
