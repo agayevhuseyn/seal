@@ -46,7 +46,9 @@ token_t* parser_advance(parser_t* parser)
 
 token_t* parser_eat(parser_t* parser, Token_Type type)
 {
-  if (parser_peek(parser)->type != type) {
+  token_t* tok = parser_peek(parser);
+  if (type == TOK_DEDENT && tok->type == TOK_EOF) return tok;
+  if (tok->type != type) {
     char msg[128];
     sprintf(msg, "expected \"%s\", got \"%s\"", token_name(type), token_name(parser_peek(parser)->type));
     parser_error(parser, msg);
@@ -85,6 +87,7 @@ ast_t* parser_parse_statements(parser_t* parser, bool is_func, bool is_ifelse, b
     sprintf(msg, "syntax error: encountered \"%s\"", token_name(parser_peek(parser)->type));
     return parser_error(parser, msg);
   } else if ((is_func || is_ifelse || is_loop) && parser_peek(parser)->type != TOK_DEDENT) {
+    if (parser_peek(parser)->type == TOK_EOF) return ast;
     char msg[128];
     sprintf(msg, "syntax error: encountered \"%s\"", token_name(parser_peek(parser)->type));
     return parser_error(parser, msg);
