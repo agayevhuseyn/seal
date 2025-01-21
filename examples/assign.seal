@@ -1,0 +1,5 @@
+include std
+
+var a = 10, b, c
+c = b = a
+std::writeln(a,b,c)

@@ -1,0 +1,15 @@
+include std
+
+object Human(name, age)
+	name = name
+	age  = age
+
+var humans = [Human("Huseyn", 17), Human("Beethoven", 56), Human("Mozart", 35), Human("Trump", 78)]
+
+for human in humans
+	if human.name == "Trump"
+		human.name = "Obama"
+		human.age = 63
+
+for human in humans
+	std::writeln(human.name, human.age)

@@ -1,0 +1,7 @@
+include std
+
+
+var a = "hello"
+if a == "hello"
+	a = a + ", world"
+std::writeln(a)

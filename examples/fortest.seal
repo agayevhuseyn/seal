@@ -1,0 +1,4 @@
+include std
+
+for i in std::span(10)
+	std::writeln(i)

@@ -1,0 +1,6 @@
+include std
+
+var a
+if a == null
+	a = 0
+std::writeln(a)

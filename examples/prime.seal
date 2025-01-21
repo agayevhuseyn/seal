@@ -1,0 +1,24 @@
+include std
+
+define is_prime(n)
+	var i = 2
+	while i <= n / 2
+		if n % i == 0
+			return false
+		i = i + 1
+	return true
+
+define prev_prime(n)
+	n = n - 1
+	while not is_prime(n)
+		n = n - 1
+	return n
+
+define next_prime(n)
+	n = n + 1
+	while not is_prime(n)
+		n = n + 1
+	return n
+
+var n = 25
+std::writeln(prev_prime(n), next_prime(n))

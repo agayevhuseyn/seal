@@ -1,0 +1,10 @@
+include std
+
+object Human(name)
+	name = name
+	self
+
+var human = Human("Huseyn")
+human.self = human
+
+std::writeln(human.self.self.self.self.self.self.self.name)

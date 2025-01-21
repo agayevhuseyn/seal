@@ -1,0 +1,8 @@
+include std
+
+define factor(n)
+	if n == 0 or n == 1
+		return 1
+	return n * factor(n - 1)
+
+std::writeln(factor(5))

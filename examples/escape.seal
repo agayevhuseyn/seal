@@ -1,0 +1,4 @@
+include std
+
+var str = "\"hello\"\n\t\\n"
+std::writeln(str)

@@ -1,0 +1,7 @@
+include std
+
+if (true\
+    and true\
+    and true\
+    and true)
+	std::writeln("hello, world")

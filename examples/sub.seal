@@ -1,0 +1,5 @@
+include std
+
+var a = [[1,2],2,3,4]
+a[0][1] = 4
+std::writeln(a)

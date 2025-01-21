@@ -1,0 +1,13 @@
+include std
+
+var sum = 0
+
+for i in std::span(10)
+	if i % 2 == 0
+		skip
+	sum = sum + i
+
+std::writeln(sum)
+
+while true
+	stop // break the loop
