@@ -1,0 +1,11 @@
+struct MyObject()
+  .a
+
+var i = 0
+while i < 10000
+  const obj = MyObject()
+  i = i + 1
+var c
+do
+  c = readln()
+while c[0] != 'q'

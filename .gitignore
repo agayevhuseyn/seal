@@ -1,0 +1,5 @@
+*.seal
+seal
+vgcore*
+TODO.txt
+!examples/*.seal

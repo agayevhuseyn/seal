@@ -1,0 +1,9 @@
+var i = 0
+var gmsg
+while i < 10000000
+  const msg = 'I' + ' love ' + 'Seal' + 'a'[0]
+  i = i + 1
+  writeln('done------------------')
+  writeln(msg)
+  gmsg = msg + 'asdadsasd'
+writeln(gmsg)
