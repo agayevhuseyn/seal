@@ -292,8 +292,8 @@ static ast_t* visitor_visit_func_call(visitor_t* visitor, scope_t* scope, ast_t*
     kill_if_argsize_ne(visitor, // arguments and parameters size must match
                        node,
                        true,
-                       "push",
-                       2,
+                       "pop",
+                       1,
                        arg_size);
     ast_t* arg;
     arg = visitor_visit(visitor, scope, node->func_call.args[0]);
@@ -379,7 +379,10 @@ static ast_t* visitor_visit_constructor(ast_t* constructor, visitor_t* visitor, 
   object->object.field_vals = SEAL_CALLOC(constructor->struct_def.field_size, sizeof(ast_t*));
   for (int i = 0; i < constructor->struct_def.field_size; i++) {
     object->object.field_vals[i] = visitor_visit(visitor, &local_scope, constructor->struct_def.field_exprs[i]);
+    ;
   }
+  
+  gc_free_scope(&local_scope);
 
   return object;
 }

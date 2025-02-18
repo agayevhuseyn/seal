@@ -1,4 +1,3 @@
-include fuck from sex
 include random
 
 writeln('hello world')
@@ -23,7 +22,6 @@ writeln(Human("umid", 18).name)
 const human = Human("huseyn", 17)
 human_set_name(human, "wolfgang")
 
-std:fuck_off(human)
 
 writeln("name is \(human.name)")
 writeln('name is $(human.name)')
