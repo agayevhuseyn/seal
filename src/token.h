@@ -14,51 +14,53 @@
 #define TOK_WHILE   7    // while
 #define TOK_FOR     8    // for
 #define TOK_IN      9    // in
-#define TOK_SKIP    10   // skip
-#define TOK_STOP    11   // stop
-#define TOK_INCLUDE 12   // include
-#define TOK_AS      13   // as
-#define TOK_DEFINE  14   // define
-#define TOK_RETURN  15   // return
-#define TOK_STRUCT  16   // struct
-#define TOK_AND     17   // and
-#define TOK_OR      18   // or
-#define TOK_NOT     19   // not
-#define TOK_TRUE    20   // true
-#define TOK_FALSE   21   // false
-#define TOK_NULL    22   // null
-#define TOK_ID      23   // identifier
-#define TOK_INT     24   // integer value
-#define TOK_FLOAT   25   // floating value
-#define TOK_STRING  26   // string value
+#define TOK_TO      10   // to
+#define TOK_BY      11   // by
+#define TOK_SKIP    12   // skip
+#define TOK_STOP    13   // stop
+#define TOK_INCLUDE 14   // include
+#define TOK_AS      15   // as
+#define TOK_DEFINE  16   // define
+#define TOK_RETURN  17   // return
+#define TOK_STRUCT  18   // struct
+#define TOK_AND     19   // and
+#define TOK_OR      20   // or
+#define TOK_NOT     21   // not
+#define TOK_TRUE    22   // true
+#define TOK_FALSE   23   // false
+#define TOK_NULL    24   // null
+#define TOK_ID      25   // identifier
+#define TOK_INT     26   // integer value
+#define TOK_FLOAT   27   // floating value
+#define TOK_STRING  28   // string value
 /* non-words */
-#define TOK_DOT     27   // .
-#define TOK_COLON   28   // :
-#define TOK_COMMA   29   // ,
-#define TOK_PLUS    30   // +
-#define TOK_MINUS   31   // -
-#define TOK_MUL     32   // *
-#define TOK_DIV     33   // /
-#define TOK_MOD     34   // %
-#define TOK_POW     35   // ^
-#define TOK_ASSIGN  36   // =
-#define TOK_EQ      37   // ==
-#define TOK_NE      38   // !=
-#define TOK_GT      39   // >
-#define TOK_GE      40   // >=
-#define TOK_LT      41   // <
-#define TOK_LE      42   // <=
+#define TOK_DOT     29   // .
+#define TOK_COLON   30   // :
+#define TOK_COMMA   31   // ,
+#define TOK_PLUS    32   // +
+#define TOK_MINUS   33   // -
+#define TOK_MUL     34   // *
+#define TOK_DIV     35   // /
+#define TOK_MOD     36   // %
+#define TOK_POW     37   // ^
+#define TOK_ASSIGN  38   // =
+#define TOK_EQ      39   // ==
+#define TOK_NE      40   // !=
+#define TOK_GT      41   // >
+#define TOK_GE      42   // >=
+#define TOK_LT      43   // <
+#define TOK_LE      44   // <=
 /* parenthesis */
-#define TOK_LPAREN  43   // (
-#define TOK_RPAREN  44   // )
-#define TOK_LBRACK  45   // [
-#define TOK_RBRACK  46   // ]
-#define TOK_LBRACE  47   // {
-#define TOK_RBRACE  48   // }
+#define TOK_LPAREN  45   // (
+#define TOK_RPAREN  46   // )
+#define TOK_LBRACK  47   // [
+#define TOK_RBRACK  48   // ]
+#define TOK_LBRACE  49   // {
+#define TOK_RBRACE  50   // }
 /* block-related */
-#define TOK_NEWL    49   // \n
-#define TOK_INDENT  50   // \t
-#define TOK_DEDENT  51   // 
+#define TOK_NEWL    51   // \n
+#define TOK_INDENT  52   // \t
+#define TOK_DEDENT  53   // 
 
 #define TOK_LAST TOK_DEDENT    // last token
 
@@ -83,6 +85,8 @@ static inline const char* token_type_name(int type)
     case TOK_WHILE  : return "TOK_WHILE";
     case TOK_FOR    : return "TOK_FOR";
     case TOK_IN     : return "TOK_IN";
+    case TOK_TO     : return "TOK_TO";
+    case TOK_BY     : return "TOK_BY";
     case TOK_SKIP   : return "TOK_SKIP";
     case TOK_STOP   : return "TOK_STOP";
     case TOK_INCLUDE: return "TOK_INCLUDE";
@@ -142,6 +146,8 @@ static inline const char* htoken_type_name(int type)
     case TOK_WHILE  : return "while";
     case TOK_FOR    : return "for";
     case TOK_IN     : return "in";
+    case TOK_TO     : return "to";
+    case TOK_BY     : return "by";
     case TOK_SKIP   : return "skip";
     case TOK_STOP   : return "stop";
     case TOK_INCLUDE: return "include";
