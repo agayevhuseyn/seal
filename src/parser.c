@@ -404,10 +404,9 @@ static ast_t* parser_parse_var_def(parser_t* parser)
 static ast_t* parser_parse_if(parser_t* parser, bool can_be_ternary, bool is_func, bool is_loop)
 {
   if (can_be_ternary) {
-    for (int i = 0; i < parser->tok_size; i++) {
-      token_t* tok = parser_peek_offset(parser, i);
-      if (tok->type == TOK_NEWL) break;
-      if (tok->type == TOK_ELSE) {
+    for (token_t** toks = parser->toks; *toks != NULL; toks++) {
+      if ((*toks)->type == TOK_NEWL) break;
+      if ((*toks)->type == TOK_ELSE) {
         return parser_parse_ternary(parser);
       }
     }
@@ -502,7 +501,7 @@ static ast_t* parser_parse_while(parser_t* parser, bool is_func)
     parser_eat(parser, TOK_NEWL);
     parser_eat(parser, TOK_INDENT);
 
-    ast->_if.comp = parser_parse_statements(parser, is_func, false, true, false);
+    ast->_while.comp = parser_parse_statements(parser, is_func, false, true, false);
 
     parser_eat(parser, TOK_DEDENT);
   }
@@ -511,8 +510,57 @@ static ast_t* parser_parse_while(parser_t* parser, bool is_func)
 }
 static ast_t* parser_parse_for(parser_t* parser, bool is_func)
 {
-  // TO BE IMPLEMENTED
-  return parser_error(parser, "for loop not implemented yet");
+  parser_eat(parser, TOK_FOR);
+
+  bool has_to = false;
+  bool has_by = false;
+  bool is_numerical = false;
+
+  for (token_t** toks = parser->toks; *toks != NULL; toks++) {
+    if ((*toks)->type == TOK_NEWL) break;
+    if ((*toks)->type == TOK_TO) {
+      has_to = true;
+      is_numerical = true;
+    } else if ((*toks)->type == TOK_BY) {
+      has_by = true;
+      is_numerical = true;
+    }
+  }
+
+  ast_t* ast = static_create_ast(AST_FOR, parser_line(parser));
+  ast->_for.is_numerical = is_numerical;
+  ast->_for.start = NULL;
+  ast->_for.end   = NULL;
+  ast->_for.step  = NULL;
+
+  kill_if_reserved_name(parser, (ast->_for.it_name = parser_eat(parser, TOK_ID)->val));
+  parser_eat(parser, TOK_IN);
+
+  if (is_numerical) {
+    ast->_for.start = parser_parse_expr(parser);
+    if (has_to) {
+      parser_eat(parser, TOK_TO);
+      ast->_for.end = parser_parse_expr(parser);
+    }
+    if (has_by) {
+      parser_eat(parser, TOK_BY);
+      ast->_for.step = parser_parse_expr(parser);
+    }
+  }
+
+  if (parser_match(parser, TOK_DO)) { // inline for
+    parser_advance(parser); // 'do'
+    ast->_for.comp = parser_parse_statement(parser, is_func, false, true, true);
+  } else {
+    parser_eat(parser, TOK_NEWL);
+    parser_eat(parser, TOK_INDENT);
+
+    ast->_for.comp = parser_parse_statements(parser, is_func, false, true, false);
+
+    parser_eat(parser, TOK_DEDENT);
+  }
+
+  return ast;
 }
 static ast_t* parser_parse_func_def(parser_t* parser)
 {
