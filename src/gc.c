@@ -5,11 +5,13 @@ bool gc_free_ast(ast_t* node)
   // temporary solution
   //if (node->type < AST_NULL || node->type > AST_VARIABLE) return true;
   if (node->is_static || node->ref_counter > 0) {
+#if GC_DEBUG
     printf("Skipping node of type %s static: %s, with ref_counter %d\nnode:\n",
            ast_type_name(node->type),
            node->is_static ? "true" : "false",
            node->ref_counter);
     print_ast(node);
+#endif
     return false;
   }
 

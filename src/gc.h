@@ -7,6 +7,8 @@
 #include "list.h"
 #include "scope.h"
 
+#define GC_DEBUG 0
+
 typedef struct {
   list_t* tracked;
 } gc_t;
@@ -47,7 +49,9 @@ static void gc_flush(gc_t* gc)
     }
     len++;
   }
+#if GC_DEBUG
   printf("GC LEN: %d\n", len);
+#endif
 }
 
 // TODO IMPLEMENT
