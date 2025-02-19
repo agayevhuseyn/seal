@@ -546,6 +546,8 @@ static ast_t* parser_parse_for(parser_t* parser, bool is_func)
       parser_eat(parser, TOK_BY);
       ast->_for.step = parser_parse_expr(parser);
     }
+  } else {
+    ast->_for.ited = parser_parse_expr(parser);
   }
 
   if (parser_match(parser, TOK_DO)) { // inline for
