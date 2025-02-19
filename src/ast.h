@@ -135,8 +135,16 @@ typedef struct ast {
     } _while;
     struct {
       const char* it_name;
-      struct ast* ited;
       struct ast* comp;
+      bool is_numerical;
+      union {
+        struct ast* ited;
+        struct {
+          struct ast* start;
+          struct ast* end;
+          struct ast* step;
+        };
+      };
     } _for;
     struct {
       const char* name;
