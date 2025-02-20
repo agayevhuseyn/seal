@@ -395,6 +395,7 @@ static ast_t* visitor_visit_constructor(ast_t* constructor, visitor_t* visitor, 
   object->object.field_vals = SEAL_CALLOC(constructor->struct_def.field_size, sizeof(ast_t*));
   for (int i = 0; i < constructor->struct_def.field_size; i++) {
     object->object.field_vals[i] = visitor_visit(visitor, &local_scope, constructor->struct_def.field_exprs[i]);
+    gc_retain(object->object.field_vals[i]);
   }
   
   gc_free_scope(&local_scope);
