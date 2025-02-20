@@ -4,6 +4,7 @@
 #include "seal.h"
 
 #include "ast.h"
+#include "gc.h"
 
 static inline ast_t* func_error(const char* name, ast_t* fcall, const char* err)
 {
@@ -99,6 +100,7 @@ static inline ast_t* builtin_push(ast_t* args[2])
   args[0]->list.mem_size++;
   args[0]->list.mems = (ast_t**)SEAL_REALLOC(args[0]->list.mems, args[0]->list.mem_size * sizeof(ast_t*));
   args[0]->list.mems[args[0]->list.mem_size - 1] = args[1];
+  gc_retain(args[1]);
   return ast_null();
 }
 
