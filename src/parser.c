@@ -404,9 +404,10 @@ static ast_t* parser_parse_var_def(parser_t* parser)
 static ast_t* parser_parse_if(parser_t* parser, bool can_be_ternary, bool is_func, bool is_loop)
 {
   if (can_be_ternary) {
-    for (token_t** toks = parser->toks; *toks != NULL; toks++) {
-      if ((*toks)->type == TOK_NEWL) break;
-      if ((*toks)->type == TOK_ELSE) {
+    for (int i = 0; !parser_is_end(parser); i++) {
+      token_t* tok = parser_peek_offset(parser, i);
+      if (tok->type == TOK_NEWL) break;
+      if (tok->type == TOK_ELSE) {
         return parser_parse_ternary(parser);
       }
     }
@@ -516,12 +517,13 @@ static ast_t* parser_parse_for(parser_t* parser, bool is_func)
   bool has_by = false;
   bool is_numerical = false;
 
-  for (token_t** toks = parser->toks; *toks != NULL; toks++) {
-    if ((*toks)->type == TOK_NEWL) break;
-    if ((*toks)->type == TOK_TO) {
+  for (int i = 0; !parser_is_end(parser); i++) {
+    token_t* tok = parser_peek_offset(parser, i);
+    if (tok->type == TOK_NEWL) break;
+    if (tok->type == TOK_TO) {
       has_to = true;
       is_numerical = true;
-    } else if ((*toks)->type == TOK_BY) {
+    } else if (tok->type == TOK_BY) {
       has_by = true;
       is_numerical = true;
     }
