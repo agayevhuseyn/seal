@@ -19,6 +19,9 @@ bool gc_free_ast(ast_t* node)
     case AST_INT:
     case AST_FLOAT:
       break;
+    case AST_RETURNED_VAL:
+      gc_release(node->returned_val.val);
+      break;
     case AST_STRING:
       SEAL_FREE(node->string.val);
       break;
