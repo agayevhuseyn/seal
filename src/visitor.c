@@ -669,6 +669,7 @@ static ast_t* visitor_visit_return(visitor_t* visitor, scope_t* scope, ast_t* no
   ast_t* ast = create_ast(AST_RETURNED_VAL);
   gc_retain(ast->returned_val.val = visitor_visit(visitor, scope, node->_return.expr));
   gc_retain(ast);
+  gc_track_ret(&visitor->gc, ast);
   return ast;
 }
 /* operations */
@@ -969,13 +970,17 @@ static ast_t* visitor_visit_assign(visitor_t* visitor, scope_t* scope, ast_t* no
       ast_t* main = visitor_visit(visitor, scope, symbol->memacc.main);
       ast_t* mem = symbol->memacc.mem;
       kill_if_non_object(visitor, main, symbol->memacc.main);
+      bool found = false;
       for (int i = 0; i < main->object.field_size; i++) {
         if (strcmp(mem->var_ref.name, main->object.field_names[i]) == 0) {
           // free unassigned field
+          found = true;
           gc_release(main->object.field_vals[i]);
-          return (main->object.field_vals[i] = assigned);
+          main->object.field_vals[i] = assigned;
+          break;
         }
       }
+      if (found) break;
       char err[ERR_LEN];
       sprintf(err,
               "%sobject has no field named \'%s\'",
@@ -984,6 +989,7 @@ static ast_t* visitor_visit_assign(visitor_t* visitor, scope_t* scope, ast_t* no
       return visitor_error(visitor, mem, err);
     }
   }
+  if (visitor->func_call_size <= 0) gc_flush_ret(&visitor->gc);
   return assigned;
 }
 /* others */
