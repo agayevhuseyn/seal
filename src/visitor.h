@@ -14,15 +14,18 @@ typedef struct {
   size_t func_size;
   list_t* struct_defs;
   size_t struct_size;
+  int func_call_size;
 } visitor_t;
 
 static inline void init_visitor(visitor_t* visitor)
 {
-  visitor->func_defs   = NULL;
-  visitor->func_size   = 0;
-  visitor->struct_defs = NULL;
-  visitor->struct_size = 0;
-  visitor->gc.tracked  = NULL;
+  visitor->func_defs      = NULL;
+  visitor->func_size      = 0;
+  visitor->struct_defs    = NULL;
+  visitor->struct_size    = 0;
+  visitor->func_call_size = 0;
+  visitor->gc.tracked     = NULL;
+  visitor->gc.ret_tracked = NULL;
 }
 
 /* main function */
