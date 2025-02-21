@@ -2,7 +2,7 @@
 #include "gc.h"
 #include "builtin.h"
 
-// non-numerical for loop
+/* for loop */
 #define FOR_INT     0
 #define FOR_STRING  1
 #define FOR_LIST    2
@@ -152,8 +152,7 @@ ast_t* visitor_visit(visitor_t* visitor, scope_t* scope, ast_t* node)
     case AST_STOP:
       return node;
     case AST_RETURNED_VAL:
-      visited = node->returned_val.val;
-      break;
+      return node->returned_val.val;
     case AST_LIST_LIT:
       visited = visitor_visit_list_lit(visitor, scope, node);
       break;
@@ -357,8 +356,14 @@ static ast_t* visitor_visit_func_call(visitor_t* visitor, scope_t* scope, ast_t*
    * push returned value (if exist) to garbage collector's list
    */
 
+  // count to function stack
+  visitor->func_call_size++;
   // visit body and return
   ast_t* returned_val = visitor_visit(visitor, &local_scope, called->func_def.comp); // should be visited
+  // free scope
+  gc_free_scope(&local_scope);
+  gc_flush(&visitor->gc);
+
   return visitor_visit(visitor, &local_scope, returned_val);
 }
 static ast_t* visitor_visit_constructor(ast_t* constructor, visitor_t* visitor, scope_t* scope, ast_t* node)
@@ -472,7 +477,13 @@ static ast_t* visitor_visit_if(visitor_t* visitor, scope_t* scope, ast_t* node)
   if (cond->boolean.val == true) {
     scope_t local_scope;
     init_scope(&local_scope, scope);
-    return visitor_visit(visitor, &local_scope, node->_if.comp);
+
+    ast_t* visited = visitor_visit(visitor, &local_scope, node->_if.comp);
+
+    gc_free_scope(&local_scope);
+    gc_flush(&visitor->gc);
+
+    return visited;
   }
   return visitor_visit(visitor, scope, node->_if.has_else ? node->_if._else : ast_null());
 }
@@ -480,7 +491,12 @@ static ast_t* visitor_visit_else(visitor_t* visitor, scope_t* scope, ast_t* node
 {
   scope_t local_scope;
   init_scope(&local_scope, scope);
-  return visitor_visit(visitor, &local_scope, node->_else.comp);
+  ast_t* visited = visitor_visit(visitor, &local_scope, node->_else.comp);
+
+  gc_free_scope(&local_scope);
+  gc_flush(&visitor->gc);
+
+  return visited;
 }
 static ast_t* visitor_visit_dowhile(visitor_t* visitor, scope_t* scope, ast_t* node)
 {
@@ -489,6 +505,10 @@ static ast_t* visitor_visit_dowhile(visitor_t* visitor, scope_t* scope, ast_t* n
     scope_t local_scope;
     init_scope(&local_scope, scope);
     ast_t* visited = visitor_visit(visitor, &local_scope, node->_while.comp);
+
+    gc_free_scope(&local_scope);
+    gc_flush(&visitor->gc);
+
     switch (visited->type) {
       case AST_RETURNED_VAL:
         return visited;
@@ -609,7 +629,7 @@ static ast_t* visitor_visit_for(visitor_t* visitor, scope_t* scope, ast_t* node)
 
     // TOOD free scope
     gc_free_scope(&local_scope);
-    gc_flush(&visitor->gc);
+    //gc_flush(&visitor->gc);
 
     switch (visited->type) {
       case AST_RETURNED_VAL:
@@ -647,7 +667,8 @@ static ast_t* visitor_visit_struct_def(visitor_t* visitor, scope_t* scope, ast_t
 static ast_t* visitor_visit_return(visitor_t* visitor, scope_t* scope, ast_t* node)
 {
   ast_t* ast = create_ast(AST_RETURNED_VAL);
-  ast->returned_val.val = visitor_visit(visitor, scope, node->_return.expr);
+  gc_retain(ast->returned_val.val = visitor_visit(visitor, scope, node->_return.expr));
+  gc_retain(ast);
   return ast;
 }
 /* operations */
@@ -870,7 +891,7 @@ static ast_t* visitor_visit_binary(visitor_t* visitor, scope_t* scope, ast_t* no
 
   char err[ERR_LEN];
   sprintf(err,
-          "\'%s\' operator is not supported for \'%s\' and \%s\'",
+          "\'%s\' operator is not supported for \'%s\' and \'%s\'",
           htoken_type_name(node->binary.op_type),
           hast_type_name(bin_left->type),
           hast_type_name(bin_right->type));
