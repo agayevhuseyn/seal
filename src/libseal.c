@@ -43,14 +43,14 @@ libseal_t* create_libseal(const char* name, bool has_alias, const char* alias_na
       fprintf(stderr, "%s function is not found in libseal: %s\n", initlib_fname, libseal->name);
       libseal_error();
     }
-    ast_t* (*function_ptr)(ast_t**, size_t) = (ast_t* (*)(ast_t**, size_t))function;
+    void (*function_ptr)() = (void (*)())function;
 #else
-    ast_t* (*function_ptr)(ast_t**, size_t) = (ast_t* (*)(ast_t**, size_t))dlsym(libseal->handle, initlib_fname);
+    void (*function_ptr)() = (void (*)())dlsym(libseal->handle, initlib_fname);
     if (!function_ptr) {
       libseal_error();
     }
 #endif
-  function_ptr(NULL, 0);
+  function_ptr();
   
   return libseal;
 }
