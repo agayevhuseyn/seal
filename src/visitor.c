@@ -139,6 +139,7 @@ static inline void binary_op_error(visitor_t* visitor, ast_t* node, const char* 
 /* main function */
 ast_t* visitor_visit(visitor_t* visitor, scope_t* scope, ast_t* node)
 {
+  // printf("fsize : %d\n", visitor->func_call_size);
   ast_t* visited;
   switch (node->type) {
     case AST_NULL:
@@ -162,8 +163,7 @@ ast_t* visitor_visit(visitor_t* visitor, scope_t* scope, ast_t* node)
     case AST_VAR_REF:
       return visitor_visit_var_ref(visitor, scope, node);
     case AST_FUNC_CALL:
-      visited = visitor_visit_func_call(visitor, scope, node);
-      break;
+      return visitor_visit_func_call(visitor, scope, node);
     case AST_SUBSCRIPT:
       visited = visitor_visit_subscript(visitor, scope, node);
       break;
@@ -192,8 +192,7 @@ ast_t* visitor_visit(visitor_t* visitor, scope_t* scope, ast_t* node)
     case AST_STRUCT_DEF:
       return visitor_visit_struct_def(visitor, scope, node);
     case AST_RETURN:
-      visited = visitor_visit_return(visitor, scope, node);
-      break;
+      return visitor_visit_return(visitor, scope, node);
     case AST_UNARY:
       visited = visitor_visit_unary(visitor, scope, node);
       break;
@@ -355,15 +354,19 @@ static ast_t* visitor_visit_func_call(visitor_t* visitor, scope_t* scope, ast_t*
    * free local scope after visiting body
    * push returned value (if exist) to garbage collector's list
    */
-
-  // count to function stack
   visitor->func_call_size++;
+
   // visit body and return
   ast_t* returned_val = visitor_visit(visitor, &local_scope, called->func_def.comp); // should be visited
   // free scope
   gc_free_scope(&local_scope);
   gc_flush(&visitor->gc);
 
+  visitor->func_call_size--;
+
+  if (visitor->func_call_size <= 0) gc_flush_ret(&visitor->gc);
+  /*gc_print_ret(&visitor->gc);*/
+  /*gc_print(&visitor->gc);*/
   return visitor_visit(visitor, &local_scope, returned_val);
 }
 static ast_t* visitor_visit_constructor(ast_t* constructor, visitor_t* visitor, scope_t* scope, ast_t* node)
@@ -667,8 +670,8 @@ static ast_t* visitor_visit_struct_def(visitor_t* visitor, scope_t* scope, ast_t
 static ast_t* visitor_visit_return(visitor_t* visitor, scope_t* scope, ast_t* node)
 {
   ast_t* ast = create_ast(AST_RETURNED_VAL);
-  gc_retain(ast->returned_val.val = visitor_visit(visitor, scope, node->_return.expr));
-  gc_retain(ast);
+  ast->returned_val.val = visitor_visit(visitor, scope, node->_return.expr);
+  gc_retain(ast->returned_val.val);
   gc_track_ret(&visitor->gc, ast);
   return ast;
 }
@@ -989,7 +992,6 @@ static ast_t* visitor_visit_assign(visitor_t* visitor, scope_t* scope, ast_t* no
       return visitor_error(visitor, mem, err);
     }
   }
-  if (visitor->func_call_size <= 0) gc_flush_ret(&visitor->gc);
   return assigned;
 }
 /* others */
