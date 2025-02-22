@@ -926,6 +926,13 @@ static ast_t* parser_parse_include(parser_t* parser)
 {
   parser_advance(parser); // 'include'
   ast_t* ast = static_create_ast(AST_INCLUDE, parser_line(parser));
-  ast->include.name = parser_match(parser, TOK_STRING) ? parser_advance(parser)->val : parser_eat(parser, TOK_ID)->val;
+  kill_if_reserved_name(parser, ast->include.name = parser_eat(parser, TOK_ID)->val);
+
+  if (parser_match(parser, TOK_AS)) {
+    ast->include.has_alias = true;
+    parser_advance(parser);
+    kill_if_reserved_name(parser, ast->include.alias = parser_eat(parser, TOK_ID)->val);
+  }
+  
   return ast;
 }
