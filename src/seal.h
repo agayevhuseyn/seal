@@ -14,7 +14,7 @@
 
 #define ERR_LEN 256
 
-#define MAX_RET_TIME 3
+#define MAX_RET_TIME 2
 
 #define RESERVED_NAMES ( \
     (char*[]) { "writeln",\
