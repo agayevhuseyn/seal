@@ -7,6 +7,7 @@
 #include "scope.h"
 #include "list.h"
 #include "gc.h"
+#include "libseal.h"
 
 typedef struct {
   gc_t gc;
@@ -15,6 +16,8 @@ typedef struct {
   list_t* struct_defs;
   size_t struct_size;
   int func_call_size;
+  libseal_t** libseals;
+  size_t libseal_size;
 } visitor_t;
 
 static inline void init_visitor(visitor_t* visitor)
@@ -26,6 +29,8 @@ static inline void init_visitor(visitor_t* visitor)
   visitor->func_call_size = 0;
   visitor->gc.tracked     = NULL;
   visitor->gc.ret_tracked = NULL;
+  visitor->libseals       = NULL;
+  visitor->libseal_size   = 0;
 }
 
 /* main function */
