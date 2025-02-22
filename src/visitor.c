@@ -997,5 +997,18 @@ static ast_t* visitor_visit_assign(visitor_t* visitor, scope_t* scope, ast_t* no
 /* others */
 static ast_t* visitor_visit_include(visitor_t* visitor, scope_t* scope, ast_t* node)
 {
-  return visitor_error(visitor, node, "INCLUDE NOT DEFINED");
+  for (int i = 0; i < visitor->libseal_size; i++) {
+      if (strcmp(node->include.name, visitor->libseals[i]->name) == 0) {
+        char msg[128];
+        sprintf(msg, "libseal \'%s\' already included", node->include.name);
+        return visitor_error(visitor, node, msg);
+      }
+    }
+    visitor->libseal_size++;
+    visitor->libseals = realloc(visitor->libseals, visitor->libseal_size * sizeof(libseal_t*));
+    visitor->libseals[visitor->libseal_size - 1] = create_libseal(node->include.name,
+                                                                  node->include.has_alias,
+                                                                  node->include.alias);
+
+  return ast_null();
 }
