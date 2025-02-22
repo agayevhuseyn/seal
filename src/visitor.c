@@ -445,7 +445,22 @@ static ast_t* visitor_visit_memacc(visitor_t* visitor, scope_t* scope, ast_t* no
 }
 static ast_t* visitor_visit_lib_func_call(visitor_t* visitor, scope_t* scope, ast_t* node)
 {
-  return visitor_error(visitor, node, "library function call not implemented");
+  ast_t* libseal = node->lib_func_call.lib;
+  for (int i = 0; i < visitor->libseal_size; i++) {
+    if (strcmp(libseal->var_ref.name, visitor->libseals[i]->name) == 0) {
+      size_t arg_size = node->lib_func_call.func_call->func_call.arg_size;
+      ast_t* args[arg_size];
+      for (int i = 0; i < arg_size; i++) {
+        args[i] = visitor_visit(visitor, scope, node->lib_func_call.func_call->func_call.args[i]);
+      }
+      ast_t* res = libseal_function_call(visitor->libseals[i], node->lib_func_call.func_call->func_call.name, args, arg_size);
+      return res;
+    }
+  }
+
+  char err[ERR_LEN];
+  sprintf(err, "libseal \'%s\' is not included", libseal->var_ref.name);
+  return visitor_error(visitor, node, err);
 }
 /* blocks */
 static ast_t* visitor_visit_comp(visitor_t* visitor, scope_t* scope, ast_t* node)
@@ -999,9 +1014,9 @@ static ast_t* visitor_visit_include(visitor_t* visitor, scope_t* scope, ast_t* n
 {
   for (int i = 0; i < visitor->libseal_size; i++) {
       if (strcmp(node->include.name, visitor->libseals[i]->name) == 0) {
-        char msg[128];
-        sprintf(msg, "libseal \'%s\' already included", node->include.name);
-        return visitor_error(visitor, node, msg);
+        char err[ERR_LEN];
+        sprintf(err, "libseal \'%s\' already included", node->include.name);
+        return visitor_error(visitor, node, err);
       }
     }
     visitor->libseal_size++;
