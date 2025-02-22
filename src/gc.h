@@ -96,6 +96,7 @@ static void gc_track_ret(gc_t* gc, ast_t* tracked)
       return;
     }
   }
+  tracked->ret_val_life = MAX_RET_TIME;
   list_push(&gc->ret_tracked, tracked);
 }
 
@@ -113,8 +114,10 @@ static void gc_flush_ret(gc_t* gc)
     print_ast(entry->val);
     printf("\tREF: %d\n", entry->val->ref_counter);
     */
-    if (gc_free_ast(entry->val)) {
+    if (--entry->val->ret_val_life <= 0) {
+      gc_release(entry->val->returned_val.val);
       *current = entry->next;
+      SEAL_FREE(entry->val);
       SEAL_FREE(entry);
     } else {
       current = &entry->next;
@@ -131,6 +134,19 @@ static inline void gc_print(gc_t* gc)
   int len = 0;
   list_iterate(gc->tracked) {
     printf("ref counter: %d:\n", it->val->ref_counter);
+    print_ast(it->val);
+    len++;
+  }
+  if (len == 0) {
+    printf("GC is empty\n");
+  }
+}
+
+static inline void gc_print_ret(gc_t* gc)
+{
+  int len = 0;
+  list_iterate(gc->ret_tracked) {
+    printf("static: %d, ref counter: %d:\n", it->val->is_static, it->val->ref_counter);
     print_ast(it->val);
     len++;
   }
