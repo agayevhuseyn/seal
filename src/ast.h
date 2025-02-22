@@ -53,7 +53,7 @@ typedef struct ast {
   int line;
   int ref_counter;
   bool is_static;
-  int ret_val_counter;
+  int ret_val_life;
 
   union {
     /* datas */
@@ -296,7 +296,7 @@ static inline ast_t* create_ast(int type)
   ast->type = type;
   ast->line = 0;
   ast->ref_counter = 0;
-  ast->ret_val_counter = 0;
+  ast->ret_val_life = 0;
 
   return ast;
 }
