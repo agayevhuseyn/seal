@@ -662,6 +662,7 @@ static ast_t* visitor_visit_for(visitor_t* visitor, scope_t* scope, ast_t* node)
         return ast_null();
     }
     
+    gc_flush(&visitor->gc);
     if (++index < max_index) goto loop;
   }
 
