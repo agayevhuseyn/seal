@@ -79,8 +79,9 @@ static inline ast_t* get_object_mem(visitor_t* visitor, ast_t* main, ast_t* mem)
   }
   char err[ERR_LEN];
   sprintf(err,
-          "%sobject has no field named \'%s\'",
+          "\'%s\'%sobject has no field named \'%s\'",
           !main->object.is_lit ? main->object.def->struct_def.name : "",
+          !main->object.is_lit ? " " : "",
           mem->var_ref.name);
   return visitor_error(visitor, mem, err);
 }
