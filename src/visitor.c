@@ -459,7 +459,7 @@ static ast_t* visitor_visit_lib_func_call(visitor_t* visitor, scope_t* scope, as
   }
 
   char err[ERR_LEN];
-  sprintf(err, "libseal \'%s\' is not included", libseal->var_ref.name);
+  sprintf(err, "library \'%s\' is not included", libseal->var_ref.name);
   return visitor_error(visitor, node, err);
 }
 /* blocks */
@@ -1016,7 +1016,7 @@ static ast_t* visitor_visit_include(visitor_t* visitor, scope_t* scope, ast_t* n
   for (int i = 0; i < visitor->libseal_size; i++) {
       if (strcmp(node->include.name, visitor->libseals[i]->name) == 0) {
         char err[ERR_LEN];
-        sprintf(err, "libseal \'%s\' already included", node->include.name);
+        sprintf(err, "library \'%s\' already included", node->include.name);
         return visitor_error(visitor, node, err);
       }
     }
