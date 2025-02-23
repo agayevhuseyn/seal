@@ -1020,11 +1020,11 @@ static ast_t* visitor_visit_include(visitor_t* visitor, scope_t* scope, ast_t* n
         return visitor_error(visitor, node, err);
       }
     }
-    visitor->libseal_size++;
-    visitor->libseals = realloc(visitor->libseals, visitor->libseal_size * sizeof(libseal_t*));
-    visitor->libseals[visitor->libseal_size - 1] = create_libseal(node->include.name,
-                                                                  node->include.has_alias,
-                                                                  node->include.alias);
+  visitor->libseal_size++;
+  visitor->libseals = realloc(visitor->libseals, visitor->libseal_size * sizeof(libseal_t*));
+  visitor->libseals[visitor->libseal_size - 1] = create_libseal(node->include.name,
+                                                                node->include.has_alias,
+                                                                node->include.alias);
 
   return ast_null();
 }
