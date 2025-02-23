@@ -79,7 +79,28 @@ void seal_check_args(const char* libname,
 }
 
 
-sealobj* get_obj_mem(sealobj* obj, const char* mem_name, seal_type type)
+sealobj* get_obj_mem(sealobj* obj,
+                     const char* mem_name,
+                     seal_type type,
+                     const char* libname,
+                     const char* func_name)
 {
-
+  if (!IS_SEAL_OBJECT(obj)) {
+    char err[ERR_LEN];
+    sprintf(err, "Required object, not \'%s\', by member \'%s\'\n", seal_type_name(obj->type), mem_name);
+    seal_func_err(libname, func_name, err);
+  }
+  for (int i = 0; i < obj->object.field_size; i++) {
+    if (strcmp(mem_name, obj->object.field_names[i]) == 0) {
+      return obj->object.field_vals[i];
+    }
+  }
+  char err[ERR_LEN];
+  sprintf(err,
+          "\'%s\'%sobject has no field named \'%s\'",
+          !obj->object.is_lit ? obj->object.def->struct_def.name : "",
+          !obj->object.is_lit ? " " : "",
+          mem_name);
+  seal_func_err(libname, func_name, err);
+  return ast_null();
 }
