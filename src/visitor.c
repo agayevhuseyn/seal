@@ -137,6 +137,32 @@ static inline void binary_op_error(visitor_t* visitor, ast_t* node, const char* 
   visitor_error(visitor, node, err);
 }
 
+static void track_library_returned_object(visitor_t* visitor, ast_t* node, bool is_main)
+{
+  switch (node->type) {
+    case AST_INT:
+    case AST_FLOAT:
+    case AST_STRING:
+      break;
+    case AST_LIST:
+      for (int i = 0; i < node->list.mem_size; i++) {
+        track_library_returned_object(visitor, node->list.mems[i], false);
+      }
+      break;
+    case AST_OBJECT:
+      for (int i = 0; i < node->object.field_size; i++) {
+        track_library_returned_object(visitor, node->object.field_vals[i], false);
+      }
+      break;
+    default:
+      return;
+  }
+  if (!is_main) {
+    gc_track(&visitor->gc, node);
+    gc_retain(node);
+  }
+}
+
 /* main function */
 ast_t* visitor_visit(visitor_t* visitor, scope_t* scope, ast_t* node)
 {
@@ -469,6 +495,9 @@ static ast_t* visitor_visit_lib_func_call(visitor_t* visitor, scope_t* scope, as
         args[i] = visitor_visit(visitor, scope, node->lib_func_call.func_call->func_call.args[i]);
       }
       ast_t* res = libseal_function_call(visitor->libseals[i], node->lib_func_call.func_call->func_call.name, args, arg_size);
+      if (res->type == AST_OBJECT || res->type == AST_LIST) {
+        track_library_returned_object(visitor, res, true);
+      }
       return res;
     }
   }
