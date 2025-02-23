@@ -45,6 +45,8 @@
 #define AST_INCLUDE       32
 /* variable */
 #define AST_VARIABLE      33
+/* last index */
+#define AST_LAST AST_VARIABLE
 
 #define ast_type(ast) ast->type
 
