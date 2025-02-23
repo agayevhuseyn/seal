@@ -8,6 +8,9 @@
 #define sealobj ast_t
 #define create_sealobj(TYPE) create_ast(TYPE) 
 #define seal_type int
+#define seal_null() ast_null()
+#define seal_true() ast_true()
+#define seal_false() ast_false()
 
 #define SEAL_NULL AST_NULL
 #define SEAL_INT AST_INT

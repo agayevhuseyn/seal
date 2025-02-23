@@ -72,8 +72,11 @@ void seal_check_args(const char* libname,
     }
 
     char err[ERR_LEN];
-    sprintf(err, "expected arg %d to be %s, got %s",
-           i + 1, seal_type_name(expected_types[i]), seal_type_name(arg->type));
+    sprintf(err,
+            "expected arg %d to be %s, got %s",
+            i + 1,
+            seal_type_name(expected_types[i]),
+            seal_type_name(arg->type));
     seal_func_err(libname, func_name, err);
   }
 }
@@ -87,12 +90,50 @@ sealobj* get_obj_mem(sealobj* obj,
 {
   if (!IS_SEAL_OBJECT(obj)) {
     char err[ERR_LEN];
-    sprintf(err, "Required object, not \'%s\', by member \'%s\'\n", seal_type_name(obj->type), mem_name);
+    sprintf(err, "required object, not \'%s\', by member \'%s\'\n", seal_type_name(obj->type), mem_name);
     seal_func_err(libname, func_name, err);
-  }
+  } 
   for (int i = 0; i < obj->object.field_size; i++) {
     if (strcmp(mem_name, obj->object.field_names[i]) == 0) {
-      return obj->object.field_vals[i];
+      sealobj* field = obj->object.field_vals[i];
+      switch (type) {
+        case SEAL_NULL:
+          if (IS_SEAL_NULL(field)) break;
+          goto error;
+        case SEAL_INT:
+          if (IS_SEAL_INT(field)) break;
+          goto error;
+        case SEAL_FLOAT:
+          if (IS_SEAL_FLOAT(field)) break;
+          goto error;
+        case SEAL_STRING:
+          if (IS_SEAL_STRING(field)) break;
+          goto error;
+        case SEAL_BOOL:
+          if (IS_SEAL_BOOL(field)) break;
+          goto error;
+        case SEAL_LIST:
+          if (IS_SEAL_LIST(field)) break;
+          goto error;
+        case SEAL_OBJECT:
+          if (IS_SEAL_OBJECT(field)) break;
+          goto error;
+        case SEAL_NUMBER:
+          if (IS_SEAL_NUMBER(field)) break;
+          goto error;
+        case SEAL_ITERABLE:
+          if (IS_SEAL_ITERABLE(field)) break;
+          goto error;
+        error: {
+          char err[ERR_LEN];
+          sprintf(err,
+                  "required member to be %s, got %s",
+                  seal_type_name(type),
+                  seal_type_name(field->type));
+          seal_func_err(libname, func_name, err);
+        }
+      }
+      return field;
     }
   }
   char err[ERR_LEN];
@@ -102,5 +143,5 @@ sealobj* get_obj_mem(sealobj* obj,
           !obj->object.is_lit ? " " : "",
           mem_name);
   seal_func_err(libname, func_name, err);
-  return ast_null();
+  return seal_null();
 }
