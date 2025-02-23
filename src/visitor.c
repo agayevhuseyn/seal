@@ -336,7 +336,9 @@ static ast_t* visitor_visit_func_call(visitor_t* visitor, scope_t* scope, ast_t*
       return visitor_error(visitor, node, err);
     }
     // must be constructor, so return it
-    return visitor_visit_constructor(called, visitor, scope, node);
+    ast_t* object = visitor_visit_constructor(called, visitor, scope, node);
+    gc_track(&visitor->gc, object);
+    return object;
   }
   /*
    * evaluate as normal function call
