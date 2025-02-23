@@ -115,4 +115,89 @@ static inline ast_t* builtin_pop(ast_t* arg, ast_t* fcall)
   return popped;
 }
 
+static ast_t* builtin_format(ast_t* fcall, ast_t* args[], size_t arg_size)
+{
+  if (arg_size == 0) {
+    func_error("format", fcall, "empty argument");
+  }
+  if (args[0]->type != AST_STRING) {
+    func_error("format", fcall, "first argument must be string");
+  }
+  const char* formatter = args[0]->string.val;
+  char* result = (char*)SEAL_CALLOC(1, sizeof(char));
+  int size = 0;
+  int arg_counter = 1;
+  int arg_format = arg_size - 1;
+  for (; *formatter != '\0'; formatter++) {
+    if (*formatter != '%' || *formatter == '%' && *(formatter + 1) == '%') {
+      size++;
+      result = (char*)SEAL_REALLOC(result, (size + 1) * sizeof(char));
+      result[size - 1] = *formatter;
+      result[size] = '\0';
+      if (*formatter == '%') formatter++;
+    } else {
+      if (arg_format == 0) {
+        func_error("format", fcall, "more formatter than arguments");
+      }
+      int len;
+      ast_t* arg = args[arg_counter];
+      arg_counter++;
+      arg_format--;
+      switch (arg->type) {
+        case AST_NULL: {
+          size += 4;
+          result = (char*)SEAL_REALLOC(result, (size + 1) * sizeof(char));
+          strcat(result, "null");
+          break;
+        }
+        case AST_INT: {
+          len = snprintf(NULL, 0, "%d", arg->integer.val);
+          size += len;
+          result = (char*)SEAL_REALLOC(result, (size + 1) * sizeof(char));
+          char buffer[len];
+          sprintf(buffer, "%d", arg->integer.val);
+          strcat(result, buffer);
+          break;
+        }
+        case AST_FLOAT: {
+          len = snprintf(NULL, 0, "%f", arg->floating.val);
+          size += len;
+          result = (char*)SEAL_REALLOC(result, (size + 1) * sizeof(char));
+          char buffer[len];
+          sprintf(buffer, "%f", arg->floating.val);
+          strcat(result, buffer);
+          break;
+        }
+        case AST_STRING: {
+          size += strlen(arg->string.val);
+          result = (char*)SEAL_REALLOC(result, (size + 1) * sizeof(char));
+          strcat(result, arg->string.val);
+          break;
+        }
+        case AST_BOOL: {
+          const char* val = arg->boolean.val ? "true" : "false";
+          size += strlen(val);
+          result = (char*)SEAL_REALLOC(result, (size + 1) * sizeof(char));
+          strcat(result, val);
+          break;
+        }
+        default: {
+          char err[ERR_LEN];
+          sprintf(err, "unrecognized type: \'%s\'", hast_type_name(arg->type));
+          func_error("format", fcall, err);
+        }
+        result[size] = '\0';
+      }
+    }
+  }
+  if (arg_format > 0) {
+    func_error("format", fcall, "too many arguments");
+  }
+
+  result[size] = '\0';
+  ast_t* res_ast = create_ast(AST_STRING);
+  res_ast->string.val = result;
+  return res_ast;
+}
+
 #endif
