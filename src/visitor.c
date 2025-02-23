@@ -254,13 +254,14 @@ static ast_t* visitor_visit_var_ref(visitor_t* visitor, scope_t* scope, ast_t* n
 static ast_t* visitor_visit_func_call(visitor_t* visitor, scope_t* scope, ast_t* node)
 {
   /* built-in functions */
+  ast_t* visited = NULL; // only for builtin functions
   if (strcmp(node->func_call.name, "writeln") == 0) {
     size_t arg_size = node->func_call.arg_size;
     ast_t* args[arg_size];
-    for (int i = 0; i < arg_size; i++) { // push variables to local scope
+    for (int i = 0; i < arg_size; i++) {
       args[i] = visitor_visit(visitor, scope, node->func_call.args[i]);
     }
-    return builtin_writeln(args, arg_size, true, true);
+    visited = builtin_writeln(args, arg_size, true, true);
   } else if (strcmp(node->func_call.name, "readln") == 0) {
     size_t arg_size = node->func_call.arg_size;
     ast_t* args[arg_size];
@@ -274,7 +275,7 @@ static ast_t* visitor_visit_func_call(visitor_t* visitor, scope_t* scope, ast_t*
                        0,
                        arg_size);
 
-    return builtin_readln();
+    visited = builtin_readln();
   } else if (strcmp(node->func_call.name, "len") == 0) {
     size_t arg_size = node->func_call.arg_size;
     kill_if_argsize_ne(visitor, // arguments and parameters size must match
@@ -286,7 +287,7 @@ static ast_t* visitor_visit_func_call(visitor_t* visitor, scope_t* scope, ast_t*
     ast_t* arg = visitor_visit(visitor, scope, node->func_call.args[0]);
     kill_if_non_iterable(visitor, arg, node->func_call.args[0]);
 
-    return builtin_len(arg);
+    visited = builtin_len(arg);
   } else if (strcmp(node->func_call.name, "push") == 0) {
     size_t arg_size = node->func_call.arg_size;
     kill_if_argsize_ne(visitor, // arguments and parameters size must match
@@ -300,7 +301,7 @@ static ast_t* visitor_visit_func_call(visitor_t* visitor, scope_t* scope, ast_t*
     args[1] = visitor_visit(visitor, scope, node->func_call.args[1]);
     kill_if_non_iterable(visitor, args[0], node->func_call.args[0]);
 
-    return builtin_push(args);
+    visited = builtin_push(args);
   } else if (strcmp(node->func_call.name, "pop") == 0) {
     size_t arg_size = node->func_call.arg_size;
     kill_if_argsize_ne(visitor, // arguments and parameters size must match
@@ -313,7 +314,18 @@ static ast_t* visitor_visit_func_call(visitor_t* visitor, scope_t* scope, ast_t*
     arg = visitor_visit(visitor, scope, node->func_call.args[0]);
     kill_if_non_list(visitor, arg, node->func_call.args[0]);
 
-    return builtin_pop(arg, node);
+    visited = builtin_pop(arg, node);
+  } else if (strcmp(node->func_call.name, "format") == 0) {
+    size_t arg_size = node->func_call.arg_size;
+    ast_t* args[arg_size];
+    for (int i = 0; i < arg_size; i++) {
+      args[i] = visitor_visit(visitor, scope, node->func_call.args[i]);
+    }
+    visited = builtin_format(node, args, arg_size);
+  }
+  if (visited) {
+    gc_track(&visitor->gc, visited); // only builtin
+    return visited;
   }
 
   ast_t* called;
