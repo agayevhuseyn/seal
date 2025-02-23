@@ -112,6 +112,7 @@ static inline ast_t* builtin_pop(ast_t* arg, ast_t* fcall)
   arg->list.mem_size--;
   ast_t* popped = arg->list.mems[arg->list.mem_size];
   arg->list.mems = (ast_t**)SEAL_REALLOC(arg->list.mems, arg->list.mem_size * sizeof(ast_t*));
+  gc_release(popped);
   return popped;
 }
 
