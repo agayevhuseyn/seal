@@ -53,4 +53,6 @@ sealobj* seal_get_obj_mem(sealobj* obj,
                           const char* libname,
                           const char* func_name);
 
+sealobj* seal_create_object(const char* field_names[], sealobj* field_vals[], size_t field_size);
+
 #endif

@@ -79,9 +79,9 @@ static inline ast_t* get_object_mem(visitor_t* visitor, ast_t* main, ast_t* mem)
   }
   char err[ERR_LEN];
   sprintf(err,
-          "\'%s\'%sobject has no field named \'%s\'",
+          "%s%sobject has no field named \'%s\'",
           !main->object.is_lit ? main->object.def->struct_def.name : "",
-          !main->object.is_lit ? " " : "",
+          !main->object.is_lit ? " type " : "",
           mem->var_ref.name);
   return visitor_error(visitor, mem, err);
 }
@@ -741,10 +741,10 @@ static ast_t* visitor_visit_unary(visitor_t* visitor, scope_t* scope, ast_t* nod
   ast_t* val = visitor_visit(visitor, scope, node->unary.expr);
   switch (node->unary.op_type) {
     case TOK_PLUS:
-      kill_if_non_number(visitor, val, node->unary.expr);
+      kill_if_non_number(visitor, val, node);
       return val;
     case TOK_MINUS: {
-      kill_if_non_number(visitor, val, node->unary.expr);
+      kill_if_non_number(visitor, val, node);
       ast_t* negated = create_ast(val->type);
       if (negated->type == AST_INT) {
         negated->integer.val *= -1;
@@ -755,7 +755,7 @@ static ast_t* visitor_visit_unary(visitor_t* visitor, scope_t* scope, ast_t* nod
       // TOOD free val
     }
     case TOK_NOT:
-      kill_if_non_bool(visitor, val, node->unary.expr);
+      kill_if_non_bool(visitor, val, node);
       return val->boolean.val ? ast_false() : ast_true();
   }
   return visitor_error(visitor, node, "VISITOR_VISIT_UNARY UNDEFINED");
