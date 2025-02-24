@@ -47,10 +47,10 @@ void seal_check_args(const char* libname,
                      sealobj* args[],
                      size_t arg_size);
 
-sealobj* get_obj_mem(sealobj* obj,
-                     const char* mem_name,
-                     seal_type type,
-                     const char* libname,
-                     const char* func_name);
+sealobj* seal_get_obj_mem(sealobj* obj,
+                          const char* mem_name,
+                          seal_type type,
+                          const char* libname,
+                          const char* func_name);
 
 #endif
