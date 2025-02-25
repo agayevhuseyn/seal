@@ -3,3 +3,4 @@ seal
 vgcore*
 TODO.txt
 !examples/*.seal
+*.exe
