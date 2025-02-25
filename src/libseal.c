@@ -1,6 +1,10 @@
 #include "libseal.h"
 
+#ifdef _WIN32
+#include <windows.h>
+#else
 #include <dlfcn.h>
+#endif
 
 static inline void libseal_error()
 {
