@@ -273,9 +273,9 @@ static void lexer_get_token(lexer_t* lexer)
       sprintf(err, "token after comment block not allowed");
       lexer_error(lexer, err, 0);
     } else if (lexer->token_after_paren) {
-      char err[ERR_LEN];
-      sprintf(err, "token after final parenthesis not allowed");
-      lexer_error(lexer, err, 0);
+      /*char err[ERR_LEN];*/
+      /*sprintf(err, "token after final parenthesis not allowed");*/
+      /*lexer_error(lexer, err, 0);*/
     }
     lexer_add_token(lexer, tok);
   }
