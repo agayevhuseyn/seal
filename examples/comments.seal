@@ -1,0 +1,19 @@
+// comments.seal
+
+// single line comment
+
+1 + 2 // comment
+
+/*
+  this
+  is
+  multiline
+  comment
+*/
+
+if /* comment */ true // allowed
+  writeln('seal')
+
+/*
+  ignored
+*/  2 + 3 // not allowed due to syntax

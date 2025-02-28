@@ -33,5 +33,8 @@ true or false // or (right will not be evaluated)
 'hello' == 'Hello' // not same
 'Hello, ' + 'Seal' // concatenation
 
+// ternary
+if true then 0 else 1 // if <expr == boolean> then <epxr> else <expr>
+
 // additional
 20 != null // any type can be comparable to 'null'
