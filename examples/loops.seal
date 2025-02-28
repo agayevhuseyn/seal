@@ -1,0 +1,19 @@
+// loops.seal
+
+while true
+  writeln('stopping loop..')
+  stop
+
+var sum = 0
+var max = 100
+for i in max
+  if i % 3 == 0
+    skip // skip the loop
+  sum = sum + i
+
+writeln(sum) // 3267
+
+for i in [1, 2, 3, 4, 5]
+  if i == 2 then skip
+  else if i == 4 then stop
+  writeln(i)

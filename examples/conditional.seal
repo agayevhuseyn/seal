@@ -1,0 +1,24 @@
+// conditional.seal
+
+// default
+if true
+  writeln('hi')
+else if true
+  writeln('hello')
+else
+  writeln('goodbye')
+
+// shortened (only allowed if one statement comes)
+if true then writeln('hi')
+else if true then writeln('hello')
+else writeln('goodbye')
+
+// mixed
+const n = 3
+if n == 0 then writeln('zero')
+else if n == 1 then writeln('one')
+else if n == 2 then writeln('two')
+else if n == 3
+  writeln('three')
+else
+  writeln('not recognized')

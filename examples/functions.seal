@@ -1,0 +1,22 @@
+// functions.seal
+
+define func(a, b)
+  if a == 0
+    return 0
+
+// not-returning functions return null as default
+const
+  a = func(1, 2) // null
+  b = func(0, 1) // 0
+
+define factor(n)
+  if n > 2
+    return n * factor(n - 1)
+  return 2
+
+define fib(n)
+  if n <= 1 then return n // short block
+  return fib(n - 1) + fib(n - 2)
+
+writeln(factor(5)) // 120
+writeln(fib(9)) // 34

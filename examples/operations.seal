@@ -1,0 +1,37 @@
+// operations.seal
+
+// arithmetic operations
+1 + 2 // addition
+3 - 1 // subtraction
+9 * 8 // multiplication
+30 / 2 // whole division
+30.2 / 2 // fractional division
+30 / 2.4 //   <
+23.9 / 1.4 // <
+100 % 11 // modulus
+9 ^ 2 // exponentiation
+
+// comparison operations
+10 > 2 // greater than
+10 >= 2 // greater or equal 
+23 < 100 // less than
+23 <= 100 // less or equal
+23.0 == 23 // equal (true by the way)
+34 != 32 // not equal
+
+// logical operations
+!true // not
+not true // also not
+!!! not ! not true // mixed usage of 'not' allowed
+false and true // and (right will not be evaluated)
+true or false // or (right will not be evaluated)
+// 'and' has higher precedence order than 'or'
+(true and true or true and true) == ((true and true) or (true and true))
+
+// string operations
+'hello' == 'Hello' // same
+'hello' == 'Hello' // not same
+'Hello, ' + 'Seal' // concatenation
+
+// additional
+20 != null // any type can be comparable to 'null'

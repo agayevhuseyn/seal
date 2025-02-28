@@ -1,0 +1,5 @@
+const list = []
+for c in 'seal'
+  push(list, c)
+
+writeln(list) // ['s', 'e', 'a', 'l']

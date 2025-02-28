@@ -1,0 +1,13 @@
+// objects.seal
+
+define create_human(name, age)
+  return {name = name, age = age}
+
+const
+  human_1 = create_human('Huseyn', 18)
+  human_2 = create_human('John', 20)
+  human_3 = human_1
+
+writeln(human_1, human_2, human_3)
+writeln(human_1 == human_2) // false
+writeln(human_1 == human_3) // true
