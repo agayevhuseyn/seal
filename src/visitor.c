@@ -747,9 +747,9 @@ static ast_t* visitor_visit_unary(visitor_t* visitor, scope_t* scope, ast_t* nod
       kill_if_non_number(visitor, val, node);
       ast_t* negated = create_ast(val->type);
       if (negated->type == AST_INT) {
-        negated->integer.val *= -1;
+        negated->integer.val = -val->integer.val;
       } else {
-        negated->floating.val *= -1;
+        negated->floating.val = -val->floating.val;
       }
       return negated;
       // TOOD free val
