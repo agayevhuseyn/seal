@@ -11,6 +11,7 @@
 #define seal_null() ast_null()
 #define seal_true() ast_true()
 #define seal_false() ast_false()
+#define create_const_seal_objects() create_const_asts()
 
 #define SEAL_NULL AST_NULL
 #define SEAL_INT AST_INT
