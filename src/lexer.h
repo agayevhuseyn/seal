@@ -23,27 +23,7 @@ typedef struct {
   bool        token_after_paren;
 } lexer_t;
 
-static inline void init_lexer(lexer_t* lexer, const char* src)
-{
-  lexer->src                 = src;
-  lexer->src_size            = strlen(src);
-  lexer->i                   = 0;
-  lexer->line                = 1;
-  lexer->toks                = NULL;
-  lexer->tok_size            = 0;
-  lexer->cur_indent          = 0;
-  lexer->encountered_word    = false;
-  lexer->token_after_comment = false;
-  lexer->token_after_paren   = false;
-
-  lexer->indent_stack_ptr = lexer->paren_stack_ptr = lexer->paren_lines_ptr = 0; // init to 0
-
-  memset(lexer->indent_stack, -1, sizeof(lexer->indent_stack)); // unitialized
-  lexer->indent_stack[lexer->indent_stack_ptr] = 0; // global indentation block
-
-  memset(lexer->paren_stack, -1, sizeof(lexer->paren_stack)); // no nest
-  memset(lexer->paren_lines_stack, -1, sizeof(lexer->paren_lines_stack)); // no nest
-}
+void init_lexer(lexer_t*, const char*);
 
 /* main functions */
 void lexer_get_tokens(lexer_t*);

@@ -9,7 +9,11 @@
 #include "gc.h"
 #include "libseal.h"
 
-typedef struct {
+#define SEAL_MAX_STATE_SIZE 4
+
+typedef struct state state_t;
+
+typedef struct visitor {
   gc_t gc;
   list_t* func_defs;
   size_t func_size;
@@ -18,6 +22,8 @@ typedef struct {
   int func_call_size;
   libseal_t** libseals;
   size_t libseal_size;
+  state_t* states[SEAL_MAX_STATE_SIZE];
+  size_t state_size;
 } visitor_t;
 
 static inline void init_visitor(visitor_t* visitor)
@@ -31,6 +37,7 @@ static inline void init_visitor(visitor_t* visitor)
   visitor->gc.ret_tracked = NULL;
   visitor->libseals       = NULL;
   visitor->libseal_size   = 0;
+  visitor->state_size     = 0;
 }
 
 /* main function */

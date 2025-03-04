@@ -50,6 +50,9 @@
 
 #define ast_type(ast) ast->type
 
+#define SEAL_INCLUDE_LIB 0
+#define SEAL_INCLUDE_SRC 1
+
 typedef struct ast {
   int type;
   int line;
@@ -197,6 +200,7 @@ typedef struct ast {
     /* others */
     struct {
       const char* name;
+      int type; /* lib or src */
       const char* alias;
       bool has_alias;
     } include;

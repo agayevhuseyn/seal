@@ -12,12 +12,7 @@ typedef struct {
   int i;
 } parser_t;
 
-static inline void init_parser(parser_t* parser, lexer_t* lexer)
-{
-  parser->toks = lexer->toks;
-  parser->tok_size = lexer->tok_size;
-  parser->i = 0;
-}
+void init_parser(parser_t*, lexer_t*);
 
 /* main function */
 ast_t* parser_parse(parser_t*);

@@ -1,6 +1,7 @@
 #include "visitor.h"
 #include "gc.h"
 #include "builtin.h"
+#include "state.h"
 
 /* for loop */
 #define FOR_INT     0
@@ -1057,18 +1058,26 @@ static ast_t* visitor_visit_assign(visitor_t* visitor, scope_t* scope, ast_t* no
 /* others */
 static ast_t* visitor_visit_include(visitor_t* visitor, scope_t* scope, ast_t* node)
 {
-  for (int i = 0; i < visitor->libseal_size; i++) {
+  if (node->include.type == SEAL_INCLUDE_SRC) {
+    if (visitor->state_size++ >= SEAL_MAX_STATE_SIZE)
+      visitor_error(visitor, node, "maximum capacity of including seal files reached");
+    state_t* state = SEAL_CALLOC(1, sizeof(state_t));
+    init_state(state, node->include.name);
+    visitor->states[visitor->state_size - 1] = state;
+  } else {
+    for (int i = 0; i < visitor->libseal_size; i++) {
       if (strcmp(node->include.name, visitor->libseals[i]->name) == 0) {
         char err[ERR_LEN];
         sprintf(err, "library \'%s\' already included", node->include.name);
         return visitor_error(visitor, node, err);
       }
     }
-  visitor->libseal_size++;
-  visitor->libseals = realloc(visitor->libseals, visitor->libseal_size * sizeof(libseal_t*));
-  visitor->libseals[visitor->libseal_size - 1] = create_libseal(node->include.name,
-                                                                node->include.has_alias,
-                                                                node->include.alias);
+    visitor->libseal_size++;
+    visitor->libseals = realloc(visitor->libseals, visitor->libseal_size * sizeof(libseal_t*));
+    visitor->libseals[visitor->libseal_size - 1] = create_libseal(node->include.name,
+                                                                  node->include.has_alias,
+                                                                  node->include.alias);
+  }
 
   return ast_null();
 }

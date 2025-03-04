@@ -98,6 +98,13 @@ static inline token_t* parser_eat(parser_t* parser, int type)
 }
 
 /* main function */
+inline void init_parser(parser_t* parser, lexer_t* lexer)
+{
+  parser->toks = lexer->toks;
+  parser->tok_size = lexer->tok_size;
+  parser->i = 0;
+}
+
 inline ast_t* parser_parse(parser_t* parser)
 {
   create_const_asts(); // allocate constant ASTs
@@ -926,12 +933,18 @@ static ast_t* parser_parse_include(parser_t* parser)
 {
   parser_advance(parser); // 'include'
   ast_t* ast = static_create_ast(AST_INCLUDE, parser_line(parser));
-  kill_if_reserved_name(parser, ast->include.name = parser_eat(parser, TOK_ID)->val);
+  if (parser_match(parser, TOK_ID)) {
+    kill_if_reserved_name(parser, ast->include.name = parser_eat(parser, TOK_ID)->val);
 
-  if (parser_match(parser, TOK_AS)) {
-    ast->include.has_alias = true;
-    parser_advance(parser);
-    kill_if_reserved_name(parser, ast->include.alias = parser_eat(parser, TOK_ID)->val);
+    if (parser_match(parser, TOK_AS)) {
+      ast->include.has_alias = true;
+      parser_advance(parser);
+      kill_if_reserved_name(parser, ast->include.alias = parser_eat(parser, TOK_ID)->val);
+    }
+    ast->include.type = SEAL_INCLUDE_LIB;
+  } else {
+    ast->include.name = parser_eat(parser, TOK_STRING)->val;
+    ast->include.type = SEAL_INCLUDE_SRC;
   }
   
   return ast;
