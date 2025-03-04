@@ -16,3 +16,5 @@ inline void init_state(state_t* state, const char* file_path)
   state->visitor = SEAL_CALLOC(1, sizeof(visitor_t));
   visitor_visit(state->visitor, &state->g_scope, state->root);
 }
+
+ast_t* state_call_func(state_t* state, ast_t** args, size_t arg_size);

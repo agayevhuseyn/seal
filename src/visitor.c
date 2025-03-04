@@ -358,15 +358,21 @@ static ast_t* visitor_visit_func_call(visitor_t* visitor, scope_t* scope, ast_t*
 
   ast_t* called;
   if ((called = search_func(visitor->func_defs, node->func_call.name)) == NULL) {
-    if ((called = search_struct(visitor->struct_defs, node->func_call.name)) == NULL) {
-      char err[ERR_LEN];
-      sprintf(err, "no function or struct named \'%s\'", node->func_call.name);
-      return visitor_error(visitor, node, err);
-    }
+//    if ((called = search_struct(visitor->struct_defs, node->func_call.name)) == NULL) {
+      for (int i = 0; i < visitor->state_size; i++) {
+        if ((called = search_func(visitor->states[i]->visitor->func_defs, node->func_call.name)) == NULL) {
+          char err[ERR_LEN];
+          sprintf(err, "no function or struct named \'%s\'", node->func_call.name);
+          return visitor_error(visitor, node, err);
+        }
+      }
+//    }
     // must be constructor, so return it
+    /*
     ast_t* object = visitor_visit_constructor(called, visitor, scope, node);
     gc_track(&visitor->gc, object);
     return object;
+    */
   }
   /*
    * evaluate as normal function call

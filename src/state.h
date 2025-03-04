@@ -22,6 +22,6 @@ typedef struct state {
 
 void init_state(state_t* state, const char* file_path);
 
-ast_t* state_call_func();
+ast_t* state_call_func(state_t* state, ast_t** args, size_t arg_size);
 
 #endif
