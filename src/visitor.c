@@ -358,21 +358,21 @@ static ast_t* visitor_visit_func_call(visitor_t* visitor, scope_t* scope, ast_t*
 
   ast_t* called;
   if ((called = search_func(visitor->func_defs, node->func_call.name)) == NULL) {
-//    if ((called = search_struct(visitor->struct_defs, node->func_call.name)) == NULL) {
-      for (int i = 0; i < visitor->state_size; i++) {
-        if ((called = search_func(visitor->states[i]->visitor->func_defs, node->func_call.name)) == NULL) {
-          char err[ERR_LEN];
-          sprintf(err, "no function or struct named \'%s\'", node->func_call.name);
-          return visitor_error(visitor, node, err);
+    for (int i = 0; i < visitor->state_size; i++) {
+      if ((called = search_func(visitor->states[i]->visitor->ext_func_defs, node->func_call.name)) != NULL) {
+        size_t arg_size = node->func_call.arg_size;
+        ast_t* args[arg_size];
+        for (int i = 0; i < arg_size; i++) {
+          args[i] = visitor_visit(visitor, scope, node->func_call.args[i]);
         }
+        return state_call_func(visitor->states[i], called, args, arg_size);
       }
-//    }
-    // must be constructor, so return it
-    /*
-    ast_t* object = visitor_visit_constructor(called, visitor, scope, node);
-    gc_track(&visitor->gc, object);
-    return object;
-    */
+      else if (i >= visitor->state_size - 1) {
+        char err[ERR_LEN];
+        sprintf(err, "no function or struct named \'%s\'", node->func_call.name);
+        return visitor_error(visitor, node, err);
+      }
+    }
   }
   /*
    * evaluate as normal function call
@@ -415,7 +415,7 @@ static ast_t* visitor_visit_func_call(visitor_t* visitor, scope_t* scope, ast_t*
   if (visitor->func_call_size <= 0) gc_flush_ret(&visitor->gc);
   /*gc_print_ret(&visitor->gc);*/
   /*gc_print(&visitor->gc);*/
-  return visitor_visit(visitor, &local_scope, returned_val);
+  return visitor_visit(visitor, NULL, returned_val);
 }
 static ast_t* visitor_visit_constructor(ast_t* constructor, visitor_t* visitor, scope_t* scope, ast_t* node)
 {
@@ -726,6 +726,8 @@ static ast_t* visitor_visit_for(visitor_t* visitor, scope_t* scope, ast_t* node)
 static ast_t* visitor_visit_func_def(visitor_t* visitor, scope_t* scope, ast_t* node)
 {
   list_push(&visitor->func_defs, node);
+  if (node->func_def.is_extern)
+    list_push(&visitor->ext_func_defs, node);
   return node;
 }
 static ast_t* visitor_visit_struct_def(visitor_t* visitor, scope_t* scope, ast_t* node)

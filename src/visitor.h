@@ -24,6 +24,7 @@ typedef struct visitor {
   size_t libseal_size;
   state_t* states[SEAL_MAX_STATE_SIZE];
   size_t state_size;
+  list_t* ext_func_defs;
 } visitor_t;
 
 static inline void init_visitor(visitor_t* visitor)
