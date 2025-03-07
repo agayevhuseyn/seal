@@ -156,6 +156,7 @@ typedef struct ast {
       const char** param_names;
       size_t param_size;
       struct ast* comp;
+      bool is_extern;
     } func_def;
     struct {
       const char* name;
