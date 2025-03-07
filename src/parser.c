@@ -174,6 +174,9 @@ static ast_t* parser_parse_statement(parser_t* parser,
     case TOK_DEFINE:
       if (!is_global_scope) goto error;
       return parser_parse_func_def(parser);
+    case TOK_EXTERN:
+      if (!is_global_scope) goto error;
+      return parser_parse_extern(parser);
     case TOK_STRUCT:
       if (!is_global_scope) goto error;
       return parser_parse_struct_def(parser);
@@ -579,6 +582,7 @@ static ast_t* parser_parse_func_def(parser_t* parser)
 
   ast_t* ast = static_create_ast(AST_FUNC_DEF, parser_line(parser));
   ast->func_def.param_size = 0;
+  ast->func_def.is_extern = false;
 
   kill_if_reserved_name(parser, ast->func_def.name = parser_eat(parser, TOK_ID)->val); // kill if reserved name
 
@@ -677,6 +681,14 @@ static ast_t* parser_parse_struct_def(parser_t* parser)
   parser_eat(parser, TOK_DEDENT);
 
   return ast;
+}
+static ast_t* parser_parse_extern(parser_t* parser)
+{
+  parser_advance(parser); // 'extern'
+  
+  ast_t* func_def = parser_parse_func_def(parser);
+  func_def->func_def.is_extern = true;
+  return func_def;
 }
 /* parse block control */
 static inline ast_t* parser_parse_skip(parser_t* parser)
