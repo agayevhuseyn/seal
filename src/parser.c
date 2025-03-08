@@ -80,7 +80,8 @@ static inline token_t* parser_eat(parser_t* parser, int type)
   int prev_tok_type = parser_peek_offset(parser, -1)->type;
   bool followed_word = prev_tok_type != TOK_NEWL &&
                        prev_tok_type != TOK_INDENT &&
-                       prev_tok_type != TOK_DEDENT;
+                       prev_tok_type != TOK_DEDENT &&
+                       prev_tok_type != TOK_EOF;
 
   char err[ERR_LEN];
   sprintf(err,
@@ -339,7 +340,7 @@ static ast_t* parser_parse_var_def(parser_t* parser)
 {
   ast_t* ast = static_create_ast(AST_VAR_DEF, parser_line(parser));
   bool is_const = ast->var_def.is_const = parser_match(parser, TOK_CONST); // constant when declared with 'const'
-  parser_advance(parser); // either 'var' or 'const'
+  parser_eat(parser, is_const ? TOK_CONST : TOK_VAR); // either 'var' or 'const'
 
   // at lemain 1 definition
   ast->var_def.size = 1;
@@ -685,10 +686,14 @@ static ast_t* parser_parse_struct_def(parser_t* parser)
 static ast_t* parser_parse_extern(parser_t* parser)
 {
   parser_advance(parser); // 'extern'
-  
-  ast_t* func_def = parser_parse_func_def(parser);
-  func_def->func_def.is_extern = true;
-  return func_def;
+  if (parser_match(parser, TOK_DEFINE)) {
+    ast_t* func_def = parser_parse_func_def(parser);
+    func_def->func_def.is_extern = true;
+    return func_def;
+  }
+  ast_t* var_def = parser_parse_var_def(parser);
+  var_def->var_def.is_extern = true;
+  return var_def;
 }
 /* parse block control */
 static inline ast_t* parser_parse_skip(parser_t* parser)
