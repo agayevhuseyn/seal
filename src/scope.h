@@ -55,10 +55,29 @@ static ast_t* scope_get_var(scope_t* scope, const char* name, int line)
     }
     scope = scope->parent;
   }
+  /*
   char err[ERR_LEN];
   sprintf(err, "\'%s\' is undefined", name);
   scope_error(err, line);
   return ast_null();
+  */
+  return NULL;
+}
+
+static ast_t* list_get_var(list_t* list, const char* name, int line)
+{
+  list_iterate(list) {
+    if (strcmp(it->val->variable.name, name) == 0) {
+      return it->val;
+    }
+  }
+  /*
+  char err[ERR_LEN];
+  sprintf(err, "\'%s\' is undefined", name);
+  scope_error(err, line);
+  return ast_null();
+  */
+  return NULL;
 }
 
 #endif
