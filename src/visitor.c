@@ -279,14 +279,17 @@ static ast_t* visitor_visit_var_ref(visitor_t* visitor, scope_t* scope, ast_t* n
 {
   ast_t* val = scope_get_var(scope, node->var_ref.name, node->line);
   if (!val) {
+    bool found = false;
     for (int i = 0; i < visitor->state_size; i++) {
       if ((val = list_get_var(visitor->states[i]->visitor->ext_vars, node->var_ref.name, node->line))) {
+        found = true;
         break;
-      } else if (i >= visitor->state_size - 1) {
-        char err[ERR_LEN];
-        sprintf(err, "\'%s\' is undefined", node->var_ref.name);
-        return visitor_error(visitor, node, err);
       }
+    }
+    if (!found) {
+      char err[ERR_LEN];
+      sprintf(err, "\'%s\' is undefined", node->var_ref.name);
+      return visitor_error(visitor, node, err);
     }
   }
   return val->variable.val;
@@ -379,12 +382,10 @@ static ast_t* visitor_visit_func_call(visitor_t* visitor, scope_t* scope, ast_t*
         }
         return state_call_func(visitor->states[i], called, args, arg_size);
       }
-      else if (i >= visitor->state_size - 1) {
-        char err[ERR_LEN];
-        sprintf(err, "no function or struct named \'%s\'", node->func_call.name);
-        return visitor_error(visitor, node, err);
-      }
     }
+    char err[ERR_LEN];
+    sprintf(err, "no function named \'%s\'", node->func_call.name);
+    return visitor_error(visitor, node, err);
   }
   /*
    * evaluate as normal function call
