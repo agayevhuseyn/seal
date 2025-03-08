@@ -124,6 +124,7 @@ typedef struct ast {
       struct ast** exprs;
       size_t size;
       bool is_const;
+      bool is_extern;
     } var_def;
     struct {
       struct ast* cond;
