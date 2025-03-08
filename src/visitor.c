@@ -277,7 +277,19 @@ static ast_t* visitor_visit_object_lit(visitor_t* visitor, scope_t* scope, ast_t
 }
 static ast_t* visitor_visit_var_ref(visitor_t* visitor, scope_t* scope, ast_t* node)
 {
-  return scope_get_var(scope, node->var_ref.name, node->line)->variable.val;
+  ast_t* val = scope_get_var(scope, node->var_ref.name, node->line);
+  if (!val) {
+    for (int i = 0; i < visitor->state_size; i++) {
+      if ((val = list_get_var(visitor->states[i]->visitor->ext_vars, node->var_ref.name, node->line))) {
+        break;
+      } else if (i >= visitor->state_size - 1) {
+        char err[ERR_LEN];
+        sprintf(err, "\'%s\' is undefined", node->var_ref.name);
+        return visitor_error(visitor, node, err);
+      }
+    }
+  }
+  return val->variable.val;
 }
 static ast_t* visitor_visit_func_call(visitor_t* visitor, scope_t* scope, ast_t* node)
 {
@@ -536,6 +548,8 @@ static ast_t* visitor_visit_var_def(visitor_t* visitor, scope_t* scope, ast_t* n
                                 is_const,
                                 node->line);
     scope_push_var(scope, var);
+    if (node->var_def.is_extern)
+      list_push(&visitor->ext_vars, var);
   }
   return ast_null();
 }
@@ -1003,6 +1017,11 @@ static ast_t* visitor_visit_assign(visitor_t* visitor, scope_t* scope, ast_t* no
   switch (symbol->type) {
     case AST_VAR_REF: {
       ast_t* var = scope_get_var(scope, symbol->var_ref.name, symbol->line);
+      if (!var) {
+        char err[ERR_LEN];
+        sprintf(err, "\'%s\' is undefined", symbol->var_ref.name);
+        return visitor_error(visitor, node, err);
+      }
       if (var->variable.is_const) {
         char err[ERR_LEN];
         sprintf(err, "assignment to constant symbol \'%s\'", var->variable.name);
