@@ -57,7 +57,8 @@ int main(int argc, char** argv)
     print_ast(root);
 
   visitor_t visitor;
-  init_visitor(&visitor);
+  gc_t gc = {NULL, NULL};
+  init_visitor(&visitor, &gc);
   scope_t global_scope;
   init_scope(&global_scope, NULL);
   visitor_visit(&visitor, &global_scope, root);

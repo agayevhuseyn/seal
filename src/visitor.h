@@ -14,7 +14,7 @@
 typedef struct state state_t;
 
 typedef struct visitor {
-  gc_t gc;
+  gc_t* gc;
   list_t* func_defs;
   size_t func_size;
   list_t* struct_defs;
@@ -28,15 +28,16 @@ typedef struct visitor {
   list_t* ext_vars;
 } visitor_t;
 
-static inline void init_visitor(visitor_t* visitor)
+static inline void init_visitor(visitor_t* visitor, gc_t* gc)
 {
   visitor->func_defs      = NULL;
   visitor->func_size      = 0;
   visitor->struct_defs    = NULL;
   visitor->struct_size    = 0;
   visitor->func_call_size = 0;
-  visitor->gc.tracked     = NULL;
-  visitor->gc.ret_tracked = NULL;
+  gc->tracked             = NULL;
+  gc->ret_tracked         = NULL;
+  visitor->gc             = gc;
   visitor->libseals       = NULL;
   visitor->libseal_size   = 0;
   visitor->state_size     = 0;

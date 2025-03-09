@@ -159,7 +159,7 @@ static void track_library_returned_object(visitor_t* visitor, ast_t* node, bool 
       return;
   }
   if (!is_main) {
-    gc_track(&visitor->gc, node);
+    gc_track(visitor->gc, node);
     gc_retain(node);
   }
 }
@@ -244,7 +244,7 @@ ast_t* visitor_visit(visitor_t* visitor, scope_t* scope, ast_t* node)
       return visitor_error(visitor, node, err);
     }
   }
-  gc_track(&visitor->gc, visited);
+  gc_track(visitor->gc, visited);
   return visited;
 }
 
@@ -367,7 +367,7 @@ static ast_t* visitor_visit_func_call(visitor_t* visitor, scope_t* scope, ast_t*
     visited = builtin_format(node, args, arg_size);
   }
   if (visited) {
-    gc_track(&visitor->gc, visited); // only builtin
+    gc_track(visitor->gc, visited); // only builtin
     return visited;
   }
 
@@ -421,13 +421,13 @@ static ast_t* visitor_visit_func_call(visitor_t* visitor, scope_t* scope, ast_t*
   ast_t* returned_val = visitor_visit(visitor, &local_scope, called->func_def.comp); // should be visited
   // free scope
   gc_free_scope(&local_scope);
-  gc_flush(&visitor->gc);
+  gc_flush(visitor->gc);
 
   visitor->func_call_size--;
 
-  if (visitor->func_call_size <= 0) gc_flush_ret(&visitor->gc);
-  /*gc_print_ret(&visitor->gc);*/
-  /*gc_print(&visitor->gc);*/
+  if (visitor->func_call_size <= 0) gc_flush_ret(visitor->gc);
+  /*gc_print_ret(visitor->gc);*/
+  /*gc_print(visitor->gc);*/
   return visitor_visit(visitor, NULL, returned_val);
 }
 static ast_t* visitor_visit_constructor(ast_t* constructor, visitor_t* visitor, scope_t* scope, ast_t* node)
@@ -565,7 +565,7 @@ static ast_t* visitor_visit_if(visitor_t* visitor, scope_t* scope, ast_t* node)
     ast_t* visited = visitor_visit(visitor, &local_scope, node->_if.comp);
 
     gc_free_scope(&local_scope);
-    gc_flush(&visitor->gc);
+    gc_flush(visitor->gc);
 
     return visited;
   }
@@ -578,7 +578,7 @@ static ast_t* visitor_visit_else(visitor_t* visitor, scope_t* scope, ast_t* node
   ast_t* visited = visitor_visit(visitor, &local_scope, node->_else.comp);
 
   gc_free_scope(&local_scope);
-  gc_flush(&visitor->gc);
+  gc_flush(visitor->gc);
 
   return visited;
 }
@@ -591,7 +591,7 @@ static ast_t* visitor_visit_dowhile(visitor_t* visitor, scope_t* scope, ast_t* n
     ast_t* visited = visitor_visit(visitor, &local_scope, node->_while.comp);
 
     gc_free_scope(&local_scope);
-    gc_flush(&visitor->gc);
+    gc_flush(visitor->gc);
 
     switch (visited->type) {
       case AST_RETURNED_VAL:
@@ -621,7 +621,7 @@ static ast_t* visitor_visit_while(visitor_t* visitor, scope_t* scope, ast_t* nod
 
     // TOOD free scope
     gc_free_scope(&local_scope);
-    gc_flush(&visitor->gc);
+    gc_flush(visitor->gc);
 
     switch (visited->type) {
       case AST_RETURNED_VAL:
@@ -671,7 +671,7 @@ static ast_t* visitor_visit_for(visitor_t* visitor, scope_t* scope, ast_t* node)
 
   if (max_index == 0) {
     // free memory
-    gc_flush(&visitor->gc);
+    gc_flush(visitor->gc);
     return ast_null();
   }
 
@@ -702,7 +702,7 @@ static ast_t* visitor_visit_for(visitor_t* visitor, scope_t* scope, ast_t* node)
         cur_iter = ited->list.mems[index];
         break;
     }
-    gc_track(&visitor->gc, cur_iter);
+    gc_track(visitor->gc, cur_iter);
     gc_release(iter_var->variable.val);
     gc_retain(cur_iter);
     iter_var->variable.val = cur_iter;
@@ -713,28 +713,28 @@ static ast_t* visitor_visit_for(visitor_t* visitor, scope_t* scope, ast_t* node)
 
     // TOOD free scope
     gc_free_scope(&local_scope);
-    //gc_flush(&visitor->gc);
+    //gc_flush(visitor->gc);
 
     switch (visited->type) {
       case AST_RETURNED_VAL:
         gc_release(ited);
         gc_free_scope(&for_scope);
-        gc_flush(&visitor->gc);
+        gc_flush(visitor->gc);
         return visited;
       case AST_STOP:
         gc_release(ited);
         gc_free_scope(&for_scope);
-        gc_flush(&visitor->gc);
+        gc_flush(visitor->gc);
         return ast_null();
     }
     
-    gc_flush(&visitor->gc);
+    gc_flush(visitor->gc);
     if (++index < max_index) goto loop;
   }
 
   gc_release(ited);
   gc_free_scope(&for_scope);
-  gc_flush(&visitor->gc);
+  gc_flush(visitor->gc);
 
   return ast_null();
 }
@@ -756,7 +756,7 @@ static ast_t* visitor_visit_return(visitor_t* visitor, scope_t* scope, ast_t* no
   ast_t* ast = create_ast(AST_RETURNED_VAL);
   ast->returned_val.val = visitor_visit(visitor, scope, node->_return.expr);
   gc_retain(ast->returned_val.val);
-  gc_track_ret(&visitor->gc, ast);
+  gc_track_ret(visitor->gc, ast);
   return ast;
 }
 /* operations */
@@ -1090,7 +1090,7 @@ static ast_t* visitor_visit_include(visitor_t* visitor, scope_t* scope, ast_t* n
     if (visitor->state_size++ >= SEAL_MAX_STATE_SIZE)
       visitor_error(visitor, node, "maximum capacity of including seal files reached");
     state_t* state = SEAL_CALLOC(1, sizeof(state_t));
-    init_state(state, node->include.name);
+    init_state(state, visitor->gc, node->include.name);
     visitor->states[visitor->state_size - 1] = state;
   } else {
     for (int i = 0; i < visitor->libseal_size; i++) {

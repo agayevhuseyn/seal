@@ -8,7 +8,7 @@ static inline ast_t* state_error(state_t* state, ast_t* node, const char* err)
   return ast_null();
 }
 
-inline void init_state(state_t* state, const char* file_path)
+inline void init_state(state_t* state, gc_t* gc, const char* file_path)
 {
   state->file_path = file_path;
   const char* src = read_file(file_path);
@@ -21,6 +21,7 @@ inline void init_state(state_t* state, const char* file_path)
   init_parser(&state->parser, &state->lexer);
   state->root = parser_parse(&state->parser);
   state->visitor = SEAL_CALLOC(1, sizeof(visitor_t));
+  state->visitor->gc = gc;
   visitor_visit(state->visitor, &state->g_scope, state->root);
 }
 
@@ -51,9 +52,9 @@ ast_t* state_call_func(state_t* state, ast_t* func_def, ast_t** args, size_t arg
   ast_t* returned_val = visitor_visit(state->visitor, &local_scope, func_def->func_def.comp); // should be visited
   // free scope
   gc_free_scope(&local_scope);
-  gc_flush(&state->visitor->gc);
+  // gc_flush(state->visitor->gc);
 
-  gc_flush_ret(&state->visitor->gc);
+  gc_flush_ret(state->visitor->gc);
   /*gc_print_ret(&visitor->gc);*/
   /*gc_print(&visitor->gc);*/
   return visitor_visit(state->visitor, NULL, returned_val);
