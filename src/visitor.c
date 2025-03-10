@@ -646,24 +646,29 @@ static ast_t* visitor_visit_for(visitor_t* visitor, scope_t* scope, ast_t* node)
 
     int index = 0, max_index, istep = 1;
     kill_if_non_int(visitor, (start = visitor_visit(visitor, scope, start)), node);
+    gc_retain(start); // keep ited until for loop ends
     if (end && step) {
       kill_if_non_int(visitor, (end  = visitor_visit(visitor, scope, end)), node);
       kill_if_non_int(visitor, (step = visitor_visit(visitor, scope, step)), node);
+      gc_retain(end); // keep ited until for loop ends
+      gc_retain(step); // keep ited until for loop ends
       index     = start->integer.val;
       max_index = end->integer.val;
       istep     = step->integer.val;
     } else if (end) {
       kill_if_non_int(visitor, (end  = visitor_visit(visitor, scope, end)), node);
+      gc_retain(end); // keep ited until for loop ends
       index     = start->integer.val;
       max_index = end->integer.val;
     } else if (step) {
       kill_if_non_int(visitor, (step = visitor_visit(visitor, scope, step)), node);
+      gc_retain(step); // keep ited until for loop ends
       index     = 0;
       max_index = start->integer.val;
       istep     = step->integer.val;
     }
 
-    if (max_index == 0) {
+    if (index >= max_index) {
       // free memory
       gc_flush(visitor->gc);
       return ast_null();
