@@ -213,7 +213,7 @@ static ast_t* parser_parse_statement(parser_t* parser,
 static inline ast_t* parser_parse_int(parser_t* parser)
 {
   ast_t* ast = static_create_ast(AST_INT, parser_line(parser));
-  ast->integer.val = atoi(parser_eat(parser, TOK_INT)->val);
+  ast->integer.val = atol(parser_eat(parser, TOK_INT)->val);
   return ast;
 }
 
