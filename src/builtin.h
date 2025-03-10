@@ -152,11 +152,11 @@ static ast_t* builtin_format(ast_t* fcall, ast_t* args[], size_t arg_size)
           break;
         }
         case AST_INT: {
-          len = snprintf(NULL, 0, "%d", arg->integer.val);
+          len = snprintf(NULL, 0, "%lld", arg->integer.val);
           size += len;
           result = (char*)SEAL_REALLOC(result, (size + 1) * sizeof(char));
           char buffer[len];
-          sprintf(buffer, "%d", arg->integer.val);
+          sprintf(buffer, "%lld", arg->integer.val);
           strcat(result, buffer);
           break;
         }
