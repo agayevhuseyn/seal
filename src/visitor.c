@@ -644,7 +644,7 @@ static ast_t* visitor_visit_for(visitor_t* visitor, scope_t* scope, ast_t* node)
          * end   = node->_for.end,
          * step  = node->_for.step;
 
-    int index = 0, max_index, istep = 1;
+    Seal_int index = 0, max_index, istep = 1;
     kill_if_non_int(visitor, (start = visitor_visit(visitor, scope, start)), node);
     gc_retain(start); // keep ited until for loop ends
     if (end && step) {
@@ -668,14 +668,15 @@ static ast_t* visitor_visit_for(visitor_t* visitor, scope_t* scope, ast_t* node)
       istep     = step->integer.val;
     }
 
-    if (index >= max_index) {
-      // free memory
-      gc_flush(visitor->gc);
-      return ast_null();
-    }
-
+    // in order to avoid segfault in jump_exit when freeing scope,
+    // declare it here
     scope_t for_scope;
     init_scope(&for_scope, scope);
+
+    if (index >= max_index) {
+      // free memory
+      goto jump_exit;
+    }
 
     ast_t* iter_var = create_var_ast(node->_for.it_name,
                                      visitor_visit(visitor, scope, ast_null()),
@@ -728,11 +729,11 @@ static ast_t* visitor_visit_for(visitor_t* visitor, scope_t* scope, ast_t* node)
 
   if (!is_numerical) {
     int type;
-    int index = 0;
+    Seal_int index = 0;
     // non-numerical
     ast_t* ited = visitor_visit(visitor, scope, node->_for.ited);
     gc_retain(ited); // keep ited until for loop ends
-    int max_index;
+    Seal_int max_index;
 
     switch (ited->type) {
       case AST_INT:
@@ -756,6 +757,7 @@ static ast_t* visitor_visit_for(visitor_t* visitor, scope_t* scope, ast_t* node)
 
     if (max_index == 0) {
       // free memory
+      gc_release(ited);
       gc_flush(visitor->gc);
       return ast_null();
     }
@@ -876,9 +878,9 @@ static ast_t* visitor_visit_binary(visitor_t* visitor, scope_t* scope, ast_t* no
   ast_t* bin_right = visitor_visit(visitor, scope, node->binary.right);
   
   if (bin_left->type == AST_INT && bin_right->type == AST_INT) {
-    int left  = bin_left->integer.val;
-    int right = bin_right->integer.val;
-    int result;
+    Seal_int left  = bin_left->integer.val;
+    Seal_int right = bin_right->integer.val;
+    Seal_int result;
 
     switch (node->binary.op_type) {
       // first comparisons
@@ -920,9 +922,9 @@ static ast_t* visitor_visit_binary(visitor_t* visitor, scope_t* scope, ast_t* no
     res_node->integer.val = result;
     return res_node;
   } else if (bin_left->type == AST_FLOAT && bin_right->type == AST_FLOAT) {
-    float left  = bin_left->floating.val;
-    float right = bin_right->floating.val;
-    float result;
+    Seal_float left  = bin_left->floating.val;
+    Seal_float right = bin_right->floating.val;
+    Seal_float result;
 
     switch (node->binary.op_type) {
       // first comparisons
@@ -962,9 +964,9 @@ static ast_t* visitor_visit_binary(visitor_t* visitor, scope_t* scope, ast_t* no
     return res_node;
   } else if ((bin_left->type == AST_INT && bin_right->type == AST_FLOAT) ||
              (bin_left->type == AST_FLOAT && bin_right->type == AST_INT)) {
-    float left  = bin_left->type == AST_INT ? bin_left->integer.val : bin_left->floating.val;
-    float right = bin_right->type == AST_INT ? bin_right->integer.val : bin_right->floating.val;
-    float result;
+    Seal_float left  = bin_left->type == AST_INT ? bin_left->integer.val : bin_left->floating.val;
+    Seal_float right = bin_right->type == AST_INT ? bin_right->integer.val : bin_right->floating.val;
+    Seal_float result;
 
     switch (node->binary.op_type) {
       // first comparisons
