@@ -16,6 +16,9 @@
 
 #define MAX_RET_TIME 3
 
+typedef long long Seal_int;
+typedef double    Seal_float;
+
 #define RESERVED_NAMES ( \
     (char*[]) { "writeln",\
                 "readln",\
