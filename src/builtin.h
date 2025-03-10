@@ -71,8 +71,9 @@ static ast_t* builtin_writeln(ast_t* args[], size_t arg_size, bool is_main, bool
   return ast_null();
 }
 
-static ast_t* builtin_readln()
+static ast_t* builtin_readln(ast_t* args[], size_t arg_size)
 {
+  if (arg_size > 0) printf("%s", args[0]->string.val);
   ast_t* line = create_ast(AST_STRING);
   line->string.val = (char*)SEAL_CALLOC(1, sizeof(char));
   
@@ -200,5 +201,7 @@ static ast_t* builtin_format(ast_t* fcall, ast_t* args[], size_t arg_size)
   res_ast->string.val = result;
   return res_ast;
 }
+
+
 
 #endif

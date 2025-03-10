@@ -307,18 +307,18 @@ static ast_t* visitor_visit_func_call(visitor_t* visitor, scope_t* scope, ast_t*
     visited = builtin_writeln(args, arg_size, true, true);
   } else if (strcmp(node->func_call.name, "readln") == 0) {
     size_t arg_size = node->func_call.arg_size;
+    if (arg_size > 1) {
+      visitor_error(visitor, node, "readln can get at most 1 argument");
+    }
     ast_t* args[arg_size];
     for (int i = 0; i < arg_size; i++) { // push variables to local scope
       args[i] = visitor_visit(visitor, scope, node->func_call.args[i]);
+      if (args[i]->type != AST_STRING) {
+        visitor_error(visitor, node, "readln can only get string as argument");
+      }
     }
-    kill_if_argsize_ne(visitor, // arguments and parameters size must match
-                       node,
-                       true,
-                       "readln",
-                       0,
-                       arg_size);
-
-    visited = builtin_readln();
+    
+    visited = builtin_readln(args, arg_size);
   } else if (strcmp(node->func_call.name, "len") == 0) {
     size_t arg_size = node->func_call.arg_size;
     kill_if_argsize_ne(visitor, // arguments and parameters size must match
