@@ -19,7 +19,7 @@ const char* read_file(const char* path)
 	} else {
 		fseek(file, 0, SEEK_END);
 		unsigned len = ftell(file);
-		char* content = calloc(len + 1, sizeof(char));
+		char* content = SEAL_CALLOC(len + 1, sizeof(char));
 		fseek(file, 0, SEEK_SET);
 		if (content) {
 			fread(content, sizeof(char), len, file);
