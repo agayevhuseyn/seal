@@ -22,7 +22,7 @@ static ast_t* builtin_writeln(ast_t* args[], size_t arg_size, bool is_main, bool
         printf("%s", "null");
         goto space;
       case AST_INT:
-        printf("%d", arg->integer.val);
+        printf("%lld", arg->integer.val);
         goto space;
       case AST_FLOAT:
         printf("%f", arg->floating.val);
