@@ -638,16 +638,97 @@ static ast_t* visitor_visit_while(visitor_t* visitor, scope_t* scope, ast_t* nod
 static ast_t* visitor_visit_for(visitor_t* visitor, scope_t* scope, ast_t* node)
 {
   bool is_numerical = node->_for.is_numerical;
-  int type; // do for the numerical later
-  int index = 0;
-  // non-numerical
-  ast_t* ited = visitor_visit(visitor, scope, node->_for.ited);
-  gc_retain(ited); // keep ited until for loop ends
-  int max_index;
   
-  if (is_numerical) return visitor_error(visitor, node, "numerical for loops not implemented yet");
+  if (is_numerical) {
+    ast_t* start = node->_for.start,
+         * end   = node->_for.end,
+         * step  = node->_for.step;
+
+    int index = 0, max_index, istep = 1;
+    kill_if_non_int(visitor, (start = visitor_visit(visitor, scope, start)), node);
+    if (end && step) {
+      kill_if_non_int(visitor, (end  = visitor_visit(visitor, scope, end)), node);
+      kill_if_non_int(visitor, (step = visitor_visit(visitor, scope, step)), node);
+      index     = start->integer.val;
+      max_index = end->integer.val;
+      istep     = step->integer.val;
+    } else if (end) {
+      kill_if_non_int(visitor, (end  = visitor_visit(visitor, scope, end)), node);
+      index     = start->integer.val;
+      max_index = end->integer.val;
+    } else if (step) {
+      kill_if_non_int(visitor, (step = visitor_visit(visitor, scope, step)), node);
+      index     = 0;
+      max_index = start->integer.val;
+      istep     = step->integer.val;
+    }
+
+    if (max_index == 0) {
+      // free memory
+      gc_flush(visitor->gc);
+      return ast_null();
+    }
+
+    scope_t for_scope;
+    init_scope(&for_scope, scope);
+
+    ast_t* iter_var = create_var_ast(node->_for.it_name,
+                                     visitor_visit(visitor, scope, ast_null()),
+                                     false,
+                                     node->line);
+    scope_push_var(&for_scope, iter_var);
+    ast_t* cur_iter = NULL; // currently iterated item
+
+    loop0:
+    {
+      cur_iter = create_ast(AST_INT);
+      cur_iter->integer.val = index;
+
+      gc_track(visitor->gc, cur_iter);
+      gc_release(iter_var->variable.val);
+      gc_retain(cur_iter);
+      iter_var->variable.val = cur_iter;
+
+      scope_t local_scope;
+      init_scope(&local_scope, &for_scope);
+      ast_t* visited = visitor_visit(visitor, &local_scope, node->_for.comp);
+
+      // TOOD free scope
+      gc_free_scope(&local_scope);
+      //gc_flush(visitor->gc);
+
+      switch (visited->type) {
+        case AST_RETURNED_VAL:
+          if (end)  gc_release(end);
+          if (step) gc_release(step);
+          gc_release(start);
+          gc_free_scope(&for_scope);
+          gc_flush(visitor->gc);
+          return visited;
+        case AST_STOP:
+          goto jump_exit;
+      }
+      
+      gc_flush(visitor->gc);
+      if ((index += istep) < max_index) goto loop0;
+    }
+
+    jump_exit:
+      if (end)  gc_release(end);
+      if (step) gc_release(step);
+      gc_release(start);
+      gc_free_scope(&for_scope);
+      gc_flush(visitor->gc);
+  }
 
   if (!is_numerical) {
+    int type;
+    int index = 0;
+    // non-numerical
+    ast_t* ited = visitor_visit(visitor, scope, node->_for.ited);
+    gc_retain(ited); // keep ited until for loop ends
+    int max_index;
+
     switch (ited->type) {
       case AST_INT:
         max_index = ited->integer.val;
@@ -667,75 +748,75 @@ static ast_t* visitor_visit_for(visitor_t* visitor, scope_t* scope, ast_t* node)
         return visitor_error(visitor, node->_for.ited, err);
       }
     }
-  }
 
-  if (max_index == 0) {
-    // free memory
-    gc_flush(visitor->gc);
-    return ast_null();
-  }
-
-  scope_t for_scope;
-  init_scope(&for_scope, scope);
-
-  ast_t* iter_var = create_var_ast(node->_for.it_name,
-                                   visitor_visit(visitor, scope, ast_null()),
-                                   false,
-                                   node->line);
-  scope_push_var(&for_scope, iter_var);
-  ast_t* cur_iter = NULL; // currently iterated item
-
-  loop:
-  {
-    switch (type) {
-      case FOR_INT:
-        cur_iter = create_ast(AST_INT);
-        cur_iter->integer.val = index;
-        break;
-      case FOR_STRING:
-        cur_iter = create_ast(AST_STRING);
-        cur_iter->string.val = SEAL_CALLOC(2, sizeof(char));
-        cur_iter->string.val[0] = ited->string.val[index];
-        cur_iter->string.val[1] = '\0';
-        break;
-      case FOR_LIST:
-        cur_iter = ited->list.mems[index];
-        break;
+    if (max_index == 0) {
+      // free memory
+      gc_flush(visitor->gc);
+      return ast_null();
     }
-    gc_track(visitor->gc, cur_iter);
-    gc_release(iter_var->variable.val);
-    gc_retain(cur_iter);
-    iter_var->variable.val = cur_iter;
 
-    scope_t local_scope;
-    init_scope(&local_scope, &for_scope);
-    ast_t* visited = visitor_visit(visitor, &local_scope, node->_for.comp);
+    scope_t for_scope;
+    init_scope(&for_scope, scope);
 
-    // TOOD free scope
-    gc_free_scope(&local_scope);
-    //gc_flush(visitor->gc);
+    ast_t* iter_var = create_var_ast(node->_for.it_name,
+                                     visitor_visit(visitor, scope, ast_null()),
+                                     false,
+                                     node->line);
+    scope_push_var(&for_scope, iter_var);
+    ast_t* cur_iter = NULL; // currently iterated item
 
-    switch (visited->type) {
-      case AST_RETURNED_VAL:
-        gc_release(ited);
-        gc_free_scope(&for_scope);
-        gc_flush(visitor->gc);
-        return visited;
-      case AST_STOP:
-        gc_release(ited);
-        gc_free_scope(&for_scope);
-        gc_flush(visitor->gc);
-        return ast_null();
+    loop1:
+    {
+      switch (type) {
+        case FOR_INT:
+          cur_iter = create_ast(AST_INT);
+          cur_iter->integer.val = index;
+          break;
+        case FOR_STRING:
+          cur_iter = create_ast(AST_STRING);
+          cur_iter->string.val = SEAL_CALLOC(2, sizeof(char));
+          cur_iter->string.val[0] = ited->string.val[index];
+          cur_iter->string.val[1] = '\0';
+          break;
+        case FOR_LIST:
+          cur_iter = ited->list.mems[index];
+          break;
+      }
+      gc_track(visitor->gc, cur_iter);
+      gc_release(iter_var->variable.val);
+      gc_retain(cur_iter);
+      iter_var->variable.val = cur_iter;
+
+      scope_t local_scope;
+      init_scope(&local_scope, &for_scope);
+      ast_t* visited = visitor_visit(visitor, &local_scope, node->_for.comp);
+
+      // TOOD free scope
+      gc_free_scope(&local_scope);
+      //gc_flush(visitor->gc);
+
+      switch (visited->type) {
+        case AST_RETURNED_VAL:
+          gc_release(ited);
+          gc_free_scope(&for_scope);
+          gc_flush(visitor->gc);
+          return visited;
+        case AST_STOP:
+          gc_release(ited);
+          gc_free_scope(&for_scope);
+          gc_flush(visitor->gc);
+          return ast_null();
+      }
+      
+      gc_flush(visitor->gc);
+      if (++index < max_index) goto loop1;
     }
-    
+
+    gc_release(ited);
+    gc_free_scope(&for_scope);
     gc_flush(visitor->gc);
-    if (++index < max_index) goto loop;
   }
-
-  gc_release(ited);
-  gc_free_scope(&for_scope);
-  gc_flush(visitor->gc);
-
+  
   return ast_null();
 }
 static ast_t* visitor_visit_func_def(visitor_t* visitor, scope_t* scope, ast_t* node)
