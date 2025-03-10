@@ -1,0 +1,21 @@
+// fileIO.seal
+
+const path = 'a.txt'
+
+var file = open(path, 'w') // write mode
+writeln(file == null) // check if file fails to open
+
+write(file, 'Hello from Seal!\n') // write to file
+close(file) // close file
+
+file = open(path, 'a') // open in append mode
+write(file, 'This text was appended from Seal\n')
+close(file) // close file
+
+file = open(path, 'r') // open in read mode
+const content = read(file) // store string in a variable
+close(file) // close file
+
+writeln(content) // print the result!
+
+// Also don't forget to check 'a.txt' file that has been created in this directory!
