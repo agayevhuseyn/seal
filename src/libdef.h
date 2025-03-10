@@ -5,9 +5,9 @@
 
 #include "ast.h"
 
-#define sealobj ast_t
+typedef ast_t sealobj;
 #define create_sealobj(TYPE) create_ast(TYPE) 
-#define seal_type int
+typedef int seal_type;
 #define seal_null() ast_null()
 #define seal_true() ast_true()
 #define seal_false() ast_false()
