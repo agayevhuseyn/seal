@@ -887,6 +887,9 @@ static ast_t* parser_parse_primary(parser_t* parser)
       parser_advance(parser);
       main = ast_null();
       break;
+    case TOK_IF:
+      main = parser_parse_ternary(parser);
+      break;
     default: {
       char err[ERR_LEN];
       sprintf(err, "invalid primary expression: \'%s\'", parser_peek(parser)->val);
