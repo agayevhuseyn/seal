@@ -811,7 +811,7 @@ static ast_t* visitor_visit_for(visitor_t* visitor, scope_t* scope, ast_t* node)
       }
     }
 
-    if (max_index == 0) {
+    if (max_index <= 0) {
       // free memory
       gc_release(ited);
       gc_flush(visitor->gc);

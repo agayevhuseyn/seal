@@ -9,7 +9,7 @@
 #include "gc.h"
 #include "libseal.h"
 
-#define SEAL_MAX_STATE_SIZE 4
+#define SEAL_MAX_STATE_SIZE 8
 
 typedef struct state state_t;
 
