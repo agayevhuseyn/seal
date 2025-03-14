@@ -202,7 +202,7 @@ static ast_t* builtin_format(ast_t* fcall, ast_t* args[], size_t arg_size)
   return res_ast;
 }
 
-static ast_t* builtin_open(ast_t* args[])
+static ast_t* builtin_fopen(ast_t* args[])
 {
   FILE* file = fopen(args[0]->string.val, args[1]->string.val);
   if (!file) return ast_null();
@@ -211,7 +211,7 @@ static ast_t* builtin_open(ast_t* args[])
   return file_ptr;
 }
 
-static ast_t* builtin_read(ast_t* arg)
+static ast_t* builtin_fread(ast_t* arg)
 {
   FILE* file = (FILE*) arg->integer.val;
   fseek(file, 0, SEEK_END);
@@ -227,14 +227,14 @@ static ast_t* builtin_read(ast_t* arg)
   return res;
 }
 
-static ast_t* builtin_close(ast_t* arg)
+static ast_t* builtin_fclose(ast_t* arg)
 {
   FILE* file = (FILE*) arg->integer.val;
   fclose(file);
   return ast_null();
 }
 
-static ast_t* builtin_write(ast_t* args[])
+static ast_t* builtin_fwrite(ast_t* args[])
 {
   FILE* file = (FILE*) args[0]->integer.val;
   fprintf(file, "%s", args[1]->string.val);

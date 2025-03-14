@@ -23,10 +23,10 @@ typedef double    Seal_float;
     (char*[]) { "writeln",\
                 "readln",\
                 "format",\
-                "open",\
-                "write",\
-                "read",\
-                "close",\
+                "fopen",\
+                "fwrite",\
+                "fread",\
+                "fclose",\
                 "len",\
                 "push",\
                 "pop",\

@@ -365,51 +365,51 @@ static ast_t* visitor_visit_func_call(visitor_t* visitor, scope_t* scope, ast_t*
       args[i] = visitor_visit(visitor, scope, node->func_call.args[i]);
     }
     visited = builtin_format(node, args, arg_size);
-  } else if (strcmp(node->func_call.name, "open") == 0) {
+  } else if (strcmp(node->func_call.name, "fopen") == 0) {
     size_t arg_size = node->func_call.arg_size;
     kill_if_argsize_ne(visitor, // arguments and parameters size must match
                        node,
                        true,
-                       "open",
+                       "fopen",
                        2,
                        arg_size);
     ast_t* args[arg_size];
     for (int i = 0; i < arg_size; i++) {
       args[i] = visitor_visit(visitor, scope, node->func_call.args[i]);
       if (args[i]->type != AST_STRING)
-        visitor_error(visitor, node, "open can only get string as arguments");
+        visitor_error(visitor, node, "fopen can only get string as arguments");
     }
-    visited = builtin_open(args);
-  } else if (strcmp(node->func_call.name, "read") == 0) {
+    visited = builtin_fopen(args);
+  } else if (strcmp(node->func_call.name, "fread") == 0) {
     size_t arg_size = node->func_call.arg_size;
     kill_if_argsize_ne(visitor, // arguments and parameters size must match
                        node,
                        true,
-                       "read",
+                       "fread",
                        1,
                        arg_size);
     ast_t* arg = visitor_visit(visitor, scope, node->func_call.args[0]);
     if (arg->type != AST_INT)
-      visitor_error(visitor, node, "read requires file");
-    visited = builtin_read(arg);
-  } else if (strcmp(node->func_call.name, "close") == 0) {
+      visitor_error(visitor, node, "fread requires file");
+    visited = builtin_fread(arg);
+  } else if (strcmp(node->func_call.name, "fclose") == 0) {
     size_t arg_size = node->func_call.arg_size;
     kill_if_argsize_ne(visitor, // arguments and parameters size must match
                        node,
                        true,
-                       "close",
+                       "fclose",
                        1,
                        arg_size);
     ast_t* arg = visitor_visit(visitor, scope, node->func_call.args[0]);
     if (arg->type != AST_INT)
-      visitor_error(visitor, node, "read requires file");
-    visited = builtin_close(arg);
-  } else if (strcmp(node->func_call.name, "write") == 0) {
+      visitor_error(visitor, node, "fclose requires file");
+    visited = builtin_fclose(arg);
+  } else if (strcmp(node->func_call.name, "fwrite") == 0) {
     size_t arg_size = node->func_call.arg_size;
     kill_if_argsize_ne(visitor, // arguments and parameters size must match
                        node,
                        true,
-                       "write",
+                       "fwrite",
                        2,
                        arg_size);
     ast_t* args[arg_size];
@@ -417,10 +417,10 @@ static ast_t* visitor_visit_func_call(visitor_t* visitor, scope_t* scope, ast_t*
       args[i] = visitor_visit(visitor, scope, node->func_call.args[i]);
     }
     if (args[0]->type != AST_INT)
-      visitor_error(visitor, node, "open requires file");
+      visitor_error(visitor, node, "fwrite requires file");
     if (args[1]->type != AST_STRING)
-      visitor_error(visitor, node, "open requires string for file");
-    visited = builtin_write(args);
+      visitor_error(visitor, node, "fwrite requires string for file");
+    visited = builtin_fwrite(args);
   }
   if (visited) {
     gc_track(visitor->gc, visited); // only builtin
