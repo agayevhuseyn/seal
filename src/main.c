@@ -37,14 +37,9 @@ int main(int argc, char** argv)
     }
   }
   const char* file_path = argv[1];
-  const char* src = read_file(file_path);
-  if (!src) {
-    fprintf(stderr, "seal: cannot open \'%s\': No such file or directory\n", file_path);
-    return EXIT_FAILURE;
-  }
   /* lexing */
   lexer_t lexer;
-  init_lexer(&lexer, src);
+  init_lexer(&lexer, file_path);
   lexer_get_tokens(&lexer);
   if (PRINT_TOKS)
     print_tokens(lexer.toks, lexer.tok_size);
@@ -58,7 +53,7 @@ int main(int argc, char** argv)
 
   visitor_t visitor;
   gc_t gc = {NULL, NULL};
-  init_visitor(&visitor, &gc);
+  init_visitor(&visitor, &gc, file_path);
   scope_t global_scope;
   init_scope(&global_scope, NULL);
   visitor_visit(&visitor, &global_scope, root);

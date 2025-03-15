@@ -31,7 +31,7 @@
   
 static inline ast_t* parser_error(parser_t* parser, const char* err)
 {
-  fprintf(stderr, "seal: line %d\nsyntax error: %s\n", parser_line(parser), err);
+  fprintf(stderr, "seal: file: \'%s\', line %d\nsyntax error: %s\n", parser->file_path, parser_line(parser), err);
   exit(1);
   return ast_null();
 }
@@ -101,6 +101,7 @@ static inline token_t* parser_eat(parser_t* parser, int type)
 /* main function */
 inline void init_parser(parser_t* parser, lexer_t* lexer)
 {
+  parser->file_path = lexer->file_path;
   parser->toks = lexer->toks;
   parser->tok_size = lexer->tok_size;
   parser->i = 0;

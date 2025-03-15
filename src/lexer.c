@@ -1,4 +1,5 @@
 #include "lexer.h"
+#include "io.h"
 
 #define LEXEME_ID                   0
 #define LEXEME_DIGIT                1
@@ -32,14 +33,20 @@
 
 static inline void lexer_error(lexer_t* lexer, const char* err, int line)
 {
-  fprintf(stderr, "seal: line %d\nsyntax error: %s\n", line == 0 ? lexer->line : line, err);
+  fprintf(stderr, "seal: file: \'%s\', line %d\nsyntax error: %s\n", lexer->file_path, line == 0 ? lexer->line : line, err);
   exit(EXIT_FAILURE);
 }
 
 /* main functions */
 
-inline void init_lexer(lexer_t* lexer, const char* src)
+inline void init_lexer(lexer_t* lexer, const char* file_path)
 {
+  const char* src = read_file(file_path);
+  if (!src) {
+    fprintf(stderr, "seal: cannot open \'%s\': No such file or directory\n", file_path);
+    exit(EXIT_FAILURE);
+  }
+  lexer->file_path           = file_path;
   lexer->src                 = src;
   lexer->src_size            = strlen(src);
   lexer->i                   = 0;

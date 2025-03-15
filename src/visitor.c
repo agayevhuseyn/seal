@@ -13,7 +13,7 @@
 
 static inline ast_t* visitor_error(visitor_t* visitor, ast_t* node, const char* err)
 {
-  fprintf(stderr, "seal: at line: %d\nerror: %s\n", node->line, err);
+  fprintf(stderr, "seal: file: \'%s\' at line: %d\nerror: %s\n", visitor->file_path, node->line, err);
   exit(1);
   return ast_null();
 }
@@ -1234,7 +1234,14 @@ static ast_t* visitor_visit_include(visitor_t* visitor, scope_t* scope, ast_t* n
     if (visitor->state_size++ >= SEAL_MAX_STATE_SIZE)
       visitor_error(visitor, node, "maximum capacity of including seal files reached");
     state_t* state = SEAL_CALLOC(1, sizeof(state_t));
-    init_state(state, visitor->gc, node->include.name);
+    /*
+    char* full_path = SEAL_CALLOC(strlen(visitor->file_path) + strlen(node->include.name) + 2, sizeof(char));
+    strcpy(full_path, visitor->file_path);
+    strcat(full_path, "/");
+    strcat(full_path, node->include.name);
+    */
+    const char* full_path = node->include.name;
+    init_state(state, visitor->gc, full_path);
     visitor->states[visitor->state_size - 1] = state;
   } else {
     for (int i = 0; i < visitor->libseal_size; i++) {

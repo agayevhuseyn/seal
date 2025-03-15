@@ -7,6 +7,7 @@
 #include "ast.h"
 
 typedef struct {
+  const char* file_path;
   token_t** toks;
   size_t tok_size;
   int i;

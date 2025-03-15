@@ -12,6 +12,7 @@ typedef struct {
   int indent_stack[MAX_INDENT_LEVEL], paren_stack[MAX_NESTED_PAREN_LEVEL], paren_lines_stack[MAX_NESTED_PAREN_LEVEL];
   int indent_stack_ptr, paren_stack_ptr, paren_lines_ptr;
   const char* src;
+  const char* file_path;
   size_t      src_size;
   int         i;
   int         line;

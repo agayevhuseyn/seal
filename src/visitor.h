@@ -14,6 +14,7 @@
 typedef struct state state_t;
 
 typedef struct visitor {
+  const char* file_path;
   gc_t* gc;
   list_t* func_defs;
   size_t func_size;
@@ -28,8 +29,9 @@ typedef struct visitor {
   list_t* ext_vars;
 } visitor_t;
 
-static inline void init_visitor(visitor_t* visitor, gc_t* gc)
+static inline void init_visitor(visitor_t* visitor, gc_t* gc, const char* file_path)
 {
+  visitor->file_path      = file_path;
   visitor->func_defs      = NULL;
   visitor->func_size      = 0;
   visitor->struct_defs    = NULL;
