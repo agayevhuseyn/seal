@@ -193,8 +193,7 @@ ast_t* visitor_visit(visitor_t* visitor, scope_t* scope, ast_t* node)
     case AST_FUNC_CALL:
       return visitor_visit_func_call(visitor, scope, node);
     case AST_SUBSCRIPT:
-      visited = visitor_visit_subscript(visitor, scope, node);
-      break;
+      return visitor_visit_subscript(visitor, scope, node);
     case AST_MEMACC:
       visited = visitor_visit_memacc(visitor, scope, node);
       break;
@@ -541,11 +540,12 @@ static ast_t* visitor_visit_subscript(visitor_t* visitor, scope_t* scope, ast_t*
       }
       return main->list.mems[index->integer.val];
     case AST_STRING:
-      if (main->list.mem_size > index->integer.val) {
+      if (strlen(main->string.val) > index->integer.val) {
         ast_t* chr = create_ast(AST_STRING);
         chr->string.val = SEAL_CALLOC(2, sizeof(char));
         chr->string.val[0] = main->string.val[index->integer.val];
         chr->string.val[1] = '\0';
+        gc_track(visitor->gc, chr);
         return chr;
       }
       goto error;
