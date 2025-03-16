@@ -198,6 +198,7 @@ typedef struct ast {
     struct {
       struct ast* var;
       struct ast* expr;
+      int op_type;
     } assign;
     /* others */
     struct {
@@ -605,8 +606,9 @@ static void print_ast(ast_t* node)
       print_ast(node->ternary.expr_false);
       break;
     case AST_ASSIGN:
-      printf("%d: %s: variable:\n",
+      printf("%d: %s: op: %s, variable:\n",
               node->line,
+              htoken_type_name(node->assign.op_type),
               hast_type_name(node->type));
       print_ast(node->assign.var);
       printf("assigned expression:\n");
