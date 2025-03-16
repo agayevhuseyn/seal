@@ -150,28 +150,46 @@ static void lexer_get_token(lexer_t* lexer)
       tok = create_token(TOK_COMMA, NULL, lexer->line);
       break;
     case '+':
-      tok = create_token(TOK_PLUS, NULL, lexer->line);
+      if (lexer_match(lexer, '='))
+        tok = create_token(TOK_PLUS_ASSIGN, NULL, lexer->line);
+      else
+        tok = create_token(TOK_PLUS, NULL, lexer->line);
       break;
     case '-':
-      tok = create_token(TOK_MINUS, NULL, lexer->line);
+      if (lexer_match(lexer, '='))
+        tok = create_token(TOK_MINUS_ASSIGN, NULL, lexer->line);
+      else
+        tok = create_token(TOK_MINUS, NULL, lexer->line);
       break;
     case '*':
-      tok = create_token(TOK_MUL, NULL, lexer->line);
+      if (lexer_match(lexer, '='))
+        tok = create_token(TOK_MUL_ASSIGN, NULL, lexer->line);
+      else
+        tok = create_token(TOK_MUL, NULL, lexer->line);
       break;
     case '/':
-      if (lexer_match(lexer, '/')) 
+      if (lexer_match(lexer, '/')) {
         lexer_ignore_comment(lexer, SINGLE_LINE_COMMENT);
-      else if (lexer_match(lexer, '*'))
+        encountered_word = lexer->encountered_word;
+      } else if (lexer_match(lexer, '*')) {
         lexer_ignore_comment(lexer, MULTILINE_COMMENT);
+        encountered_word = lexer->encountered_word;
+      } else if (lexer_match(lexer, '='))
+        tok = create_token(TOK_DIV_ASSIGN, NULL, lexer->line);
       else
         tok = create_token(TOK_DIV, NULL, lexer->line);
-      encountered_word = lexer->encountered_word;
       break;
     case '%':
-      tok = create_token(TOK_MOD, NULL, lexer->line);
+      if (lexer_match(lexer, '='))
+        tok = create_token(TOK_MOD_ASSIGN, NULL, lexer->line);
+      else
+        tok = create_token(TOK_MOD, NULL, lexer->line);
       break;
     case '^':
-      tok = create_token(TOK_POW, NULL, lexer->line);
+      if (lexer_match(lexer, '='))
+        tok = create_token(TOK_POW_ASSIGN, NULL, lexer->line);
+      else
+        tok = create_token(TOK_POW, NULL, lexer->line);
       break;
     case '=': // ==
       if (lexer_match(lexer, '='))
