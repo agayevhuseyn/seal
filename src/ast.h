@@ -320,11 +320,21 @@ static inline ast_t* create_var_ast(const char* name, ast_t* val, bool is_const,
 }
 
 void create_const_asts(); /* this function must be called only once */
+void create_typeof_asts(); /* this function must be called only once */
 
 /* constant nodes are called with these functions */
 ast_t* ast_null();
 ast_t* ast_true();
 ast_t* ast_false();
+
+/* typeof function returned values */
+ast_t* typeof_int();
+ast_t* typeof_float();
+ast_t* typeof_string();
+ast_t* typeof_bool();
+ast_t* typeof_list();
+ast_t* typeof_map();
+ast_t* typeof_null();
 
 static void print_ast(ast_t* node)
 {
@@ -336,7 +346,7 @@ static void print_ast(ast_t* node)
               hast_type_name(node->type));
       break;
     case AST_INT:
-      printf("%d: %s: \'%d\'\n",
+      printf("%d: %s: \'%lld\'\n",
               node->line,
               hast_type_name(node->type),
               node->integer.val);

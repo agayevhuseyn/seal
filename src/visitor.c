@@ -854,6 +854,17 @@ static ast_t* visitor_visit_unary(visitor_t* visitor, scope_t* scope, ast_t* nod
     case TOK_NOT:
       kill_if_non_bool(visitor, val, node);
       return val->boolean.val ? ast_false() : ast_true();
+    case TOK_TYPEOF:
+      switch (val->type) {
+        case AST_INT   : return typeof_int();
+        case AST_FLOAT : return typeof_float();
+        case AST_STRING: return typeof_string();
+        case AST_BOOL  : return typeof_bool();
+        case AST_LIST  : return typeof_list();
+        case AST_OBJECT: return typeof_map();
+        case AST_NULL  : return typeof_null();
+        default: visitor_error(visitor, node, "TYPEOF UNDEFINED");
+      }
   }
   return visitor_error(visitor, node, "VISITOR_VISIT_UNARY UNDEFINED");
 }

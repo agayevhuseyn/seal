@@ -109,8 +109,6 @@ inline void init_parser(parser_t* parser, lexer_t* lexer)
 
 inline ast_t* parser_parse(parser_t* parser)
 {
-  create_const_asts(); // allocate constant ASTs
-
   return parser_parse_statements(parser, false, false, false, false);
 }
 
@@ -773,7 +771,8 @@ static ast_t* parser_parse_unary(parser_t* parser)
 {
   if (parser_match(parser, TOK_NOT) ||
       parser_match(parser, TOK_MINUS) ||
-      parser_match(parser, TOK_PLUS)) {
+      parser_match(parser, TOK_PLUS) ||
+      parser_match(parser, TOK_TYPEOF)) {
     ast_t* ast = static_create_ast(AST_UNARY, parser_line(parser));
     ast->unary.op_type = parser_advance(parser)->type; // optype
     ast->unary.expr = parser_parse_unary(parser);

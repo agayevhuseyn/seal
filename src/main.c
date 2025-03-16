@@ -1,3 +1,4 @@
+#include "ast.h"
 #include "seal.h"
 
 #include "io.h"
@@ -45,6 +46,8 @@ int main(int argc, char** argv)
     print_tokens(lexer.toks, lexer.tok_size);
   /* parsing and generating abstract syntax tree (AST) */
   
+  create_const_asts(); // allocate constant ASTs
+  create_typeof_asts(); // allocate typeof instances
   parser_t parser;
   init_parser(&parser, &lexer);
   ast_t* root = parser_parse(&parser);
