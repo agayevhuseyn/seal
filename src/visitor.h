@@ -74,6 +74,7 @@ static ast_t* visitor_visit_return(visitor_t*, scope_t*, ast_t*);
 /* operations */
 static ast_t* visitor_visit_unary(visitor_t*, scope_t*, ast_t*);
 static ast_t* visitor_visit_binary(visitor_t*, scope_t*, ast_t*);
+static ast_t* visitor_perform_binary(visitor_t*, ast_t* node, ast_t* bin_left, ast_t* bin_right, int op);
 static ast_t* visitor_visit_binary_bool(visitor_t*, scope_t*, ast_t*);
 static ast_t* visitor_visit_ternary(visitor_t*, scope_t*, ast_t*);
 static ast_t* visitor_visit_assign(visitor_t*, scope_t*, ast_t*);

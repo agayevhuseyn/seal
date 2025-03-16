@@ -932,13 +932,21 @@ static ast_t* visitor_visit_binary(visitor_t* visitor, scope_t* scope, ast_t* no
 {
   ast_t* bin_left  = visitor_visit(visitor, scope, node->binary.left);
   ast_t* bin_right = visitor_visit(visitor, scope, node->binary.right);
-  
+
+  return visitor_perform_binary(visitor, node, bin_left, bin_right, node->binary.op_type);
+}
+static ast_t* visitor_perform_binary(visitor_t* visitor,
+                                     ast_t* node,
+                                     ast_t* bin_left,
+                                     ast_t* bin_right,
+                                     int op)
+{
   if (bin_left->type == AST_INT && bin_right->type == AST_INT) {
     Seal_int left  = bin_left->integer.val;
     Seal_int right = bin_right->integer.val;
     Seal_int result;
 
-    switch (node->binary.op_type) {
+    switch (op) {
       // first comparisons
       case TOK_EQ:
         return left == right ? ast_true() : ast_false();
@@ -971,7 +979,7 @@ static ast_t* visitor_visit_binary(visitor_t* visitor, scope_t* scope, ast_t* no
         result = pow(left, right);
         break;
       default:
-        binary_op_error(visitor, node, "integer", node->binary.op_type);
+        binary_op_error(visitor, node, "integer", op);
         break;
     }
     ast_t* res_node = create_ast(AST_INT);
@@ -982,7 +990,7 @@ static ast_t* visitor_visit_binary(visitor_t* visitor, scope_t* scope, ast_t* no
     Seal_float right = bin_right->floating.val;
     Seal_float result;
 
-    switch (node->binary.op_type) {
+    switch (op) {
       // first comparisons
       case TOK_EQ:
         return left == right ? ast_true() : ast_false();
@@ -1012,7 +1020,7 @@ static ast_t* visitor_visit_binary(visitor_t* visitor, scope_t* scope, ast_t* no
         result = pow(left, right);
         break;
       default:
-        binary_op_error(visitor, node, "float", node->binary.op_type);
+        binary_op_error(visitor, node, "float", op);
         break;
     }
     ast_t* res_node = create_ast(AST_FLOAT);
@@ -1024,7 +1032,7 @@ static ast_t* visitor_visit_binary(visitor_t* visitor, scope_t* scope, ast_t* no
     Seal_float right = bin_right->type == AST_INT ? bin_right->integer.val : bin_right->floating.val;
     Seal_float result;
 
-    switch (node->binary.op_type) {
+    switch (op) {
       // first comparisons
       case TOK_EQ:
         return left == right ? ast_true() : ast_false();
@@ -1054,7 +1062,7 @@ static ast_t* visitor_visit_binary(visitor_t* visitor, scope_t* scope, ast_t* no
         result = pow(left, right);
         break;
       default:
-        binary_op_error(visitor, node, "float", node->binary.op_type);
+        binary_op_error(visitor, node, "float", op);
         break;
     }
     ast_t* res_node = create_ast(AST_FLOAT);
@@ -1066,7 +1074,7 @@ static ast_t* visitor_visit_binary(visitor_t* visitor, scope_t* scope, ast_t* no
     char* result;
     size_t len;
 
-    switch (node->binary.op_type) {
+    switch (op) {
       // first comparisons
       case TOK_EQ:
         return strcmp(left, right) == 0 ? ast_true() : ast_false();
@@ -1080,7 +1088,7 @@ static ast_t* visitor_visit_binary(visitor_t* visitor, scope_t* scope, ast_t* no
         result[len] = '\0';
         break;
       default:
-        binary_op_error(visitor, node, "string", node->binary.op_type);
+        binary_op_error(visitor, node, "string", op);
         break;
     }
     ast_t* res_node = create_ast(AST_STRING);
@@ -1090,33 +1098,33 @@ static ast_t* visitor_visit_binary(visitor_t* visitor, scope_t* scope, ast_t* no
     bool left  = bin_left->boolean.val;
     bool right = bin_right->boolean.val;
 
-    switch (node->binary.op_type) {
+    switch (op) {
       case TOK_EQ:
         return left == right ? ast_true() : ast_false();
       case TOK_NE:
         return left != right ? ast_true() : ast_false();
       default:
-        binary_op_error(visitor, node, "bool", node->binary.op_type);
+        binary_op_error(visitor, node, "bool", op);
         break;
     }
   } else if (bin_left->type == AST_OBJECT && bin_right->type == AST_OBJECT) {
-    switch (node->binary.op_type) {
+    switch (op) {
       case TOK_EQ:
         return &bin_left->object == &bin_right->object ? ast_true() : ast_false();
       case TOK_NE:
         return &bin_left->object != &bin_right->object ? ast_true() : ast_false();
       default:
-        binary_op_error(visitor, node, "object", node->binary.op_type);
+        binary_op_error(visitor, node, "object", op);
         break;
     }
   } else if (bin_left->type == AST_NULL || bin_right->type == AST_NULL) {
-    switch (node->binary.op_type) {
+    switch (op) {
       case TOK_EQ:
         return bin_left->type == bin_right->type ? ast_true() : ast_false();
       case TOK_NE:
         return bin_left->type != bin_right->type ? ast_true() : ast_false();
       default:
-        binary_op_error(visitor, node, "null", node->binary.op_type);
+        binary_op_error(visitor, node, "null", op);
         break;
     }
   }
@@ -1124,7 +1132,7 @@ static ast_t* visitor_visit_binary(visitor_t* visitor, scope_t* scope, ast_t* no
   char err[ERR_LEN];
   sprintf(err,
           "\'%s\' operator is not supported for \'%s\' and \'%s\'",
-          htoken_type_name(node->binary.op_type),
+          htoken_type_name(op),
           hast_type_name(bin_left->type),
           hast_type_name(bin_right->type));
   return visitor_error(visitor, node, err);
@@ -1157,8 +1165,20 @@ static ast_t* visitor_visit_ternary(visitor_t* visitor, scope_t* scope, ast_t* n
 static ast_t* visitor_visit_assign(visitor_t* visitor, scope_t* scope, ast_t* node) // consider constant
 {
   ast_t* symbol = node->assign.var;
-  ast_t* assigned = visitor_visit(visitor, scope, node->assign.expr);
-  gc_retain(assigned);
+  ast_t* assigned = NULL;
+  int aug_op = 0;
+  if (node->assign.op_type == TOK_ASSIGN) {
+    assigned = visitor_visit(visitor, scope, node->assign.expr);
+  } else {
+    switch (node->assign.op_type) {
+      case TOK_PLUS_ASSIGN  : aug_op = TOK_PLUS;  break;
+      case TOK_MINUS_ASSIGN : aug_op = TOK_MINUS; break;
+      case TOK_MUL_ASSIGN   : aug_op = TOK_MUL;   break;
+      case TOK_DIV_ASSIGN   : aug_op = TOK_DIV;   break;
+      case TOK_MOD_ASSIGN   : aug_op = TOK_MOD;   break;
+      case TOK_POW_ASSIGN   : aug_op = TOK_POW;   break;
+    }
+  }
   switch (symbol->type) {
     case AST_VAR_REF: {
       ast_t* var = scope_get_var(scope, symbol->var_ref.name, symbol->line);
@@ -1173,6 +1193,10 @@ static ast_t* visitor_visit_assign(visitor_t* visitor, scope_t* scope, ast_t* no
         return visitor_error(visitor, symbol, err);
       }
       // free unassigned symbol value
+      if (!assigned) {
+        ast_t* bin_right = visitor_visit(visitor, scope, node->assign.expr);
+        assigned = visitor_perform_binary(visitor, node, var->variable.val, bin_right, aug_op);
+      }
       gc_release(var->variable.val);
       var->variable.val = assigned;
       break;
@@ -1189,6 +1213,10 @@ static ast_t* visitor_visit_assign(visitor_t* visitor, scope_t* scope, ast_t* no
             goto error;
           }
           // free unassigned member
+          if (!assigned) {
+            ast_t* bin_right = visitor_visit(visitor, scope, node->assign.expr);
+            assigned = visitor_perform_binary(visitor, node, main->list.mems[index->integer.val], bin_right, aug_op);
+          }
           gc_release(main->list.mems[index->integer.val]);
           main->list.mems[index->integer.val] = assigned;
           break;
@@ -1211,6 +1239,10 @@ static ast_t* visitor_visit_assign(visitor_t* visitor, scope_t* scope, ast_t* no
         if (strcmp(mem->var_ref.name, main->object.field_names[i]) == 0) {
           // free unassigned field
           found = true;
+          if (!assigned) {
+            ast_t* bin_right = visitor_visit(visitor, scope, node->assign.expr);
+            assigned = visitor_perform_binary(visitor, node, main->object.field_vals[i], bin_right, aug_op);
+          }
           gc_release(main->object.field_vals[i]);
           main->object.field_vals[i] = assigned;
           break;
@@ -1225,6 +1257,7 @@ static ast_t* visitor_visit_assign(visitor_t* visitor, scope_t* scope, ast_t* no
       return visitor_error(visitor, mem, err);
     }
   }
+  gc_retain(assigned);
   return assigned;
 }
 /* others */
