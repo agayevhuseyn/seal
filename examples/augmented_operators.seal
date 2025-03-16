@@ -1,0 +1,19 @@
+var i = 0, max = 100
+
+while i < max
+  // loop body
+  // ...
+
+  i += 1
+
+writeln(i -= -1)
+writeln(i *= -1)
+writeln(i /= -2)
+writeln(i %= 3)
+writeln(i ^= 3)
+
+var copy = ''
+for c in 'Seal'
+  copy += c
+
+writeln(copy)
