@@ -939,9 +939,16 @@ static ast_t* parser_parse_primary(parser_t* parser)
   }
 
   // handle assignment
-  if (parser_match(parser, TOK_ASSIGN) && is_lvalue(main)) {
-    parser_advance(parser); // '='
+  if ((parser_match(parser, TOK_ASSIGN) ||
+       parser_match(parser, TOK_PLUS_ASSIGN) ||
+       parser_match(parser, TOK_MINUS_ASSIGN) ||
+       parser_match(parser, TOK_MUL_ASSIGN) ||
+       parser_match(parser, TOK_DIV_ASSIGN) ||
+       parser_match(parser, TOK_MOD_ASSIGN) ||
+       parser_match(parser, TOK_POW_ASSIGN)) &&
+      is_lvalue(main)) {
     ast_t* assign = static_create_ast(AST_ASSIGN, parser_line(parser));
+    assign->assign.op_type = parser_advance(parser)->type; // assign type
     assign->assign.var = main;
     assign->assign.expr = parser_parse_expr(parser);
     main = assign;
