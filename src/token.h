@@ -45,23 +45,29 @@
 #define TOK_MOD     37   // %
 #define TOK_POW     38   // ^
 #define TOK_ASSIGN  39   // =
-#define TOK_EQ      40   // ==
-#define TOK_NE      41   // !=
-#define TOK_GT      42   // >
-#define TOK_GE      43   // >=
-#define TOK_LT      44   // <
-#define TOK_LE      45   // <=
+#define TOK_PLUS_ASSIGN   40   // +=
+#define TOK_MINUS_ASSIGN  41   // -=
+#define TOK_MUL_ASSIGN    42   // *=
+#define TOK_DIV_ASSIGN    43   // /=
+#define TOK_MOD_ASSIGN    44   // %=
+#define TOK_POW_ASSIGN    45   // ^=
+#define TOK_EQ      46   // ==
+#define TOK_NE      47   // !=
+#define TOK_GT      48   // >
+#define TOK_GE      49   // >=
+#define TOK_LT      50   // <
+#define TOK_LE      51   // <=
 /* parenthesis */
-#define TOK_LPAREN  46   // (
-#define TOK_RPAREN  47   // )
-#define TOK_LBRACK  48   // [
-#define TOK_RBRACK  49   // ]
-#define TOK_LBRACE  50   // {
-#define TOK_RBRACE  51   // }
+#define TOK_LPAREN  52   // (
+#define TOK_RPAREN  53   // )
+#define TOK_LBRACK  54   // [
+#define TOK_RBRACK  55   // ]
+#define TOK_LBRACE  56   // {
+#define TOK_RBRACE  57   // }
 /* block-related */
-#define TOK_NEWL    52   // \n
-#define TOK_INDENT  53   // \t
-#define TOK_DEDENT  54   // 
+#define TOK_NEWL    58   // \n
+#define TOK_INDENT  59   // \t or \s
+#define TOK_DEDENT  60   // <-\t or \s
 
 #define TOK_LAST TOK_DEDENT    // last token
 
@@ -116,6 +122,12 @@ static inline const char* token_type_name(int type)
     case TOK_MOD    : return "TOK_MOD";
     case TOK_POW    : return "TOK_POW";
     case TOK_ASSIGN : return "TOK_ASSIGN";
+    case TOK_PLUS_ASSIGN  : return "TOK_PLUS_ASSIGN";
+    case TOK_MINUS_ASSIGN : return "TOK_MINUS_ASSIGN";
+    case TOK_MUL_ASSIGN   : return "TOK_MUL_ASSIGN";
+    case TOK_DIV_ASSIGN   : return "TOK_DIV_ASSIGN";
+    case TOK_MOD_ASSIGN   : return "TOK_MOD_ASSIGN";
+    case TOK_POW_ASSIGN   : return "TOK_POW_ASSIGN";
     case TOK_EQ     : return "TOK_EQ";
     case TOK_NE     : return "TOK_NE";
     case TOK_GT     : return "TOK_GT";
@@ -178,6 +190,12 @@ static inline const char* htoken_type_name(int type)
     case TOK_MOD    : return "%";
     case TOK_POW    : return "^";
     case TOK_ASSIGN : return "=";
+    case TOK_PLUS_ASSIGN  : return "+=";
+    case TOK_MINUS_ASSIGN : return "-=";
+    case TOK_MUL_ASSIGN   : return "*=";
+    case TOK_DIV_ASSIGN   : return "/=";
+    case TOK_MOD_ASSIGN   : return "%=";
+    case TOK_POW_ASSIGN   : return "^=";
     case TOK_EQ     : return "==";
     case TOK_NE     : return "!=";
     case TOK_GT     : return ">";
