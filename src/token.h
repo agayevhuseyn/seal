@@ -23,7 +23,7 @@
 #define TOK_AS      16   // as
 #define TOK_DEFINE  17   // define
 #define TOK_RETURN  18   // return
-#define TOK_STRUCT  19   // struct
+#define TOK_TYPEOF  19   // typeof
 #define TOK_AND     20   // and
 #define TOK_OR      21   // or
 #define TOK_NOT     22   // not
@@ -101,7 +101,7 @@ static inline const char* token_type_name(int type)
     case TOK_AS     : return "TOK_AS";
     case TOK_DEFINE : return "TOK_DEFINE";
     case TOK_RETURN : return "TOK_RETURN";
-    case TOK_STRUCT : return "TOK_STRUCT";
+    case TOK_TYPEOF : return "TOK_TYPEOF";
     case TOK_AND    : return "TOK_AND";
     case TOK_OR     : return "TOK_OR";
     case TOK_NOT    : return "TOK_NOT";
@@ -169,7 +169,7 @@ static inline const char* htoken_type_name(int type)
     case TOK_AS     : return "as";
     case TOK_DEFINE : return "define";
     case TOK_RETURN : return "return";
-    case TOK_STRUCT : return "struct";
+    case TOK_TYPEOF : return "typeof";
     case TOK_AND    : return "and";
     case TOK_OR     : return "or";
     case TOK_NOT    : return "not";
