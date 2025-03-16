@@ -29,22 +29,21 @@
 #define AST_WHILE         19
 #define AST_FOR           20
 #define AST_FUNC_DEF      21
-#define AST_STRUCT_DEF    22
 /* block control */
-#define AST_SKIP          23
-#define AST_STOP          24
-#define AST_RETURN        25
-#define AST_RETURNED_VAL  26   // only runtime
+#define AST_SKIP          22
+#define AST_STOP          23
+#define AST_RETURN        24
+#define AST_RETURNED_VAL  25   // only runtime
 /* operations */
-#define AST_UNARY         27
-#define AST_BINARY        28
-#define AST_BINARY_BOOL   29
-#define AST_TERNARY       30
-#define AST_ASSIGN        31
+#define AST_UNARY         26
+#define AST_BINARY        27
+#define AST_BINARY_BOOL   28
+#define AST_TERNARY       29
+#define AST_ASSIGN        30
 /* others */
-#define AST_INCLUDE       32
+#define AST_INCLUDE       31
 /* variable */
-#define AST_VARIABLE      33
+#define AST_VARIABLE      32
 /* last index */
 #define AST_LAST AST_VARIABLE
 
@@ -92,7 +91,6 @@ typedef struct ast {
       const char** field_names;
       struct ast** field_vals;
       size_t field_size;
-      bool is_lit;
     } object;
     struct {
       const char* name;
@@ -159,15 +157,6 @@ typedef struct ast {
       struct ast* comp;
       bool is_extern;
     } func_def;
-    struct {
-      const char* name;
-      const char** param_names;
-      size_t param_size;
-      /* fields */
-      const char** field_names;
-      struct ast** field_exprs;
-      size_t field_size;
-    } struct_def;
     /* block control */
     struct {
       struct ast* expr;
@@ -241,7 +230,6 @@ static inline const char* ast_type_name(int type)
     case AST_WHILE        : return "AST_WHILE";
     case AST_FOR          : return "AST_FOR";
     case AST_FUNC_DEF     : return "AST_FUNC_DEF";
-    case AST_STRUCT_DEF   : return "AST_STRUCT_DEF";
     case AST_SKIP         : return "AST_SKIP";
     case AST_STOP         : return "AST_STOP";
     case AST_RETURN       : return "AST_RETURN";
@@ -282,7 +270,6 @@ static inline const char* hast_type_name(int type)
     case AST_WHILE        : return "while";
     case AST_FOR          : return "for";
     case AST_FUNC_DEF     : return "function definition";
-    case AST_STRUCT_DEF   : return "struct definition";
     case AST_SKIP         : return "skip";
     case AST_STOP         : return "stop";
     case AST_RETURN       : return "return";
@@ -532,23 +519,6 @@ static void print_ast(ast_t* node)
       }
       printf("function body:\n");
       print_ast(node->func_def.comp);
-      break;
-    case AST_STRUCT_DEF:
-      printf("%d: %s: \'%s\', field size: %zu, fields:\n",
-              node->line,
-              hast_type_name(node->type),
-              node->struct_def.name,
-              node->struct_def.field_size);
-      printf("constructor: parameter size: %zu, parameters:\n",
-              node->struct_def.param_size);
-      for (int i = 0; i < node->struct_def.param_size; i++) {
-        printf("\tparameter %d: \'%s\'\n", i, node->struct_def.param_names[i]);
-      }
-      printf("fields:\n");
-      for (int i = 0; i < node->struct_def.field_size; i++) {
-        printf("\tfield \'%s\': value:\n", node->struct_def.field_names[i]);
-        print_ast(node->struct_def.field_exprs[i]);
-      }
       break;
     /* block control */
     case AST_SKIP:

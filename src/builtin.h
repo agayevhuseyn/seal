@@ -47,10 +47,6 @@ static ast_t* builtin_writeln(ast_t* args[], size_t arg_size, bool is_main, bool
         printf("]");
         goto space;
       case AST_OBJECT:
-        if (!arg->object.is_lit) {
-          printf("%s: %p", arg->object.def->struct_def.name, &arg->object);
-          goto space;
-        }
         printf("{");
         for (int j = 0; j < arg->object.field_size; j++) {
           printf("%s = ", arg->object.field_names[j]);

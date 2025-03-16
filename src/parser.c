@@ -179,9 +179,6 @@ static ast_t* parser_parse_statement(parser_t* parser,
     case TOK_EXTERN:
       if (!is_global_scope) goto error;
       return parser_parse_extern(parser);
-    case TOK_STRUCT:
-      if (!is_global_scope) goto error;
-      return parser_parse_struct_def(parser);
     case TOK_SKIP:
       if (!is_loop) goto error;
       return parser_parse_skip(parser);
@@ -614,71 +611,6 @@ static ast_t* parser_parse_func_def(parser_t* parser)
   parser_eat(parser, TOK_INDENT);
 
   ast->func_def.comp = parser_parse_statements(parser, true, false, false, false);
-
-  parser_eat(parser, TOK_DEDENT);
-
-  return ast;
-}
-static ast_t* parser_parse_struct_def(parser_t* parser)
-{
-  parser_eat(parser, TOK_STRUCT);
-
-  ast_t* ast = static_create_ast(AST_STRUCT_DEF, parser_line(parser));
-  ast->struct_def.param_size = 0;
-  ast->struct_def.field_size = 0;
-
-  kill_if_reserved_name(parser, ast->struct_def.name = parser_eat(parser, TOK_ID)->val); // kill if reserved name
-
-  parser_eat(parser, TOK_LPAREN);
-
-  if (!parser_match(parser, TOK_RPAREN)) {
-    ast->struct_def.param_size = 1;
-    ast->struct_def.param_names = SEAL_CALLOC(1, sizeof(char*));
-    kill_if_reserved_name(parser, ast->struct_def.param_names[0] = parser_eat(parser, TOK_ID)->val);
-  }
-
-  while (!parser_match(parser, TOK_RPAREN)) {
-    parser_eat(parser, TOK_COMMA); // ',' separator
-
-    const char* param = parser_eat(parser, TOK_ID)->val;
-    kill_if_reserved_name(parser, param);
-    kill_if_duplicated_name(parser, param, ast->struct_def.param_names, ast->struct_def.param_size);
-
-    ast->struct_def.param_size++;
-    ast->struct_def.param_names = SEAL_REALLOC(ast->struct_def.param_names, ast->struct_def.param_size * sizeof(char*));
-    ast->struct_def.param_names[ast->struct_def.param_size - 1] = param;
-  }
-
-  parser_eat(parser, TOK_RPAREN);
-
-  // field block
-  parser_eat(parser, TOK_NEWL);
-  parser_eat(parser, TOK_INDENT);
-
-  while (!parser_match(parser, TOK_DEDENT)) {
-    parser_eat(parser, TOK_DOT);
-
-    // no duplicate allowed
-    const char* field_name = parser_eat(parser, TOK_ID)->val;
-    kill_if_duplicated_name(parser, field_name, ast->struct_def.field_names, ast->struct_def.field_size);
-
-    ast->struct_def.field_size++;
-    // field names
-    ast->struct_def.field_names = SEAL_REALLOC(ast->struct_def.field_names, ast->struct_def.field_size * sizeof(char*));
-    ast->struct_def.field_names[ast->struct_def.field_size - 1] = field_name;
-
-    // field vals
-    ast->struct_def.field_exprs = SEAL_REALLOC(ast->struct_def.field_exprs, ast->struct_def.field_size * sizeof(ast_t*));
-
-    if (parser_match(parser, TOK_ASSIGN)) {
-      parser_advance(parser); // '='
-      ast->struct_def.field_exprs[ast->struct_def.field_size - 1] = parser_parse_expr(parser);
-    } else {
-      ast->struct_def.field_exprs[ast->struct_def.field_size - 1] = ast_null();
-    }
-
-    parser_eat(parser, TOK_NEWL);
-  }
 
   parser_eat(parser, TOK_DEDENT);
 

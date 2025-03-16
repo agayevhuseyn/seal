@@ -138,9 +138,7 @@ sealobj* seal_get_obj_mem(sealobj* obj,
   }
   char err[ERR_LEN];
   sprintf(err,
-          "%s%sobject has no field named \'%s\'",
-          !obj->object.is_lit ? obj->object.def->struct_def.name : "",
-          !obj->object.is_lit ? " type " : "",
+          "object has no field named \'%s\'",
           mem_name);
   seal_func_err(libname, func_name, err);
   return seal_null();
@@ -149,7 +147,6 @@ sealobj* seal_get_obj_mem(sealobj* obj,
 sealobj* seal_create_object(const char* field_names[], sealobj* field_vals[], size_t field_size)
 {
   sealobj* obj = create_ast(AST_OBJECT);
-  obj->object.is_lit = true;
   obj->object.field_size = field_size;
   obj->object.field_vals = SEAL_CALLOC(field_size, sizeof(sealobj*));
   for (int i = 0; i < field_size; i++) {

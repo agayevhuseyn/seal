@@ -28,16 +28,6 @@ static inline ast_t* search_func(list_t* list, const char* name)
   return NULL;
 }
 
-static inline ast_t* search_struct(list_t* list, const char* name)
-{
-  list_iterate(list) {
-    if (strcmp(name, it->val->struct_def.name) == 0) {
-      return it->val;
-    }
-  }
-  return NULL;
-}
-
 static inline void kill_if_index_non_int(visitor_t* visitor, ast_t* index, ast_t* node)
 {
   if (index->type == AST_INT) return;
@@ -80,9 +70,7 @@ static inline ast_t* get_object_mem(visitor_t* visitor, ast_t* main, ast_t* mem)
   }
   char err[ERR_LEN];
   sprintf(err,
-          "%s%sobject has no field named \'%s\'",
-          !main->object.is_lit ? main->object.def->struct_def.name : "",
-          !main->object.is_lit ? " type " : "",
+          "object has no field named \'%s\'",
           mem->var_ref.name);
   return visitor_error(visitor, mem, err);
 }
@@ -113,7 +101,6 @@ static inline void kill_if_non_int(visitor_t* visitor, ast_t* main, ast_t* node)
 
 static inline void kill_if_argsize_ne(visitor_t* visitor,
                                       ast_t* node,
-                                      bool is_func,
                                       const char* name,
                                       size_t param_size,
                                       size_t arg_size)
@@ -121,8 +108,7 @@ static inline void kill_if_argsize_ne(visitor_t* visitor,
   if (arg_size != param_size) { // arguments and parameters size must match
     char err[ERR_LEN];
     sprintf(err,
-            "%s \'%s\' requires %zu argument%s, got %zu",
-            is_func ? "function" : "constructor",
+            "function \'%s\' requires %zu argument%s, got %zu",
             name,
             param_size,
             param_size == 1 ? "" : "s",
@@ -216,8 +202,6 @@ ast_t* visitor_visit(visitor_t* visitor, scope_t* scope, ast_t* node)
       return visitor_visit_for(visitor, scope, node);
     case AST_FUNC_DEF:
       return visitor_visit_func_def(visitor, scope, node);
-    case AST_STRUCT_DEF:
-      return visitor_visit_struct_def(visitor, scope, node);
     case AST_RETURN:
       return visitor_visit_return(visitor, scope, node);
     case AST_UNARY:
@@ -264,7 +248,6 @@ static ast_t* visitor_visit_object_lit(visitor_t* visitor, scope_t* scope, ast_t
 {
   ast_t* object = create_ast(AST_OBJECT);
   size_t size = node->object_lit.field_size;
-  object->object.is_lit = true; // made up by literal
   object->object.field_size = size; // field size
   object->object.field_names = node->object_lit.field_names; // assign names
   object->object.field_vals = SEAL_CALLOC(size, sizeof(ast_t*)); // allocate memory for fields values
@@ -322,7 +305,6 @@ static ast_t* visitor_visit_func_call(visitor_t* visitor, scope_t* scope, ast_t*
     size_t arg_size = node->func_call.arg_size;
     kill_if_argsize_ne(visitor, // arguments and parameters size must match
                        node,
-                       true,
                        "len",
                        1,
                        arg_size);
@@ -334,7 +316,6 @@ static ast_t* visitor_visit_func_call(visitor_t* visitor, scope_t* scope, ast_t*
     size_t arg_size = node->func_call.arg_size;
     kill_if_argsize_ne(visitor, // arguments and parameters size must match
                        node,
-                       true,
                        "push",
                        2,
                        arg_size);
@@ -348,7 +329,6 @@ static ast_t* visitor_visit_func_call(visitor_t* visitor, scope_t* scope, ast_t*
     size_t arg_size = node->func_call.arg_size;
     kill_if_argsize_ne(visitor, // arguments and parameters size must match
                        node,
-                       true,
                        "pop",
                        1,
                        arg_size);
@@ -368,7 +348,6 @@ static ast_t* visitor_visit_func_call(visitor_t* visitor, scope_t* scope, ast_t*
     size_t arg_size = node->func_call.arg_size;
     kill_if_argsize_ne(visitor, // arguments and parameters size must match
                        node,
-                       true,
                        "fopen",
                        2,
                        arg_size);
@@ -383,7 +362,6 @@ static ast_t* visitor_visit_func_call(visitor_t* visitor, scope_t* scope, ast_t*
     size_t arg_size = node->func_call.arg_size;
     kill_if_argsize_ne(visitor, // arguments and parameters size must match
                        node,
-                       true,
                        "fread",
                        1,
                        arg_size);
@@ -395,7 +373,6 @@ static ast_t* visitor_visit_func_call(visitor_t* visitor, scope_t* scope, ast_t*
     size_t arg_size = node->func_call.arg_size;
     kill_if_argsize_ne(visitor, // arguments and parameters size must match
                        node,
-                       true,
                        "fclose",
                        1,
                        arg_size);
@@ -407,7 +384,6 @@ static ast_t* visitor_visit_func_call(visitor_t* visitor, scope_t* scope, ast_t*
     size_t arg_size = node->func_call.arg_size;
     kill_if_argsize_ne(visitor, // arguments and parameters size must match
                        node,
-                       true,
                        "fwrite",
                        2,
                        arg_size);
@@ -453,7 +429,6 @@ static ast_t* visitor_visit_func_call(visitor_t* visitor, scope_t* scope, ast_t*
 
   kill_if_argsize_ne(visitor, // arguments and parameters size must match
                      node,
-                     true,
                      called->func_def.name,
                      called->func_def.param_size,
                      arg_size);
@@ -484,47 +459,6 @@ static ast_t* visitor_visit_func_call(visitor_t* visitor, scope_t* scope, ast_t*
   /*gc_print_ret(visitor->gc);*/
   /*gc_print(visitor->gc);*/
   return visitor_visit(visitor, NULL, returned_val);
-}
-static ast_t* visitor_visit_constructor(ast_t* constructor, visitor_t* visitor, scope_t* scope, ast_t* node)
-{
-  // constructor is 'struct_def'
-  scope_t local_scope; // allocate local scope on stack
-  init_scope(&local_scope, NULL); // initialize local scope without outer scope
-
-  size_t arg_size = node->func_call.arg_size;
-
-
-  kill_if_argsize_ne(visitor, // arguments and parameters size must match
-                     node,
-                     false,
-                     constructor->struct_def.name,
-                     constructor->struct_def.param_size,
-                     arg_size);
-
-  for (int i = 0; i < arg_size; i++) { // push variables to local scope
-    ast_t* arg_var = create_var_ast(constructor->struct_def.param_names[i],
-                                    visitor_visit(visitor, scope, node->func_call.args[i]),
-                                    false,
-                                    node->line);
-    scope_push_var(&local_scope, arg_var);
-  }
-
-  // create object, assign its fields and return
-  ast_t* object = create_ast(AST_OBJECT);
-  object->object.is_lit = false;
-  object->object.def = constructor;
-  object->object.field_size = constructor->struct_def.field_size;
-  object->object.field_names = constructor->struct_def.field_names;
-  // allocate memory, visit and assign its fields
-  object->object.field_vals = SEAL_CALLOC(constructor->struct_def.field_size, sizeof(ast_t*));
-  for (int i = 0; i < constructor->struct_def.field_size; i++) {
-    object->object.field_vals[i] = visitor_visit(visitor, &local_scope, constructor->struct_def.field_exprs[i]);
-    gc_retain(object->object.field_vals[i]);
-  }
-  
-  gc_free_scope(&local_scope);
-
-  return object;
 }
 static ast_t* visitor_visit_subscript(visitor_t* visitor, scope_t* scope, ast_t* node)
 {
@@ -889,11 +823,6 @@ static ast_t* visitor_visit_func_def(visitor_t* visitor, scope_t* scope, ast_t* 
     list_push(&visitor->ext_func_defs, node);
   return node;
 }
-static ast_t* visitor_visit_struct_def(visitor_t* visitor, scope_t* scope, ast_t* node)
-{
-  list_push(&visitor->struct_defs, node);
-  return node;
-}
 /* block control */
 static ast_t* visitor_visit_return(visitor_t* visitor, scope_t* scope, ast_t* node)
 {
@@ -1251,8 +1180,7 @@ static ast_t* visitor_visit_assign(visitor_t* visitor, scope_t* scope, ast_t* no
       if (found) break;
       char err[ERR_LEN];
       sprintf(err,
-              "%sobject has no field named \'%s\'",
-              !main->object.is_lit ? main->object.def->struct_def.name : "",
+              "object has no field named \'%s\'",
               mem->var_ref.name);
       return visitor_error(visitor, mem, err);
     }
