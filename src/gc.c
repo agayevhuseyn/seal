@@ -2,6 +2,9 @@
 
 bool gc_free_ast(ast_t* node)
 {
+#if !GC_ACTIVE
+  return 0;
+#endif
   // temporary solution
   //if (node->type < AST_NULL || node->type > AST_VARIABLE) return true;
   if (node->is_static || node->ref_counter > 0) {

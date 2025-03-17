@@ -7,6 +7,7 @@
 #include "list.h"
 #include "scope.h"
 
+#define GC_ACTIVE 1
 #define GC_DEBUG 0
 
 typedef struct {
@@ -28,6 +29,9 @@ static inline void gc_release(ast_t* node)
 
 static void gc_flush(gc_t* gc)
 {
+#if !GC_ACTIVE
+  return;
+#endif
   // READ AND ANALYZE THIS CODE
   list_t **current = &gc->tracked;
   int len = 0;
@@ -56,6 +60,9 @@ static void gc_flush(gc_t* gc)
 // TODO IMPLEMENT
 static void gc_free_scope(scope_t* scope)
 {
+#if !GC_ACTIVE
+  return;
+#endif
   /*
   list_iterate(scope->var_list) {
     ast_t* var = it->val;
@@ -77,6 +84,9 @@ static void gc_free_scope(scope_t* scope)
 
 static void gc_track(gc_t* gc, ast_t* tracked)
 {
+#if !GC_ACTIVE
+  return;
+#endif
   if (tracked->is_static || tracked->type == AST_RETURNED_VAL) return;
   // last way
   list_iterate(gc->tracked) {
@@ -89,6 +99,9 @@ static void gc_track(gc_t* gc, ast_t* tracked)
 
 static void gc_track_ret(gc_t* gc, ast_t* tracked)
 {
+#if !GC_ACTIVE
+  return;
+#endif
   if (tracked->is_static || tracked->type != AST_RETURNED_VAL) return;
   // last way
   list_iterate(gc->ret_tracked) {
@@ -102,6 +115,9 @@ static void gc_track_ret(gc_t* gc, ast_t* tracked)
 
 static void gc_flush_ret(gc_t* gc)
 {
+#if !GC_ACTIVE
+  return;
+#endif
   // READ AND ANALYZE THIS CODE
   list_t **current = &gc->ret_tracked;
   int len = 0;
