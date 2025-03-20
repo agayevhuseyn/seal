@@ -27,6 +27,32 @@ static inline void gc_release(ast_t* node)
   node->ref_counter--;
 }
 
+static inline void gc_print(gc_t* gc)
+{
+  int len = 0;
+  list_iterate(gc->tracked) {
+    printf("ref counter: %d:\n", it->val->ref_counter);
+    print_ast(it->val);
+    len++;
+  }
+  if (len == 0) {
+    printf("GC is empty\n");
+  }
+}
+
+static inline void gc_print_ret(gc_t* gc)
+{
+  int len = 0;
+  list_iterate(gc->ret_tracked) {
+    printf("static: %d, ref counter: %d:\n", it->val->is_static, it->val->ref_counter);
+    print_ast(it->val);
+    len++;
+  }
+  if (len == 0) {
+    printf("GC is empty\n");
+  }
+}
+
 static void gc_flush(gc_t* gc)
 {
 #if !GC_ACTIVE
@@ -143,32 +169,6 @@ static void gc_flush_ret(gc_t* gc)
 #if GC_DEBUG
   printf("GC LEN: %d\n", len);
 #endif
-}
-
-static inline void gc_print(gc_t* gc)
-{
-  int len = 0;
-  list_iterate(gc->tracked) {
-    printf("ref counter: %d:\n", it->val->ref_counter);
-    print_ast(it->val);
-    len++;
-  }
-  if (len == 0) {
-    printf("GC is empty\n");
-  }
-}
-
-static inline void gc_print_ret(gc_t* gc)
-{
-  int len = 0;
-  list_iterate(gc->ret_tracked) {
-    printf("static: %d, ref counter: %d:\n", it->val->is_static, it->val->ref_counter);
-    print_ast(it->val);
-    len++;
-  }
-  if (len == 0) {
-    printf("GC is empty\n");
-  }
 }
 
 #endif
