@@ -16,6 +16,8 @@
 
 #define MAX_RET_TIME 3
 
+#define MAX_FUNC_STACK_SIZE 1024
+
 typedef long long Seal_int;
 typedef double    Seal_float;
 

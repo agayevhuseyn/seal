@@ -1,6 +1,7 @@
 #include "visitor.h"
 #include "gc.h"
 #include "builtin.h"
+#include "seal.h"
 #include "state.h"
 
 /* for loop */
@@ -445,7 +446,11 @@ static ast_t* visitor_visit_func_call(visitor_t* visitor, scope_t* scope, ast_t*
    * free local scope after visiting body
    * push returned value (if exist) to garbage collector's list
    */
-  visitor->func_call_size++;
+  if (++visitor->func_call_size > MAX_FUNC_STACK_SIZE) {
+    char err[ERR_LEN];
+    sprintf(err, "max function call stack size reached: %d", MAX_FUNC_STACK_SIZE);
+    visitor_error(visitor, node, err);
+  }
 
   // visit body and return
   ast_t* returned_val = visitor_visit(visitor, &local_scope, called->func_def.comp); // should be visited
