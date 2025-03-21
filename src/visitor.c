@@ -876,7 +876,9 @@ static ast_t* visitor_visit_unary(visitor_t* visitor, scope_t* scope, ast_t* nod
 static ast_t* visitor_visit_binary(visitor_t* visitor, scope_t* scope, ast_t* node)
 {
   ast_t* bin_left  = visitor_visit(visitor, scope, node->binary.left);
+  gc_retain(bin_left);
   ast_t* bin_right = visitor_visit(visitor, scope, node->binary.right);
+  gc_release(bin_left);
 
   return visitor_perform_binary(visitor, node, bin_left, bin_right, node->binary.op_type);
 }
