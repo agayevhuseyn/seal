@@ -397,6 +397,17 @@ static ast_t* visitor_visit_func_call(visitor_t* visitor, scope_t* scope, ast_t*
     if (args[1]->type != AST_STRING)
       visitor_error(visitor, node, "fwrite requires string for file");
     visited = builtin_fwrite(args);
+  } else if (strcmp(node->func_call.name, "exit") == 0) {
+    size_t arg_size = node->func_call.arg_size;
+    kill_if_argsize_ne(visitor, // arguments and parameters size must match
+                       node,
+                       "exit",
+                       1,
+                       arg_size);
+    ast_t* arg = visitor_visit(visitor, scope, node->func_call.args[0]);
+    if (arg->type != AST_INT)
+      visitor_error(visitor, node, "exit code must be int type");
+    visited = builtin_exit(arg->integer.val);
   }
   if (visited) {
     gc_track(visitor->gc, visited); // only builtin

@@ -237,4 +237,10 @@ static ast_t* builtin_fwrite(ast_t* args[])
   return ast_null();
 }
 
+static ast_t* builtin_exit(int status)
+{
+  exit(status);
+  return ast_null();
+}
+
 #endif

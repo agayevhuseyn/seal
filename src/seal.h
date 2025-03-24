@@ -37,7 +37,8 @@ typedef double    Seal_float;
                 "int",\
                 "float",\
                 "str",\
-                "bool"})
+                "bool",\
+                "exit"})
 
 #define RESERVED_NAMES_SIZE (sizeof(RESERVED_NAMES) / sizeof(RESERVED_NAMES[0]))
 
