@@ -5,6 +5,7 @@
 
 #include "ast.h"
 #include "gc.h"
+#include "sealtypes.h"
 
 static inline ast_t* func_error(const char* name, ast_t* fcall, const char* err)
 {
@@ -12,6 +13,62 @@ static inline ast_t* func_error(const char* name, ast_t* fcall, const char* err)
   exit(1);
   return ast_null();
 }
+
+static void check_arg_size(ast_t* fcall_node, const char* func_name, size_t arg_size, size_t type_size) {
+  if (arg_size != type_size) {
+    char err[ERR_LEN];
+    sprintf(err, "expected %lu arg%s, got %lu", type_size, type_size > 1 ? "s" : "\0", arg_size);
+    func_error(func_name, fcall_node, err);
+  }
+}
+static void check_args(ast_t* fcall_node,
+                       const char* func_name,
+                       int expected_types[],
+                       ast_t* args[],
+                       size_t arg_size)
+{
+  for (int i = 0; i < arg_size; i++) {
+    sealobj* arg = args[i];
+    switch (expected_types[i]) {
+      case SEAL_NULL:
+        if (IS_SEAL_NULL(arg)) continue;
+        break;
+      case SEAL_INT:
+        if (IS_SEAL_INT(arg)) continue;
+        break;
+      case SEAL_FLOAT:
+        if (IS_SEAL_FLOAT(arg)) continue;
+        break;
+      case SEAL_STRING:
+        if (IS_SEAL_STRING(arg)) continue;
+        break;
+      case SEAL_BOOL:
+        if (IS_SEAL_BOOL(arg)) continue;
+        break;
+      case SEAL_LIST:
+        if (IS_SEAL_LIST(arg)) continue;
+        break;
+      case SEAL_OBJECT:
+        if (IS_SEAL_OBJECT(arg)) continue;
+        break;
+      case SEAL_NUMBER:
+        if (IS_SEAL_NUMBER(arg)) continue;
+        break;
+      case SEAL_ITERABLE:
+        if (IS_SEAL_ITERABLE(arg)) continue;
+        break;
+    }
+
+    char err[ERR_LEN];
+    sprintf(err,
+            "expected arg %d to be %s, got %s",
+            i + 1,
+            seal_type_name(expected_types[i]),
+            seal_type_name(arg->type));
+    func_error(func_name, fcall_node, err);
+  }
+}
+
 
 static ast_t* builtin_writeln(ast_t* args[], size_t arg_size, bool is_main, bool is_single)
 {
@@ -67,9 +124,9 @@ static ast_t* builtin_writeln(ast_t* args[], size_t arg_size, bool is_main, bool
   return ast_null();
 }
 
-static ast_t* builtin_readln(ast_t* args[], size_t arg_size)
+static ast_t* builtin_readln(ast_t* arg)
 {
-  if (arg_size > 0) printf("%s", args[0]->string.val);
+  if (arg) builtin_writeln(&arg, 1, false, true);
   ast_t* line = create_ast(AST_STRING);
   line->string.val = (char*)SEAL_CALLOC(1, sizeof(char));
   
@@ -198,7 +255,7 @@ static ast_t* builtin_format(ast_t* fcall, ast_t* args[], size_t arg_size)
   return res_ast;
 }
 
-static ast_t* builtin_fopen(ast_t* args[])
+static ast_t* builtin_fopen(ast_t* args[2])
 {
   FILE* file = fopen(args[0]->string.val, args[1]->string.val);
   if (!file) return ast_null();
@@ -230,16 +287,16 @@ static ast_t* builtin_fclose(ast_t* arg)
   return ast_null();
 }
 
-static ast_t* builtin_fwrite(ast_t* args[])
+static ast_t* builtin_fwrite(ast_t* args[2])
 {
   FILE* file = (FILE*) args[0]->integer.val;
   fprintf(file, "%s", args[1]->string.val);
   return ast_null();
 }
 
-static ast_t* builtin_exit(int status)
+static ast_t* builtin_exit(ast_t* arg)
 {
-  exit(status);
+  exit(arg->integer.val);
   return ast_null();
 }
 

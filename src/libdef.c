@@ -1,22 +1,5 @@
 #include "libdef.h"
 
-static inline const char*
-seal_type_name(seal_type type)
-{
-  switch (type) {
-    case SEAL_NULL:     return "null";
-    case SEAL_INT:      return "integer";
-    case SEAL_FLOAT:    return "float";
-    case SEAL_STRING:   return "string";
-    case SEAL_BOOL:     return "bool";
-    case SEAL_LIST:     return "list";
-    case SEAL_OBJECT:   return "object";
-    case SEAL_NUMBER:   return "number";
-    case SEAL_ITERABLE: return "iterable";
-    default:            return "SEAL TYPE NOT RECOGNIZED";
-  }
-}
-
 void seal_func_err(const char* libname, const char* func_name, const char* err)
 {
   fprintf(stderr,
@@ -90,7 +73,7 @@ sealobj* seal_get_obj_mem(sealobj* obj,
 {
   if (!IS_SEAL_OBJECT(obj)) {
     char err[ERR_LEN];
-    sprintf(err, "required object, not \'%s\', by member \'%s\'\n", seal_type_name(obj->type), mem_name);
+    sprintf(err, "required object, not \'%s\', by member \'%s\'", seal_type_name(obj->type), mem_name);
     seal_func_err(libname, func_name, err);
   } 
   for (int i = 0; i < obj->object.field_size; i++) {

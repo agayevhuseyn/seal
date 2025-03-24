@@ -33,7 +33,6 @@ typedef double    Seal_float;
                 "push",\
                 "pop",\
                 "assert",\
-                "typeof",\
                 "int",\
                 "float",\
                 "str",\
