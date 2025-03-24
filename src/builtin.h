@@ -57,6 +57,9 @@ static void check_args(ast_t* fcall_node,
       case SEAL_ITERABLE:
         if (IS_SEAL_ITERABLE(arg)) continue;
         break;
+      case SEAL_ANY:
+        if (IS_SEAL_ANY(arg)) continue;
+        break;
     }
 
     char err[ERR_LEN];
