@@ -129,7 +129,7 @@ static void lexer_get_token(lexer_t* lexer)
     case '\n':
       lexer->cur_indent = 0;
       encountered_word  = false;
-      if (lexer->encountered_word && lexer->paren_lines_ptr == 0) {
+      if (lexer->encountered_word && lexer->paren_stack_ptr == 0) {
         tok = create_token(TOK_NEWL, NULL, lexer->line);
       }
       lexer->token_after_comment = false;
