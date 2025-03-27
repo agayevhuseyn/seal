@@ -21,7 +21,6 @@ typedef struct {
   int         cur_indent;
   bool        encountered_word;
   bool        token_after_comment;
-  bool        token_after_paren;
 } lexer_t;
 
 void init_lexer(lexer_t*, const char*);

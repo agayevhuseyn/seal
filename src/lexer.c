@@ -56,7 +56,6 @@ inline void init_lexer(lexer_t* lexer, const char* file_path)
   lexer->cur_indent          = 0;
   lexer->encountered_word    = false;
   lexer->token_after_comment = false;
-  lexer->token_after_paren   = false;
 
   lexer->indent_stack_ptr = lexer->paren_stack_ptr = lexer->paren_lines_ptr = 0; // init to 0
 
@@ -134,7 +133,6 @@ static void lexer_get_token(lexer_t* lexer)
         tok = create_token(TOK_NEWL, NULL, lexer->line);
       }
       lexer->token_after_comment = false;
-      lexer->token_after_paren   = false;
       lexer->line++;
       break;
     case '.':
@@ -320,20 +318,11 @@ static void lexer_get_token(lexer_t* lexer)
       char err[ERR_LEN];
       sprintf(err, "token after comment block not allowed");
       lexer_error(lexer, err, 0);
-    } else if (lexer->token_after_paren) {
-      /*char err[ERR_LEN];*/
-      /*sprintf(err, "token after final parenthesis not allowed");*/
-      /*lexer_error(lexer, err, 0);*/
     }
     lexer_add_token(lexer, tok);
   }
 
   lexer->encountered_word = encountered_word;
-
-  /* assuming it is parenthesis */
-  if (is_closing_paren && !same_line_paren && lexer->paren_stack_ptr == 0) {
-    lexer->token_after_paren = true;
-  }
 }
 
 /* char functions */
