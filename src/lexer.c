@@ -276,8 +276,6 @@ static void lexer_get_token(lexer_t* lexer)
   }
 
   // parenthesis stack
-  bool is_closing_paren = false;
-  bool same_line_paren = false;
   if (tok && tok->type >= TOK_LPAREN && tok->type <= TOK_RBRACE) {
     if (tok->type == TOK_LPAREN || tok->type == TOK_LBRACK || tok->type == TOK_LBRACE) {
       stack_push(c, lexer->paren_stack, MAX_NESTED_PAREN_LEVEL, &lexer->paren_stack_ptr);
@@ -290,9 +288,6 @@ static void lexer_get_token(lexer_t* lexer)
       }
       int popped = stack_pop(lexer->paren_stack, MAX_NESTED_PAREN_LEVEL, &lexer->paren_stack_ptr);
       int popped_line = stack_pop(lexer->paren_lines_stack, MAX_NESTED_PAREN_LEVEL, &lexer->paren_lines_ptr);
-      if (lexer->line == popped_line) {
-        same_line_paren = true;
-      }
       switch (c) {
         case ')':
           if (popped != '(') goto error;
@@ -309,7 +304,6 @@ static void lexer_get_token(lexer_t* lexer)
           lexer_error(lexer, err, 0);
         }
       }
-      is_closing_paren = true;
     }
   }
 
