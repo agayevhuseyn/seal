@@ -262,7 +262,7 @@ static void lexer_get_token(lexer_t* lexer)
         if (lexer->cur_indent != lexer->indent_stack[lexer->indent_stack_ptr]) {
           if (lexer->indent_stack_ptr > 0) {
             goto pop_indent;
-          } else if (lexer->indent_stack_ptr == 0) {
+          } else {
             lexer_error(lexer, "mismatch unindetation", 0);
           }
         }
