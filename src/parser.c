@@ -919,7 +919,12 @@ static ast_t* parser_parse_primary(parser_t* parser)
        parser_match(parser, TOK_MINUS_ASSIGN) ||
        parser_match(parser, TOK_MUL_ASSIGN) ||
        parser_match(parser, TOK_DIV_ASSIGN) ||
-       parser_match(parser, TOK_MOD_ASSIGN)) &&
+       parser_match(parser, TOK_MOD_ASSIGN) ||
+       parser_match(parser, TOK_BAND_ASSIGN) ||
+       parser_match(parser, TOK_BOR_ASSIGN) || 
+       parser_match(parser, TOK_XOR_ASSIGN) || 
+       parser_match(parser, TOK_SHL_ASSIGN) || 
+       parser_match(parser, TOK_SHR_ASSIGN)) &&
       is_lvalue(main)) {
     ast_t* assign = static_create_ast(AST_ASSIGN, parser_line(parser));
     assign->assign.op_type = parser_advance(parser)->type; // assign type
