@@ -678,13 +678,55 @@ static ast_t* parser_parse_or(parser_t* parser)
 }
 static ast_t* parser_parse_and(parser_t* parser)
 {
-  ast_t* left = parser_parse_equal(parser);
+  ast_t* left = parser_parse_bor(parser);
 
   while (parser_match(parser, TOK_AND)) {
     ast_t* bin = static_create_ast(AST_BINARY_BOOL, parser_line(parser));
     bin->binary_bool.left = left;
     bin->binary_bool.op_type = parser_advance(parser)->type; // optype
-    bin->binary_bool.right = parser_parse_equal(parser);
+    bin->binary_bool.right = parser_parse_bor(parser);
+    left = bin;
+  }
+
+  return left;
+}
+static ast_t* parser_parse_bor(parser_t* parser)
+{
+  ast_t* left = parser_parse_xor(parser);
+
+  while (parser_match(parser, TOK_XOR)) {
+    ast_t* bin = static_create_ast(AST_BINARY, parser_line(parser));
+    bin->binary.left = left;
+    bin->binary.op_type = parser_advance(parser)->type; // optype
+    bin->binary.right = parser_parse_xor(parser);
+    left = bin;
+  }
+
+  return left;
+}
+static ast_t* parser_parse_xor(parser_t* parser)
+{
+  ast_t* left = parser_parse_band(parser);
+
+  while (parser_match(parser, TOK_XOR)) {
+    ast_t* bin = static_create_ast(AST_BINARY, parser_line(parser));
+    bin->binary.left = left;
+    bin->binary.op_type = parser_advance(parser)->type; // optype
+    bin->binary.right = parser_parse_band(parser);
+    left = bin;
+  }
+
+  return left;
+}
+static ast_t* parser_parse_band(parser_t* parser)
+{
+  ast_t* left = parser_parse_equal(parser);
+
+  while (parser_match(parser, TOK_BAND)) {
+    ast_t* bin = static_create_ast(AST_BINARY, parser_line(parser));
+    bin->binary.left = left;
+    bin->binary.op_type = parser_advance(parser)->type; // optype
+    bin->binary.right = parser_parse_equal(parser);
     left = bin;
   }
 
@@ -707,7 +749,7 @@ static ast_t* parser_parse_equal(parser_t* parser)
 }
 static ast_t* parser_parse_compare(parser_t* parser)
 {
-  ast_t* left = parser_parse_term(parser);
+  ast_t* left = parser_parse_shift(parser);
 
   while (parser_match(parser, TOK_GT) ||
          parser_match(parser, TOK_GE) ||
@@ -716,7 +758,22 @@ static ast_t* parser_parse_compare(parser_t* parser)
     ast_t* bin = static_create_ast(AST_BINARY, parser_line(parser));
     bin->binary.left = left;
     bin->binary.op_type = parser_advance(parser)->type; // optype
-    bin->binary.right = parser_parse_term(parser);
+    bin->binary.right = parser_parse_shift(parser);
+    left = bin;
+  }
+
+  return left;
+}
+static ast_t* parser_parse_shift(parser_t* parser)
+{
+  ast_t* left = parser_parse_term(parser);
+
+  while (parser_match(parser, TOK_SHL) ||
+         parser_match(parser, TOK_SHR)) {
+    ast_t* bin = static_create_ast(AST_BINARY, parser_line(parser));
+    bin->binary.left = left;
+    bin->binary.op_type = parser_advance(parser)->type; // optype
+    bin->binary.right = parser_parse_factor(parser);
     left = bin;
   }
 
@@ -758,7 +815,8 @@ static ast_t* parser_parse_unary(parser_t* parser)
   if (parser_match(parser, TOK_NOT) ||
       parser_match(parser, TOK_MINUS) ||
       parser_match(parser, TOK_PLUS) ||
-      parser_match(parser, TOK_TYPEOF)) {
+      parser_match(parser, TOK_TYPEOF) ||
+      parser_match(parser, TOK_BNOT)) {
     ast_t* ast = static_create_ast(AST_UNARY, parser_line(parser));
     ast->unary.op_type = parser_advance(parser)->type; // optype
     ast->unary.expr = parser_parse_unary(parser);
