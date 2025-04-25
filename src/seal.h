@@ -5,7 +5,6 @@
 #include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
-#include <math.h>
 
 #define SEAL_MALLOC(size)       malloc(size)
 #define SEAL_CALLOC(n, size)    calloc(n, size)
