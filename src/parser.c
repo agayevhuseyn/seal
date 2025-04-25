@@ -694,7 +694,7 @@ static ast_t* parser_parse_bor(parser_t* parser)
 {
   ast_t* left = parser_parse_xor(parser);
 
-  while (parser_match(parser, TOK_XOR)) {
+  while (parser_match(parser, TOK_BOR)) {
     ast_t* bin = static_create_ast(AST_BINARY, parser_line(parser));
     bin->binary.left = left;
     bin->binary.op_type = parser_advance(parser)->type; // optype
