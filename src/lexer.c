@@ -183,11 +183,26 @@ static void lexer_get_token(lexer_t* lexer)
       else
         tok = create_token(TOK_MOD, NULL, lexer->line);
       break;
+    case '&':
+      if (lexer_match(lexer, '='))
+        tok = create_token(TOK_BAND_ASSIGN, NULL, lexer->line);
+      else
+        tok = create_token(TOK_BAND, NULL, lexer->line);
+      break;
+    case '|':
+      if (lexer_match(lexer, '='))
+        tok = create_token(TOK_BOR_ASSIGN, NULL, lexer->line);
+      else
+        tok = create_token(TOK_BOR, NULL, lexer->line);
+      break;
     case '^':
       if (lexer_match(lexer, '='))
-        tok = create_token(TOK_POW_ASSIGN, NULL, lexer->line);
+        tok = create_token(TOK_XOR_ASSIGN, NULL, lexer->line);
       else
-        tok = create_token(TOK_POW, NULL, lexer->line);
+        tok = create_token(TOK_XOR, NULL, lexer->line);
+      break;
+    case '~':
+      tok = create_token(TOK_BNOT, NULL, lexer->line);
       break;
     case '=': // ==
       if (lexer_match(lexer, '='))
@@ -204,12 +219,22 @@ static void lexer_get_token(lexer_t* lexer)
     case '>': // >=
       if (lexer_match(lexer, '='))
         tok = create_token(TOK_GE, NULL, lexer->line);
+      else if (lexer_match(lexer, '>'))
+        if (lexer_match(lexer, '='))
+          tok = create_token(TOK_SHR_ASSIGN, NULL, lexer->line);
+        else
+          tok = create_token(TOK_SHR, NULL, lexer->line);
       else
         tok = create_token(TOK_GT, NULL, lexer->line);
       break;
     case '<': // <=
       if (lexer_match(lexer, '='))
         tok = create_token(TOK_LE, NULL, lexer->line);
+      else if (lexer_match(lexer, '<'))
+        if (lexer_match(lexer, '='))
+          tok = create_token(TOK_SHL_ASSIGN, NULL, lexer->line);
+        else
+          tok = create_token(TOK_SHL, NULL, lexer->line);
       else
         tok = create_token(TOK_LT, NULL, lexer->line);
       break;
