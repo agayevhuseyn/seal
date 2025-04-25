@@ -895,9 +895,6 @@ static ast_t* visitor_perform_binary(visitor_t* visitor,
       case TOK_MOD:
         result = left % right;
         break;
-      case TOK_POW:
-        result = pow(left, right);
-        break;
       default:
         binary_op_error(visitor, node, "integer", op);
         break;
@@ -935,9 +932,6 @@ static ast_t* visitor_perform_binary(visitor_t* visitor,
         break;
       case TOK_DIV:
         result = left / right;
-        break;
-      case TOK_POW:
-        result = pow(left, right);
         break;
       default:
         binary_op_error(visitor, node, "float", op);
@@ -977,9 +971,6 @@ static ast_t* visitor_perform_binary(visitor_t* visitor,
         break;
       case TOK_DIV:
         result = left / right;
-        break;
-      case TOK_POW:
-        result = pow(left, right);
         break;
       default:
         binary_op_error(visitor, node, "float", op);
@@ -1096,7 +1087,6 @@ static ast_t* visitor_visit_assign(visitor_t* visitor, scope_t* scope, ast_t* no
       case TOK_MUL_ASSIGN   : aug_op = TOK_MUL;   break;
       case TOK_DIV_ASSIGN   : aug_op = TOK_DIV;   break;
       case TOK_MOD_ASSIGN   : aug_op = TOK_MOD;   break;
-      case TOK_POW_ASSIGN   : aug_op = TOK_POW;   break;
     }
   }
   switch (symbol->type) {

@@ -61,7 +61,6 @@ static ast_t* parser_parse_equal(parser_t*);
 static ast_t* parser_parse_compare(parser_t*);
 static ast_t* parser_parse_term(parser_t*);
 static ast_t* parser_parse_factor(parser_t*);
-static ast_t* parser_parse_pow(parser_t*);
 static ast_t* parser_parse_unary(parser_t*);
 static ast_t* parser_parse_primary(parser_t*);
 /* parse others */

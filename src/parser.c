@@ -739,7 +739,7 @@ static ast_t* parser_parse_term(parser_t* parser)
 }
 static ast_t* parser_parse_factor(parser_t* parser)
 {
-  ast_t* left = parser_parse_pow(parser);
+  ast_t* left = parser_parse_unary(parser);
 
   while (parser_match(parser, TOK_MUL) ||
          parser_match(parser, TOK_DIV) ||
@@ -747,21 +747,7 @@ static ast_t* parser_parse_factor(parser_t* parser)
     ast_t* bin = static_create_ast(AST_BINARY, parser_line(parser));
     bin->binary.left = left;
     bin->binary.op_type = parser_advance(parser)->type; // optype
-    bin->binary.right = parser_parse_pow(parser);
-    left = bin;
-  }
-
-  return left;
-}
-static ast_t* parser_parse_pow(parser_t* parser)
-{
-  ast_t* left = parser_parse_unary(parser);
-
-  if (parser_match(parser, TOK_POW)) {
-    ast_t* bin = static_create_ast(AST_BINARY, parser_line(parser));
-    bin->binary.left = left;
-    bin->binary.op_type = parser_advance(parser)->type; // optype
-    bin->binary.right = parser_parse_pow(parser);
+    bin->binary.right = parser_parse_unary(parser);
     left = bin;
   }
 
@@ -875,8 +861,7 @@ static ast_t* parser_parse_primary(parser_t* parser)
        parser_match(parser, TOK_MINUS_ASSIGN) ||
        parser_match(parser, TOK_MUL_ASSIGN) ||
        parser_match(parser, TOK_DIV_ASSIGN) ||
-       parser_match(parser, TOK_MOD_ASSIGN) ||
-       parser_match(parser, TOK_POW_ASSIGN)) &&
+       parser_match(parser, TOK_MOD_ASSIGN)) &&
       is_lvalue(main)) {
     ast_t* assign = static_create_ast(AST_ASSIGN, parser_line(parser));
     assign->assign.op_type = parser_advance(parser)->type; // assign type
