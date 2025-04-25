@@ -43,31 +43,40 @@
 #define TOK_MUL     35   // *
 #define TOK_DIV     36   // /
 #define TOK_MOD     37   // %
-#define TOK_POW     38   // ^
-#define TOK_ASSIGN  39   // =
-#define TOK_PLUS_ASSIGN   40   // +=
-#define TOK_MINUS_ASSIGN  41   // -=
-#define TOK_MUL_ASSIGN    42   // *=
-#define TOK_DIV_ASSIGN    43   // /=
-#define TOK_MOD_ASSIGN    44   // %=
-#define TOK_POW_ASSIGN    45   // ^=
-#define TOK_EQ      46   // ==
-#define TOK_NE      47   // !=
-#define TOK_GT      48   // >
-#define TOK_GE      49   // >=
-#define TOK_LT      50   // <
-#define TOK_LE      51   // <=
+#define TOK_BAND    38   // &
+#define TOK_BOR     39   // |
+#define TOK_XOR     40   // ^
+#define TOK_SHL     41   // <<
+#define TOK_SHR     42   // >>
+#define TOK_BNOT    43   // ~
+#define TOK_ASSIGN  44   // =
+#define TOK_PLUS_ASSIGN   45   // +=
+#define TOK_MINUS_ASSIGN  46   // -=
+#define TOK_MUL_ASSIGN    47   // *=
+#define TOK_DIV_ASSIGN    48   // /=
+#define TOK_MOD_ASSIGN    49   // %=
+#define TOK_BAND_ASSIGN   50   // &=
+#define TOK_BOR_ASSIGN    51   // |=
+#define TOK_XOR_ASSIGN    52   // ^=
+#define TOK_SHL_ASSIGN    53   // <<=
+#define TOK_SHR_ASSIGN    54   // >>=
+#define TOK_EQ      55   // ==
+#define TOK_NE      56   // !=
+#define TOK_GT      57   // >
+#define TOK_GE      58   // >=
+#define TOK_LT      59   // <
+#define TOK_LE      60   // <=
 /* parenthesis */
-#define TOK_LPAREN  52   // (
-#define TOK_RPAREN  53   // )
-#define TOK_LBRACK  54   // [
-#define TOK_RBRACK  55   // ]
-#define TOK_LBRACE  56   // {
-#define TOK_RBRACE  57   // }
+#define TOK_LPAREN  61   // (
+#define TOK_RPAREN  62   // )
+#define TOK_LBRACK  63   // [
+#define TOK_RBRACK  64   // ]
+#define TOK_LBRACE  65   // {
+#define TOK_RBRACE  66   // }
 /* block-related */
-#define TOK_NEWL    58   // \n
-#define TOK_INDENT  59   // \t or \s
-#define TOK_DEDENT  60   // <-\t or \s
+#define TOK_NEWL    67   // \n
+#define TOK_INDENT  68   // \t or \s
+#define TOK_DEDENT  69   // <-\t or \s
 
 #define TOK_LAST TOK_DEDENT    // last token
 
@@ -120,14 +129,23 @@ static inline const char* token_type_name(int type)
     case TOK_MUL    : return "TOK_MUL";
     case TOK_DIV    : return "TOK_DIV";
     case TOK_MOD    : return "TOK_MOD";
-    case TOK_POW    : return "TOK_POW";
+    case TOK_BAND   : return "TOK_BAND";
+    case TOK_BOR    : return "TOK_BOR";
+    case TOK_XOR    : return "TOK_XOR";
+    case TOK_SHL    : return "TOK_SHL";
+    case TOK_SHR    : return "TOK_SHR";
+    case TOK_BNOT   : return "TOK_BNOT";
     case TOK_ASSIGN : return "TOK_ASSIGN";
     case TOK_PLUS_ASSIGN  : return "TOK_PLUS_ASSIGN";
     case TOK_MINUS_ASSIGN : return "TOK_MINUS_ASSIGN";
     case TOK_MUL_ASSIGN   : return "TOK_MUL_ASSIGN";
     case TOK_DIV_ASSIGN   : return "TOK_DIV_ASSIGN";
     case TOK_MOD_ASSIGN   : return "TOK_MOD_ASSIGN";
-    case TOK_POW_ASSIGN   : return "TOK_POW_ASSIGN";
+    case TOK_BAND_ASSIGN  : return "TOK_BAND_ASSIGN";
+    case TOK_BOR_ASSIGN   : return "TOK_BOR_ASSIGN";
+    case TOK_XOR_ASSIGN   : return "TOK_XOR_ASSIGN";
+    case TOK_SHL_ASSIGN   : return "TOK_SHL_ASSIGN";
+    case TOK_SHR_ASSIGN   : return "TOK_SHR_ASSIGN";
     case TOK_EQ     : return "TOK_EQ";
     case TOK_NE     : return "TOK_NE";
     case TOK_GT     : return "TOK_GT";
@@ -188,14 +206,23 @@ static inline const char* htoken_type_name(int type)
     case TOK_MUL    : return "*";
     case TOK_DIV    : return "/";
     case TOK_MOD    : return "%";
-    case TOK_POW    : return "^";
+    case TOK_BAND   : return "&";
+    case TOK_BOR    : return "|";
+    case TOK_XOR    : return "^";
+    case TOK_SHL    : return "<<";
+    case TOK_SHR    : return ">>";
+    case TOK_BNOT   : return "~";
     case TOK_ASSIGN : return "=";
     case TOK_PLUS_ASSIGN  : return "+=";
     case TOK_MINUS_ASSIGN : return "-=";
     case TOK_MUL_ASSIGN   : return "*=";
     case TOK_DIV_ASSIGN   : return "/=";
     case TOK_MOD_ASSIGN   : return "%=";
-    case TOK_POW_ASSIGN   : return "^=";
+    case TOK_BAND_ASSIGN  : return "&=";
+    case TOK_BOR_ASSIGN   : return "|=";
+    case TOK_XOR_ASSIGN   : return "^=";
+    case TOK_SHL_ASSIGN   : return "<<=";
+    case TOK_SHR_ASSIGN   : return ">>=";
     case TOK_EQ     : return "==";
     case TOK_NE     : return "!=";
     case TOK_GT     : return ">";
