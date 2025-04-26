@@ -62,10 +62,10 @@ typedef struct ast {
   union {
     /* datas */
     struct {
-      Seal_int val;
+      seal_int val;
     } integer;
     struct {
-      Seal_float val;
+      seal_float val;
     } floating;
     struct {
       char* val;

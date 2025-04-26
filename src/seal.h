@@ -13,12 +13,8 @@
 
 #define ERR_LEN 256
 
-#define MAX_RET_TIME 3
-
-#define MAX_FUNC_STACK_SIZE 1024
-
-typedef long long Seal_int;
-typedef double    Seal_float;
+typedef long long seal_int;
+typedef double    seal_float;
 
 #define RESERVED_NAMES ( \
     (char*[]) { "writeln",\
