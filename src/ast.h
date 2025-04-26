@@ -327,15 +327,6 @@ ast_t* ast_null();
 ast_t* ast_true();
 ast_t* ast_false();
 
-/* typeof function returned values */
-ast_t* typeof_int();
-ast_t* typeof_float();
-ast_t* typeof_string();
-ast_t* typeof_bool();
-ast_t* typeof_list();
-ast_t* typeof_map();
-ast_t* typeof_null();
-
 static void print_ast(ast_t* node)
 {
   switch (node->type) {
