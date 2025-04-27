@@ -262,4 +262,4 @@ static void print_tokens(token_t** tokens, size_t token_size)
   }
 }
 
-#endif
+#endif /* SEAL_TOKEN_H */

@@ -43,4 +43,4 @@ static char* lexer_get_lexeme(lexer_t*, int lexeme_type, int str_sur);
 /* other functions */
 static void lexer_ignore_comment(lexer_t*, int comment_type);
 
-#endif
+#endif /* SEAL_LEXER_H */

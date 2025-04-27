@@ -546,4 +546,4 @@ static void print_ast(ast_t* node)
   }
 }
 
-#endif
+#endif /* SEAL_AST_H */

@@ -66,4 +66,4 @@ static inline void print_op(uint8_t* bytes, size_t size)
   printf("\n");
 }
 
-#endif
+#endif /* SEAL_BYTECODE_H */

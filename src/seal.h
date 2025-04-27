@@ -37,4 +37,4 @@ typedef double    seal_float;
 
 #define RESERVED_NAMES_SIZE (sizeof(RESERVED_NAMES) / sizeof(RESERVED_NAMES[0]))
 
-#endif
+#endif /* SEAL_H */

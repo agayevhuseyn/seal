@@ -51,4 +51,4 @@ seal_type_name(int type)
   }
 }
 
-#endif
+#endif /* SEAL_TYPES_H */

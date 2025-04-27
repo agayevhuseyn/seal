@@ -6,4 +6,4 @@
 bool check_if_seal_file(const char* path);
 const char* read_file(const char* path);
 
-#endif
+#endif /* SEAL_IO_H */

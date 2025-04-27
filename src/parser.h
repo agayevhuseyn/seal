@@ -70,4 +70,4 @@ static ast_t* parser_parse_primary(parser_t*);
 /* parse others */
 static ast_t* parser_parse_include(parser_t*);
 
-#endif
+#endif /* SEAL_PARSER_H */
