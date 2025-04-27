@@ -11,41 +11,36 @@
 #define AST_FLOAT         2
 #define AST_STRING        3
 #define AST_BOOL          4
-#define AST_LIST_LIT      5    // static list declaration
-#define AST_LIST          6
-#define AST_OBJECT_LIT    7    // static object declaration
-#define AST_OBJECT        8
-#define AST_VAR_REF       9
-#define AST_FUNC_CALL     10
-#define AST_SUBSCRIPT     11
-#define AST_MEMACC        12
-#define AST_LIB_FUNC_CALL 13
+#define AST_LIST          5
+#define AST_MAP           6
+#define AST_VAR_REF       7
+#define AST_FUNC_CALL     8
+#define AST_SUBSCRIPT     9
+#define AST_MEMACC        10
+#define AST_LIB_FUNC_CALL 11
 /* blocks */
-#define AST_COMP          14
-#define AST_VAR_DEF       15
-#define AST_IF            16
-#define AST_ELSE          17
-#define AST_DOWHILE       18
-#define AST_WHILE         19
-#define AST_FOR           20
-#define AST_FUNC_DEF      21
+#define AST_COMP          12
+#define AST_VAR_DEF       13
+#define AST_IF            14
+#define AST_ELSE          15
+#define AST_DOWHILE       16
+#define AST_WHILE         17
+#define AST_FOR           18
+#define AST_FUNC_DEF      19
 /* block control */
-#define AST_SKIP          22
-#define AST_STOP          23
-#define AST_RETURN        24
-#define AST_RETURNED_VAL  25   // only runtime
+#define AST_SKIP          20
+#define AST_STOP          21
+#define AST_RETURN        22
 /* operations */
-#define AST_UNARY         26
-#define AST_BINARY        27
-#define AST_BINARY_BOOL   28
-#define AST_TERNARY       29
-#define AST_ASSIGN        30
+#define AST_UNARY         23
+#define AST_BINARY        24
+#define AST_BINARY_BOOL   25
+#define AST_TERNARY       26
+#define AST_ASSIGN        27
 /* others */
-#define AST_INCLUDE       31
-/* variable */
-#define AST_VARIABLE      32
+#define AST_INCLUDE       28
 /* last index */
-#define AST_LAST AST_VARIABLE
+#define AST_LAST AST_INCLUDE
 
 #define ast_type(ast) ast->type
 
@@ -76,22 +71,12 @@ typedef struct ast {
     struct {
       size_t mem_size;
       struct ast** mems;
-    } list_lit;
-    struct {
-      size_t mem_size;
-      struct ast** mems;
     } list;
     struct {
       const char** field_names;
       struct ast** field_vals;
       size_t field_size;
-    } object_lit;
-    struct {
-      struct ast* def;
-      const char** field_names;
-      struct ast** field_vals;
-      size_t field_size;
-    } object;
+    } map;
     struct {
       const char* name;
     } var_ref;
@@ -161,9 +146,6 @@ typedef struct ast {
     struct {
       struct ast* expr;
     } _return;
-    struct {
-      struct ast* val;
-    } returned_val;
     /* operations */
     struct {
       struct ast* expr;
@@ -196,12 +178,6 @@ typedef struct ast {
       const char* alias;
       bool has_alias;
     } include;
-    /* variable */
-    struct {
-      const char* name;
-      struct ast* val;
-      bool is_const;
-    } variable;
   };
 } ast_t;
 
@@ -213,10 +189,8 @@ static inline const char* ast_type_name(int type)
     case AST_FLOAT        : return "AST_FLOAT";
     case AST_STRING       : return "AST_STRING";
     case AST_BOOL         : return "AST_BOOL";
-    case AST_LIST_LIT     : return "AST_LIST_LIT";
     case AST_LIST         : return "AST_LIST";
-    case AST_OBJECT_LIT   : return "AST_OBJECT_LIT";
-    case AST_OBJECT       : return "AST_OBJECT";
+    case AST_MAP:           return "AST_MAP";
     case AST_VAR_REF      : return "AST_VAR_REF";
     case AST_FUNC_CALL    : return "AST_FUNC_CALL";
     case AST_SUBSCRIPT    : return "AST_SUBSCRIPT";
@@ -233,14 +207,12 @@ static inline const char* ast_type_name(int type)
     case AST_SKIP         : return "AST_SKIP";
     case AST_STOP         : return "AST_STOP";
     case AST_RETURN       : return "AST_RETURN";
-    case AST_RETURNED_VAL : return "AST_RETURNED_VAL";
     case AST_UNARY        : return "AST_UNARY";
     case AST_BINARY       : return "AST_BINARY";
     case AST_BINARY_BOOL  : return "AST_BINARY_BOOL";
     case AST_TERNARY      : return "AST_TERNARY";
     case AST_ASSIGN       : return "AST_ASSIGN";
     case AST_INCLUDE      : return "AST_INCLUDE";
-    case AST_VARIABLE     : return "AST_VARIABLE";
     default               : return "AST NOT RECOGNIZED";
   }
 }
@@ -253,10 +225,8 @@ static inline const char* hast_type_name(int type)
     case AST_FLOAT        : return "float";
     case AST_STRING       : return "string";
     case AST_BOOL         : return "bool";
-    case AST_LIST_LIT     : return "list literal";
     case AST_LIST         : return "list";
-    case AST_OBJECT_LIT   : return "object literal";
-    case AST_OBJECT       : return "object";
+    case AST_MAP          : return "map";
     case AST_VAR_REF      : return "variable reference";
     case AST_FUNC_CALL    : return "function call";
     case AST_SUBSCRIPT    : return "subscript";
@@ -273,14 +243,12 @@ static inline const char* hast_type_name(int type)
     case AST_SKIP         : return "skip";
     case AST_STOP         : return "stop";
     case AST_RETURN       : return "return";
-    case AST_RETURNED_VAL : return "returned value";
     case AST_UNARY        : return "unary";
     case AST_BINARY       : return "binary";
     case AST_BINARY_BOOL  : return "binary bool";
     case AST_TERNARY      : return "ternary";
     case AST_ASSIGN       : return "assignment";
     case AST_INCLUDE      : return "include";
-    case AST_VARIABLE     : return "variable";
     default               : return "<AST NAME NOT FOUND>";
   }
 }
@@ -307,20 +275,7 @@ static inline ast_t* static_create_ast(int type, int line)
   return ast;
 }
 
-static inline ast_t* create_var_ast(const char* name, ast_t* val, bool is_const, int line)
-{
-  ast_t* ast = create_ast(AST_VARIABLE);
-  
-  ast->variable.name = name;
-  ast->variable.val = val;
-  ast->variable.is_const = is_const;
-  ast->line = line;
-
-  return ast;
-}
-
 void create_const_asts(); /* this function must be called only once */
-void create_typeof_asts(); /* this function must be called only once */
 
 /* constant nodes are called with these functions */
 ast_t* ast_null();
@@ -360,26 +315,26 @@ static void print_ast(ast_t* node)
               hast_type_name(node->type),
               node->boolean.val ? "true" : "false");
       break;
-    case AST_LIST_LIT:
+    case AST_LIST:
       printf("%d: %s: size: %zu, members:\n",
               node->line,
               hast_type_name(node->type),
-              node->list_lit.mem_size);
-      for (int i = 0; i < node->list_lit.mem_size; i++) {
+              node->list.mem_size);
+      for (int i = 0; i < node->list.mem_size; i++) {
         printf("\tmem %d:\n", i);
-        print_ast(node->list_lit.mems[i]);
+        print_ast(node->list.mems[i]);
       }
       break;
-    case AST_OBJECT_LIT:
+    case AST_MAP:
       printf("%d: %s: size: %zu, fields:\n",
               node->line,
               hast_type_name(node->type),
-              node->object_lit.field_size);
-      for (int i = 0; i < node->object_lit.field_size; i++) {
+              node->map.field_size);
+      for (int i = 0; i < node->map.field_size; i++) {
         printf("\t");
-        printf("field %s:\n", node->object_lit.field_names[i]);
+        printf("field %s:\n", node->map.field_names[i]);
         printf("\t");
-        print_ast(node->object_lit.field_vals[i]);
+        print_ast(node->map.field_vals[i]);
       }
       break;
     case AST_VAR_REF:
@@ -533,7 +488,6 @@ static void print_ast(ast_t* node)
               hast_type_name(node->type));
       break;
     case AST_RETURN:
-    case AST_RETURNED_VAL:
       printf("%d: %s, expr:\n",
               node->line,
               hast_type_name(node->type));
@@ -592,13 +546,6 @@ static void print_ast(ast_t* node)
               hast_type_name(node->type),
               node->include.name,
               node->include.has_alias ? node->include.alias : "");
-      break;
-    case AST_VARIABLE:
-      printf("%d: is constant: %d, \'%s\', value:\n",
-              node->line,
-              node->variable.is_const,
-              node->variable.name);
-      print_ast(node->variable.val);
       break;
     default:
       fprintf(stderr, "unexpected AST type: \'%d\'\n", node->type);
