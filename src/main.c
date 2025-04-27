@@ -4,8 +4,8 @@
 #include "io.h"
 #include "lexer.h"
 #include "parser.h"
-#include "visitor.h"
 #include "gc.h"
+#include "vm.h"
 
 static inline void usage(const char* program_name)
 {
@@ -47,19 +47,20 @@ int main(int argc, char** argv)
   /* parsing and generating abstract syntax tree (AST) */
   
   create_const_asts(); // allocate constant ASTs
-  create_typeof_asts(); // allocate typeof instances
   parser_t parser;
   init_parser(&parser, &lexer);
   ast_t* root = parser_parse(&parser);
   if (PRINT_AST)
     print_ast(root);
 
-  visitor_t visitor;
-  gc_t gc = {NULL, NULL};
-  init_visitor(&visitor, &gc, file_path);
-  scope_t global_scope;
-  init_scope(&global_scope, NULL);
-  visitor_visit(&visitor, &global_scope, root);
+  cout_t cout;
+  compile(&cout, root);
+  print_op(cout.bytecodes, cout.bytecode_size);
+
+  vm_t vm;
+  init_vm(&vm, &cout);
+  eval_vm(&vm);
+  //print_stack(&vm);
 
   // FREE EVERYTHING AFTER BEING USED
   
