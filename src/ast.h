@@ -187,7 +187,7 @@ static inline const char* ast_type_name(int type)
     case AST_STRING       : return "AST_STRING";
     case AST_BOOL         : return "AST_BOOL";
     case AST_LIST         : return "AST_LIST";
-    case AST_MAP:           return "AST_MAP";
+    case AST_MAP          : return "AST_MAP";
     case AST_VAR_REF      : return "AST_VAR_REF";
     case AST_FUNC_CALL    : return "AST_FUNC_CALL";
     case AST_SUBSCRIPT    : return "AST_SUBSCRIPT";
@@ -256,8 +256,6 @@ static inline ast_t* create_ast(int type)
   
   ast->type = type;
   ast->line = 0;
-  ast->ref_counter = 0;
-  ast->ret_val_life = 0;
 
   return ast;
 }
@@ -267,7 +265,6 @@ static inline ast_t* static_create_ast(int type, int line)
   ast_t* ast = create_ast(type);
   
   ast->line = line;
-  ast->is_static = true;
 
   return ast;
 }
