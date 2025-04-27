@@ -50,9 +50,6 @@
 typedef struct ast {
   int type;
   int line;
-  int ref_counter;
-  bool is_static;
-  int ret_val_life;
 
   union {
     /* datas */
