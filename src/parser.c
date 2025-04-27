@@ -229,63 +229,63 @@ static inline ast_t* parser_parse_string(parser_t* parser)
 
 static ast_t* parser_parse_list(parser_t* parser)
 {
-  ast_t* ast = static_create_ast(AST_LIST_LIT, parser_line(parser));
-  ast->list_lit.mem_size = 0;
-  ast->list_lit.mems = NULL;
+  ast_t* ast = static_create_ast(AST_LIST, parser_line(parser));
+  ast->list.mem_size = 0;
+  ast->list.mems = NULL;
 
   parser_eat(parser, TOK_LBRACK);
   if (!parser_match(parser, TOK_RBRACK)) {
-    ast->list_lit.mem_size = 1;
-    ast->list_lit.mems = SEAL_CALLOC(1, sizeof(ast_t*));
-    ast->list_lit.mems[0] = parser_parse_expr(parser);
+    ast->list.mem_size = 1;
+    ast->list.mems = SEAL_CALLOC(1, sizeof(ast_t*));
+    ast->list.mems[0] = parser_parse_expr(parser);
   }
   while (parser_match(parser, TOK_COMMA)) {
     parser_eat(parser, TOK_COMMA);
 
-    ast->list_lit.mem_size++;
-    ast->list_lit.mems = SEAL_REALLOC(ast->list_lit.mems, ast->list_lit.mem_size * sizeof(ast_t*));
-    ast->list_lit.mems[ast->list_lit.mem_size - 1] = parser_parse_expr(parser);
+    ast->list.mem_size++;
+    ast->list.mems = SEAL_REALLOC(ast->list.mems, ast->list.mem_size * sizeof(ast_t*));
+    ast->list.mems[ast->list.mem_size - 1] = parser_parse_expr(parser);
   }
   parser_eat(parser, TOK_RBRACK);
 
   return ast;
 }
 
-static ast_t* parser_parse_object(parser_t* parser)
+static ast_t* parser_parse_map(parser_t* parser)
 {
-  ast_t* ast = static_create_ast(AST_OBJECT_LIT, parser_line(parser));
-  ast->object_lit.field_size = 0;
-  ast->object_lit.field_names = NULL;
-  ast->object_lit.field_vals = NULL;
+  ast_t* ast = static_create_ast(AST_MAP, parser_line(parser));
+  ast->map.field_size = 0;
+  ast->map.field_names = NULL;
+  ast->map.field_vals = NULL;
 
   parser_eat(parser, TOK_LBRACE);
   if (!parser_match(parser, TOK_RBRACE)) {
-    ast->object_lit.field_size = 1;
+    ast->map.field_size = 1;
     // field names
-    ast->object_lit.field_names = SEAL_CALLOC(1, sizeof(char*));
-    ast->object_lit.field_names[0] = parser_eat(parser, TOK_ID)->val;
+    ast->map.field_names = SEAL_CALLOC(1, sizeof(char*));
+    ast->map.field_names[0] = parser_eat(parser, TOK_ID)->val;
 
     parser_eat(parser, TOK_ASSIGN); // require '='
     // field vals
-    ast->object_lit.field_vals = SEAL_CALLOC(1, sizeof(ast_t*));
-    ast->object_lit.field_vals[0] = parser_parse_expr(parser);
+    ast->map.field_vals = SEAL_CALLOC(1, sizeof(ast_t*));
+    ast->map.field_vals[0] = parser_parse_expr(parser);
   }
   while (parser_match(parser, TOK_COMMA)) {
     parser_eat(parser, TOK_COMMA);
 
     // no duplicate allowed
     const char* field_name = parser_eat(parser, TOK_ID)->val;
-    kill_if_duplicated_name(parser, field_name, ast->object_lit.field_names, ast->object_lit.field_size);
+    kill_if_duplicated_name(parser, field_name, ast->map.field_names, ast->map.field_size);
 
-    ast->object_lit.field_size++;
+    ast->map.field_size++;
     // field names
-    ast->object_lit.field_names = SEAL_REALLOC(ast->object_lit.field_names, ast->object_lit.field_size * sizeof(char*));
-    ast->object_lit.field_names[ast->object_lit.field_size - 1] = field_name;
+    ast->map.field_names = SEAL_REALLOC(ast->map.field_names, ast->map.field_size * sizeof(char*));
+    ast->map.field_names[ast->map.field_size - 1] = field_name;
 
     parser_eat(parser, TOK_ASSIGN); // require '='
     // field vals
-    ast->object_lit.field_vals = SEAL_REALLOC(ast->object_lit.field_vals, ast->object_lit.field_size * sizeof(ast_t*));
-    ast->object_lit.field_vals[ast->object_lit.field_size - 1] = parser_parse_expr(parser);
+    ast->map.field_vals = SEAL_REALLOC(ast->map.field_vals, ast->map.field_size * sizeof(ast_t*));
+    ast->map.field_vals[ast->map.field_size - 1] = parser_parse_expr(parser);
   }
   parser_eat(parser, TOK_RBRACE);
 
@@ -840,7 +840,7 @@ static ast_t* parser_parse_primary(parser_t* parser)
       main = parser_parse_list(parser);
       break;
     case TOK_LBRACE:
-      main = parser_parse_object(parser);
+      main = parser_parse_map(parser);
       break;
     case TOK_INT:
       main = parser_parse_int(parser);

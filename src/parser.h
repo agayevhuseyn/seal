@@ -34,7 +34,7 @@ static inline ast_t* parser_parse_int(parser_t*);
 static inline ast_t* parser_parse_float(parser_t*);
 static inline ast_t* parser_parse_string(parser_t*);
 static ast_t* parser_parse_list(parser_t*);
-static ast_t* parser_parse_object(parser_t*);
+static ast_t* parser_parse_map(parser_t*);
 static inline ast_t* parser_parse_id(parser_t*);
 static inline ast_t* parser_parse_var_ref(parser_t*);
 static ast_t* parser_parse_func_call(parser_t*);
