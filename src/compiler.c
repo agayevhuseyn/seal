@@ -53,6 +53,12 @@ static void compile_binary(cout_t* cout, ast_t* node)
     case TOK_MUL  : opcode = OP_MUL; break;
     case TOK_DIV  : opcode = OP_DIV; break;
     case TOK_MOD  : opcode = OP_MOD; break;
+    case TOK_EQ   : opcode = OP_EQ;  break;
+    case TOK_NE   : opcode = OP_NE;  break;
+    case TOK_GT   : opcode = OP_GT;  break;
+    case TOK_GE   : opcode = OP_GE;  break;
+    case TOK_LT   : opcode = OP_LT;  break;
+    case TOK_LE   : opcode = OP_LE;  break;
   }
 
   PUSH(cout, opcode);
