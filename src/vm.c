@@ -49,7 +49,7 @@ void eval_vm(vm_t* vm)
       case OP_PUSH: {
           uint8_t left  = FETCH(vm);
           uint8_t right = FETCH(vm);
-          uint16_t idx = (left << 8) | right;
+          uint16_t idx = left ? (left << 8) | right : right;
           PUSH(vm, vm->const_pool_ptr[idx]);
         }
         break;
