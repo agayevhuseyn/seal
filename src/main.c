@@ -1,7 +1,6 @@
 #include "ast.h"
 #include "seal.h"
 
-#include "io.h"
 #include "lexer.h"
 #include "parser.h"
 #include "gc.h"

@@ -1,5 +1,4 @@
 #include "compiler.h"
-#include "op.h"
 #include "sealtypes.h"
 
 #define START_BYTECODE_CAP 1024

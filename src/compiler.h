@@ -4,6 +4,7 @@
 #include "seal.h"
 #include "ast.h"
 #include "sealtypes.h"
+#include "bytecode.h"
 
 typedef struct cout cout_t;
 

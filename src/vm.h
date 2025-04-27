@@ -2,7 +2,6 @@
 #define SEAL_VM_H
 
 #include "seal.h"
-#include "op.h"
 #include "compiler.h"
 #include "sealtypes.h"
 
