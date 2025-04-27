@@ -127,6 +127,7 @@ void eval_vm(vm_t* vm)
         else
           ERROR_OP(==, left, right);
       }
+      break;
       case OP_NE: {
         svalue_t right = POP(vm);
         svalue_t left  = POP(vm);
@@ -139,6 +140,7 @@ void eval_vm(vm_t* vm)
         else
           ERROR_OP(!=, left, right);
       }
+      break;
       case OP_GT: {
         svalue_t right = POP(vm);
         svalue_t left  = POP(vm);
@@ -151,6 +153,7 @@ void eval_vm(vm_t* vm)
         else
           ERROR_OP(>, left, right);
       }
+      break;
       case OP_GE: {
         svalue_t right = POP(vm);
         svalue_t left  = POP(vm);
@@ -163,6 +166,7 @@ void eval_vm(vm_t* vm)
         else
           ERROR_OP(>=, left, right);
       }
+      break;
       case OP_LT: {
         svalue_t right = POP(vm);
         svalue_t left  = POP(vm);
@@ -175,6 +179,7 @@ void eval_vm(vm_t* vm)
         else
           ERROR_OP(<, left, right);
       }
+      break;
       case OP_LE: {
         svalue_t right = POP(vm);
         svalue_t left  = POP(vm);
@@ -187,6 +192,7 @@ void eval_vm(vm_t* vm)
         else
           ERROR_OP(<=, left, right);
       }
+      break;
       case OP_JMP:
       case OP_JZ:
       case OP_JNZ:
