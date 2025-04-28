@@ -52,9 +52,14 @@ static inline const char* op_name(int op)
   }
 }
 
-static inline void print_op(uint8_t* bytes, size_t size)
+static inline void print_op(uint8_t* bytes, size_t byte_size, uint16_t* labels, size_t label_size)
 {
-  for (int i = 0; i < size;) {
+  for (int i = 0; i < byte_size;) {
+    for (int j = 0; j < label_size; j++) {
+      if (i == labels[j]) {
+        printf("LABEL%d: %d\n", j, labels[j]);
+      }
+    }
     uint8_t op = bytes[i++];
     printf("%s ", op_name(op)); 
     switch (op) { /* check if opcode requires byte(s) */
@@ -70,6 +75,10 @@ static inline void print_op(uint8_t* bytes, size_t size)
             printf("%d", idx);
             break;
         }
+      }
+      break;
+      case OP_JMP: {
+        printf("%d", bytes[i++]);
       }
       break;
       case OP_JZ: {
