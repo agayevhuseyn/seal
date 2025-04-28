@@ -45,7 +45,13 @@ void compile(cout_t* cout, ast_t* node)
 static void compile_node(cout_t* cout, ast_t* node)
 {
   switch (node->type) {
-    case AST_COMP: for (int i = 0; i < node->comp.stmt_size - 1; i++) { compile_node(cout, node->comp.stmts[i]); } break;
+    case AST_COMP:
+      for (int i = 0; i < node->comp.stmt_size; i++) {
+        if (node->comp.stmts[i]->type != AST_NULL) {
+          compile_node(cout, node->comp.stmts[i]);
+        }
+      }
+    break;
     case AST_IF: compile_if(cout, node); break;
     case AST_BINARY: compile_binary(cout, node); break;
     case AST_NULL:
@@ -59,16 +65,37 @@ static void compile_node(cout_t* cout, ast_t* node)
 }
 static void compile_if(cout_t* cout, ast_t* node)
 {
-  compile_node(cout, node->_if.cond);
+  uint8_t* next_addr, *end_addr;
+  next_addr = end_addr = NULL;
 
-  PUSH(cout, OP_JZ);
-  uint8_t* addr = CUR_ADDR(cout);
-  PUSH(cout, 0); /* just push 0 for now */
+  if (node->type == AST_IF) {
+    compile_node(cout, node->_if.cond);
 
-  compile_node(cout, node->_if.comp);
+    PUSH(cout, OP_JZ);
+    next_addr = CUR_ADDR(cout);
+    PUSH(cout, 0); /* just push 0 for now */
 
-  *addr = LABEL_IDX(cout);
-  PUSH_LABEL(cout, CUR_IDX(cout));
+    compile_node(cout, node->_if.comp);
+
+    if (node->_if.has_else) {
+      PUSH(cout, OP_JMP);
+      end_addr = CUR_ADDR(cout);
+      PUSH(cout, 0); /* just push 0 for now */
+
+      *next_addr = LABEL_IDX(cout); /* next label after finishing an if statement */
+      PUSH_LABEL(cout, CUR_IDX(cout));
+
+      compile_if(cout, node->_if._else);
+
+      *end_addr = LABEL_IDX(cout);
+      PUSH_LABEL(cout, CUR_IDX(cout));
+    } else {
+      *next_addr = LABEL_IDX(cout); /* end of if statement */
+      PUSH_LABEL(cout, CUR_IDX(cout));
+    }
+  } else { /* AST_ELSE */
+    compile_node(cout, node->_else.comp);
+  }
 }
 static void compile_binary(cout_t* cout, ast_t* node)
 {
