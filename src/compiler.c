@@ -17,13 +17,13 @@
     /* check bounds */ \
     *cout->const_pool_ptr++ = val)
 
-#define CONST_IDX(cout) ((uint16_t)(cout->const_pool_ptr - cout->const_pool))
+#define CONST_IDX(cout) ((uint16_t)(cout->const_pool_ptr - cout->const_pool)) /* WARNING!! only use this before pushing constant */
 
 #define PUSH_LABEL(cout, addr) ( \
     /* check bounds */ \
     *cout->label_ptr++ = addr)
 
-#define LABEL_IDX(cout) ((uint8_t)(cout->label_ptr - cout->labels - 1)) /* WARNING!! only use this after pushing label */ \
+#define LABEL_IDX(cout) ((uint8_t)(cout->label_ptr - cout->labels)) /* WARNING!! only use this before pushing label */
 
 void compile(cout_t* cout, ast_t* node)
 {
@@ -46,7 +46,7 @@ static void compile_node(cout_t* cout, ast_t* node)
 {
   switch (node->type) {
     case AST_COMP: for (int i = 0; i < node->comp.stmt_size - 1; i++) { compile_node(cout, node->comp.stmts[i]); } break;
-    case AST_IF: compile_if(cout, node);
+    case AST_IF: compile_if(cout, node); break;
     case AST_BINARY: compile_binary(cout, node); break;
     case AST_NULL:
     case AST_INT:
@@ -59,13 +59,16 @@ static void compile_node(cout_t* cout, ast_t* node)
 }
 static void compile_if(cout_t* cout, ast_t* node)
 {
+  compile_node(cout, node->_if.cond);
+
   PUSH(cout, OP_JZ);
   uint8_t* addr = CUR_ADDR(cout);
   PUSH(cout, 0); /* just push 0 for now */
 
   compile_node(cout, node->_if.comp);
-  PUSH_LABEL(cout, CUR_IDX(cout));
+
   *addr = LABEL_IDX(cout);
+  PUSH_LABEL(cout, CUR_IDX(cout));
 }
 static void compile_binary(cout_t* cout, ast_t* node)
 {

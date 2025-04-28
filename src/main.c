@@ -13,7 +13,7 @@ static inline void usage(const char* program_name)
 
 static inline void flags()
 {
-  fprintf(stderr, "seal: flags: -pt (print tokens), -pa (print AST), -po (print opcodes), -pc (print constant pool)\n");
+  fprintf(stderr, "seal: flags: -pt (print tokens), -pa (print AST), -po (print opcodes), -pb (print bytes), -pc (print constant pool)\n");
 }
 
 int main(int argc, char** argv)
@@ -26,6 +26,7 @@ int main(int argc, char** argv)
   bool PRINT_TOKS = false;
   bool PRINT_AST  = false;
   bool PRINT_OP   = false;
+  bool PRINT_BYTE = false;
   bool PRINT_CONST_POOL = false;
 
   for (int i = 2; i < argc; i++) {
@@ -35,6 +36,8 @@ int main(int argc, char** argv)
       PRINT_AST = true;
     } else if (strcmp("-po", argv[i]) == 0) {
       PRINT_OP  = true;
+    } else if (strcmp("-pb", argv[i]) == 0) {
+      PRINT_BYTE = true;
     } else if (strcmp("-pc", argv[i]) == 0) {
       PRINT_CONST_POOL = true;
     } else {
@@ -62,8 +65,12 @@ int main(int argc, char** argv)
   compile(&cout, root);
   if (PRINT_OP)
     print_op(cout.bytecodes, cout.bytecode_size);
+  if (PRINT_BYTE)
+    PRINT_BYTE(cout.bytecodes, cout.bytecode_size)
   if (PRINT_CONST_POOL)
     PRINT_CONST_POOL(cout);
+
+  printf("Label at 0: %d\n", cout.labels[0]);
 
   vm_t vm;
   init_vm(&vm, &cout);

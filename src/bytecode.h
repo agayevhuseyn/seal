@@ -22,6 +22,11 @@
 #define OP_JNZ    0x10
 #define OP_PRINT  0x11
 
+#define PRINT_BYTE(bytecodes, size) for(int i = 0; i < size; i++) { \
+    printf("%d ", bytecodes[i]); \
+    if (i == size - 1) printf("\n"); \
+  }
+
 static inline const char* op_name(int op)
 {
   switch (op) {
@@ -65,6 +70,10 @@ static inline void print_op(uint8_t* bytes, size_t size)
             printf("%d", idx);
             break;
         }
+      }
+      break;
+      case OP_JZ: {
+        printf("%d", bytes[i++]);
       }
       break;
     }
