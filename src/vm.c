@@ -200,6 +200,8 @@ void eval_vm(vm_t* vm)
       }
       break;
       case OP_JMP:
+        JUMP(vm, FETCH(vm));
+        break;
       case OP_JZ: {
         uint16_t addr = FETCH(vm);
         if (!AS_BOOL(POP(vm))) {
@@ -208,6 +210,7 @@ void eval_vm(vm_t* vm)
       }
       break;
       case OP_JNZ:
+        break;
       case OP_PRINT: {
         svalue_t s = POP(vm);
         switch (s.type) {
