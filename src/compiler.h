@@ -14,28 +14,30 @@ typedef struct cout cout_t;
 #define TRUE_IDX  1
 #define FALSE_IDX 2
 
-#define PRINT_CONST_POOL(cout) for (int i = 0; i < cout.const_pool_idx - cout.const_pool + 1; i++) { \
-        svalue_t s = cout.const_pool[i]; \
-        switch (s.type) { \
-          case SEAL_INT: \
-            printf("%lld\n", s.as._int); \
-            break; \
-          case SEAL_FLOAT: \
-            printf("%f\n", s.as._float); \
-            break; \
-          case SEAL_STRING: \
-            printf("%s\n", s.as.string); \
-            break; \
-          case SEAL_BOOL: \
-            printf("%s\n", s.as._bool ? "true" : "false"); \
-            break; \
-          case SEAL_NULL: \
-            printf("null\n"); \
-            break; \
-          default: \
-            printf("UNRECOGNIZED DATA TYPE TO PRINT\n"); \
-        } \
-}
+#define PRINT_CONST_POOL(cout) for (int i = 0; i < cout.const_pool_idx - cout.const_pool; i++) { \
+    if (i == 0) printf("CONST POOL START-------\n"); \
+    svalue_t s = cout.const_pool[i]; \
+    switch (s.type) { \
+      case SEAL_INT: \
+        printf("%lld\n", s.as._int); \
+        break; \
+      case SEAL_FLOAT: \
+        printf("%f\n", s.as._float); \
+        break; \
+      case SEAL_STRING: \
+        printf("\'%s\'\n", s.as.string); \
+        break; \
+      case SEAL_BOOL: \
+        printf("%s\n", s.as._bool ? "true" : "false"); \
+        break; \
+      case SEAL_NULL: \
+        printf("null\n"); \
+        break; \
+      default: \
+        printf("UNRECOGNIZED DATA TYPE TO PRINT\n"); \
+    } \
+    if (i - 1 == cout.const_pool_idx - cout.const_pool) printf("CONST POOL END-------\n"); \
+  }
 
 struct cout {
   uint8_t* bytecodes;     /* bytecode array */
