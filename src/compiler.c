@@ -10,15 +10,27 @@
     cout->bytecodes[cout->bytecode_size++] = byte; \
   } while (0)
 
+#define CUR_IDX(cout) (cout->bytecode_size) /* returns index of current empty byte */
+#define CUR_ADDR(cout) (&(cout->bytecodes[CUR_IDX(cout)])) /* returns address of current empty byte */
+
 #define PUSH_CONST(cout, val) ( \
     /* check bounds */ \
-    *cout->const_pool_idx++ = val)
+    *cout->const_pool_ptr++ = val)
+
+#define CONST_IDX(cout) ((uint16_t)(cout->const_pool_ptr - cout->const_pool))
+
+#define PUSH_LABEL(cout, addr) ( \
+    /* check bounds */ \
+    *cout->label_ptr++ = addr)
+
+#define LABEL_IDX(cout) ((uint8_t)(cout->label_ptr - cout->labels - 1)) /* WARNING!! only use this after pushing label */ \
 
 void compile(cout_t* cout, ast_t* node)
 {
   cout->bytecode_size = 0;
   cout->bytecode_cap  = START_BYTECODE_CAP;
-  cout->const_pool_idx = cout->const_pool;
+  cout->const_pool_ptr = cout->const_pool;
+  cout->label_ptr = cout->labels;
   cout->bytecodes = SEAL_CALLOC(START_BYTECODE_CAP, sizeof(uint8_t));
 
   PUSH_CONST(cout, (svalue_t) { .type = SEAL_NULL }); /* push constant null */
@@ -34,6 +46,7 @@ static void compile_node(cout_t* cout, ast_t* node)
 {
   switch (node->type) {
     case AST_COMP: for (int i = 0; i < node->comp.stmt_size - 1; i++) { compile_node(cout, node->comp.stmts[i]); } break;
+    case AST_IF: compile_if(cout, node);
     case AST_BINARY: compile_binary(cout, node); break;
     case AST_NULL:
     case AST_INT:
@@ -43,6 +56,16 @@ static void compile_node(cout_t* cout, ast_t* node)
       compile_val(cout, node);
       break;
   }
+}
+static void compile_if(cout_t* cout, ast_t* node)
+{
+  PUSH(cout, OP_JZ);
+  uint8_t* addr = CUR_ADDR(cout);
+  PUSH(cout, 0); /* just push 0 for now */
+
+  compile_node(cout, node->_if.comp);
+  PUSH_LABEL(cout, CUR_IDX(cout));
+  *addr = LABEL_IDX(cout);
 }
 static void compile_binary(cout_t* cout, ast_t* node)
 {
@@ -87,7 +110,7 @@ static void compile_val(cout_t* cout, ast_t* node)
       PUSH(cout, NULL_IDX);
       return;
   }
-  uint16_t idx = cout->const_pool_idx - cout->const_pool;
+  uint16_t idx = CONST_IDX(cout);
   PUSH(cout, (uint8_t)idx >> 8);
   PUSH(cout, (uint8_t)idx);
   PUSH_CONST(cout, val); /* push constant into pool */
