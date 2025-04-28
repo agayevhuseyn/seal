@@ -13,7 +13,7 @@ static inline void usage(const char* program_name)
 
 static inline void flags()
 {
-  fprintf(stderr, "seal: flags: -pt (print tokens), -pa (print AST(abstact syntax tree))\n");
+  fprintf(stderr, "seal: flags: -pt (print tokens), -pa (print AST), -po (print opcodes), -pc (print constant pool)\n");
 }
 
 int main(int argc, char** argv)
@@ -25,12 +25,18 @@ int main(int argc, char** argv)
   /* FLAGS */
   bool PRINT_TOKS = false;
   bool PRINT_AST  = false;
+  bool PRINT_OP   = false;
+  bool PRINT_CONST_POOL = false;
 
   for (int i = 2; i < argc; i++) {
     if (strcmp("-pt", argv[i]) == 0) {
       PRINT_TOKS = true;
     } else if (strcmp("-pa", argv[i]) == 0) {
       PRINT_AST = true;
+    } else if (strcmp("-po", argv[i]) == 0) {
+      PRINT_OP  = true;
+    } else if (strcmp("-pc", argv[i]) == 0) {
+      PRINT_CONST_POOL = true;
     } else {
       flags();
       return EXIT_FAILURE;
@@ -54,8 +60,10 @@ int main(int argc, char** argv)
 
   cout_t cout;
   compile(&cout, root);
-  //print_op(cout.bytecodes, cout.bytecode_size);
-  //PRINT_CONST_POOL(cout);
+  if (PRINT_OP)
+    print_op(cout.bytecodes, cout.bytecode_size);
+  if (PRINT_CONST_POOL)
+    PRINT_CONST_POOL(cout);
 
   vm_t vm;
   init_vm(&vm, &cout);
