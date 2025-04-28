@@ -84,7 +84,7 @@ static void compile_val(cout_t* cout, ast_t* node)
     case AST_NULL:
       val.type = SEAL_NULL;
       PUSH(cout, 0);
-      PUSH(cout, SEAL_NULL);
+      PUSH(cout, NULL_IDX);
       return;
   }
   uint16_t idx = cout->const_pool_idx - cout->const_pool;
