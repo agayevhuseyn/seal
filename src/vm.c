@@ -120,6 +120,10 @@ void eval_vm(vm_t* vm)
           PUSH_BOOL(vm, AS_FLOAT(left) == AS_FLOAT(right));
         else if (IS_INT(left) && IS_FLOAT(right) || IS_FLOAT(left) && IS_INT(right))
           PUSH_BOOL(vm, (IS_INT(left) ? AS_INT(left) : AS_FLOAT(left)) == (IS_INT(right) ? AS_INT(right) : AS_FLOAT(right)));
+        else if (IS_BOOL(left) && IS_BOOL(right))
+          PUSH_BOOL(vm, AS_BOOL(left) == AS_BOOL(right));
+        else if (IS_STRING(left) && IS_STRING(right))
+          PUSH_BOOL(vm, strcmp(AS_STRING(left), AS_STRING(right)) == 0);
         else
           ERROR_OP(==, left, right);
       }
@@ -133,6 +137,10 @@ void eval_vm(vm_t* vm)
           PUSH_BOOL(vm, AS_FLOAT(left) != AS_FLOAT(right));
         else if (IS_INT(left) && IS_FLOAT(right) || IS_FLOAT(left) && IS_INT(right))
           PUSH_BOOL(vm, (IS_INT(left) ? AS_INT(left) : AS_FLOAT(left)) != (IS_INT(right) ? AS_INT(right) : AS_FLOAT(right)));
+        else if (IS_BOOL(left) && IS_BOOL(right))
+          PUSH_BOOL(vm, AS_BOOL(left) != AS_BOOL(right));
+        else if (IS_STRING(left) && IS_STRING(right))
+          PUSH_BOOL(vm, strcmp(AS_STRING(left), AS_STRING(right)) != 0);
         else
           ERROR_OP(!=, left, right);
       }
