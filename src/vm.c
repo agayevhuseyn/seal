@@ -3,6 +3,7 @@
 #define FETCH(vm) (*vm->ip++)
 #define PUSH(vm, val) (*vm->sp++ = val)
 #define POP(vm) (*(--(vm->sp)))
+#define JUMP(vm, addr) (vm->ip = &vm->bytecodes[vm->label_ptr[addr]])
 #define GET_CONST(vm, i) (vm->const_pool_ptr[i])
 #define ERROR(err) (fprintf(stderr, "seal vm: %s\n", err), exit(EXIT_FAILURE))
 #define ERROR_OP(op, left, right) do { \
@@ -31,8 +32,9 @@
 void init_vm(vm_t* vm, cout_t* cout)
 {
   vm->const_pool_ptr = cout->const_pool;
+  vm->label_ptr = cout->labels;
   vm->sp = vm->stack;
-  vm->ip = cout->bytecodes;
+  vm->ip = vm->bytecodes = cout->bytecodes;
 }
 
 void eval_vm(vm_t* vm)
@@ -198,7 +200,13 @@ void eval_vm(vm_t* vm)
       }
       break;
       case OP_JMP:
-      case OP_JZ:
+      case OP_JZ: {
+        uint16_t addr = FETCH(vm);
+        if (!AS_BOOL(POP(vm))) {
+          JUMP(vm, addr);
+        }
+      }
+      break;
       case OP_JNZ:
       case OP_PRINT: {
         svalue_t s = POP(vm);
