@@ -64,13 +64,11 @@ int main(int argc, char** argv)
   cout_t cout;
   compile(&cout, root);
   if (PRINT_OP)
-    print_op(cout.bytecodes, cout.bytecode_size);
+    print_op(cout.bytecodes, cout.bytecode_size, cout.labels, cout.label_ptr - cout.labels);
   if (PRINT_BYTE)
     PRINT_BYTE(cout.bytecodes, cout.bytecode_size)
   if (PRINT_CONST_POOL)
     PRINT_CONST_POOL(cout);
-
-  printf("Label at 0: %d\n", cout.labels[0]);
 
   vm_t vm;
   init_vm(&vm, &cout);
