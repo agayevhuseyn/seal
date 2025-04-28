@@ -51,19 +51,25 @@ static inline void print_op(uint8_t* bytes, size_t size)
 {
   for (int i = 0; i < size;) {
     uint8_t op = bytes[i++];
-    printf("%d ", op); continue;
-    printf("%s", op_name(op)); 
+    printf("%s ", op_name(op)); 
     switch (op) { /* check if opcode requires byte(s) */
       case OP_PUSH: {
         uint8_t left  = bytes[i++];
         uint8_t right = bytes[i++];
-        printf(" %d", (left << 8) | right);
+        uint16_t idx  = (left << 8) | right;
+        switch (idx) {
+          case 0: printf("NULL");  break;
+          case 1: printf("TRUE");  break;
+          case 2: printf("FALSE"); break;
+          default:
+            printf("%d", idx);
+            break;
+        }
       }
       break;
     }
     printf("\n");
   }
-  printf("\n");
 }
 
 #endif /* SEAL_BYTECODE_H */
