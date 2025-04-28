@@ -3,6 +3,7 @@
 #define FETCH(vm) (*vm->ip++)
 #define PUSH(vm, val) (*vm->sp++ = val)
 #define POP(vm) (*(--(vm->sp)))
+#define GET_CONST(vm, i) (vm->const_pool_ptr[i])
 #define ERROR(err) (fprintf(stderr, "seal vm: %s\n", err), exit(EXIT_FAILURE))
 #define ERROR_OP(op, left, right) do { \
     char err[ERR_LEN]; \
@@ -10,12 +11,11 @@
     ERROR(err); \
   } while (0)
 
-#define sval(t, mem, val) (svalue_t) { .type = t, .as.mem = val}
-
+#define PUSH_NULL(vm)        PUSH(vm, GET_CONST(vm, NULL_IDX))
 #define PUSH_INT(vm, val)    PUSH(vm, sval(SEAL_INT, _int, val))
 #define PUSH_FLOAT(vm, val)  PUSH(vm, sval(SEAL_FLOAT, _float, val))
 #define PUSH_STRING(vm, val) PUSH(vm, sval(SEAL_STRING, string, val))
-#define PUSH_BOOL(vm, val)   PUSH(vm, sval(SEAL_BOOL, _bool, val))
+#define PUSH_BOOL(vm, val)   PUSH(vm, GET_CONST(vm, val ? TRUE_IDX : FALSE_IDX))
 
 #define AS_INT(val)    (val.as._int)
 #define AS_FLOAT(val)  (val.as._float)
@@ -27,10 +27,6 @@
 #define IS_FLOAT(val)  (val.type == SEAL_FLOAT)
 #define IS_STRING(val) (val.type == SEAL_STRING)
 #define IS_BOOL(val)   (val.type == SEAL_BOOL)
-
-static const svalue_t sval_true  = sval(SEAL_BOOL, _bool, true);
-static const svalue_t sval_false = sval(SEAL_BOOL, _bool, false);
-static const svalue_t sval_null  = (svalue_t) { .type = SEAL_NULL };
 
 void init_vm(vm_t* vm, cout_t* cout)
 {
@@ -50,7 +46,7 @@ void eval_vm(vm_t* vm)
           uint8_t left  = FETCH(vm);
           uint8_t right = FETCH(vm);
           uint16_t idx = left ? (left << 8) | right : right;
-          PUSH(vm, vm->const_pool_ptr[idx]);
+          PUSH(vm, GET_CONST(vm, idx));
         }
         break;
       case OP_POP: POP(vm); break;

@@ -10,12 +10,39 @@ typedef struct cout cout_t;
 
 #define CONST_POOL_SIZE (0xFFFF + 1)    /* 65536 */
 
+#define NULL_IDX  0
+#define TRUE_IDX  1
+#define FALSE_IDX 2
+
+#define PRINT_CONST_POOL(cout) for (int i = 0; i < cout.const_pool_idx - cout.const_pool + 1; i++) { \
+        svalue_t s = cout.const_pool[i]; \
+        switch (s.type) { \
+          case SEAL_INT: \
+            printf("%lld\n", s.as._int); \
+            break; \
+          case SEAL_FLOAT: \
+            printf("%f\n", s.as._float); \
+            break; \
+          case SEAL_STRING: \
+            printf("%s\n", s.as.string); \
+            break; \
+          case SEAL_BOOL: \
+            printf("%s\n", s.as._bool ? "true" : "false"); \
+            break; \
+          case SEAL_NULL: \
+            printf("null\n"); \
+            break; \
+          default: \
+            printf("UNRECOGNIZED DATA TYPE TO PRINT\n"); \
+        } \
+}
+
 struct cout {
   uint8_t* bytecodes;     /* bytecode array */
   size_t   bytecode_size; /* bytecode size */
   size_t   bytecode_cap;  /* bytecode capacity */
   svalue_t  const_pool[CONST_POOL_SIZE]; /* pool for constant values */
-  svalue_t* const_pool_idx; /* index for tracking constant pool values */
+  svalue_t* const_pool_idx; /* pointer index for tracking constant pool values */
 };
 
 void compile(cout_t*, ast_t*); /* init cout and compile root node into bytecode */

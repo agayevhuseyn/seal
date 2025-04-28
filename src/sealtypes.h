@@ -33,6 +33,8 @@ struct svalue {
   } as;
 };
 
+#define sval(t, mem, val) (svalue_t) { .type = t, .as.mem = val}
+
 static inline const char*
 seal_type_name(int type)
 {

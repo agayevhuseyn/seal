@@ -54,7 +54,8 @@ int main(int argc, char** argv)
 
   cout_t cout;
   compile(&cout, root);
-  print_op(cout.bytecodes, cout.bytecode_size);
+  //print_op(cout.bytecodes, cout.bytecode_size);
+  //PRINT_CONST_POOL(cout);
 
   vm_t vm;
   init_vm(&vm, &cout);

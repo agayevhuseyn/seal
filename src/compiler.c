@@ -21,6 +21,10 @@ void compile(cout_t* cout, ast_t* node)
   cout->const_pool_idx = cout->const_pool;
   cout->bytecodes = SEAL_CALLOC(START_BYTECODE_CAP, sizeof(uint8_t));
 
+  PUSH_CONST(cout, (svalue_t) { .type = SEAL_NULL }); /* push constant null */
+  PUSH_CONST(cout, sval(SEAL_BOOL, _bool, true)); /* push constant true */
+  PUSH_CONST(cout, sval(SEAL_BOOL, _bool, false)); /* push constant false */
+
   compile_node(cout, node);
 
   PUSH(cout, OP_PRINT);
@@ -64,19 +68,27 @@ static void compile_binary(cout_t* cout, ast_t* node)
 }
 static void compile_val(cout_t* cout, ast_t* node)
 {
+  PUSH(cout, OP_PUSH); /* push opcode */
+
   svalue_t val;
   switch (node->type) {
     case AST_INT   : val.type = SEAL_INT;    val.as._int   = node->integer.val; break;
     case AST_FLOAT : val.type = SEAL_FLOAT;  val.as._float = node->floating.val; break;
     case AST_STRING: val.type = SEAL_STRING; val.as.string = node->string.val; break;
-    case AST_BOOL  : val.type = SEAL_BOOL;   val.as._bool  = node->boolean.val; break;
-    case AST_NULL  : val.type = SEAL_NULL; break;
+    case AST_BOOL:
+      val.type = SEAL_BOOL;
+      val.as._bool  = node->boolean.val;
+      PUSH(cout, 0);
+      PUSH(cout, val.as._bool ? TRUE_IDX : FALSE_IDX);
+      return;
+    case AST_NULL:
+      val.type = SEAL_NULL;
+      PUSH(cout, 0);
+      PUSH(cout, SEAL_NULL);
+      return;
   }
-  PUSH(cout, OP_PUSH);
   uint16_t idx = cout->const_pool_idx - cout->const_pool;
   PUSH(cout, (uint8_t)idx >> 8);
   PUSH(cout, (uint8_t)idx);
-  //printf("%ld\n", cout->const_pool_idx - cout->const_pool);
-  //printf("%ld\n", cout->const_pool_idx - cout->const_pool);
-  PUSH_CONST(cout, val);
+  PUSH_CONST(cout, val); /* push constant into pool */
 }
