@@ -77,14 +77,11 @@ static inline void print_op(uint8_t* bytes, size_t byte_size, uint16_t* labels, 
         }
       }
       break;
-      case OP_JMP: {
+      case OP_JMP:
+      case OP_JZ:
+      case OP_JNZ:
         printf("%d", bytes[i++]);
-      }
-      break;
-      case OP_JZ: {
-        printf("%d", bytes[i++]);
-      }
-      break;
+        break;
     }
     printf("\n");
   }
