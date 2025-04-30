@@ -17,13 +17,13 @@
     /* check bounds */ \
     *cout->const_pool_ptr++ = val)
 
-#define CONST_IDX(cout) ((uint16_t)(cout->const_pool_ptr - cout->const_pool)) /* WARNING!! only use this before pushing constant */
+#define CONST_IDX(cout) ((uint16_t)(cout->const_pool_ptr - cout->const_pool - 1)) /* WARNING!! only use this before after constant */
 
 #define PUSH_LABEL(cout, addr) ( \
     /* check bounds */ \
     *cout->label_ptr++ = addr)
 
-#define LABEL_IDX(cout) ((uint8_t)(cout->label_ptr - cout->labels)) /* WARNING!! only use this before pushing label */
+#define LABEL_IDX(cout) ((uint8_t)(cout->label_ptr - cout->labels - 1)) /* WARNING!! only use this after pushing label */
 
 void compile(cout_t* cout, ast_t* node)
 {
@@ -65,36 +65,66 @@ static void compile_node(cout_t* cout, ast_t* node)
 }
 static void compile_if(cout_t* cout, ast_t* node)
 {
-  uint8_t* next_addr, *end_addr;
-  next_addr = end_addr = NULL;
+  int jmp_size = 0;
+  ast_t* temp_node = node;
+  while (temp_node->type == AST_IF && temp_node->_if.has_else) {
+    temp_node = temp_node->_if._else;
+    jmp_size++;
+  }
+  uint8_t *end_addrs[jmp_size], **end_addr = end_addrs, *next_addr = NULL;
 
-  if (node->type == AST_IF) {
-    compile_node(cout, node->_if.cond);
+  compile_node(cout, node->_if.cond);
 
-    PUSH(cout, OP_JZ);
-    next_addr = CUR_ADDR(cout);
-    PUSH(cout, 0); /* just push 0 for now */
+  PUSH(cout, OP_JZ);
+  next_addr = CUR_ADDR(cout);
+  PUSH(cout, 0);
 
-    compile_node(cout, node->_if.comp);
+  compile_node(cout, node->_if.comp);
 
-    if (node->_if.has_else) {
-      PUSH(cout, OP_JMP);
-      end_addr = CUR_ADDR(cout);
-      PUSH(cout, 0); /* just push 0 for now */
+  if (jmp_size == 0) {
+    PUSH_LABEL(cout, CUR_IDX(cout));
+    *next_addr = LABEL_IDX(cout);
+    return;
+  }
+  
+  PUSH(cout, OP_JMP);
+  *end_addr++ = CUR_ADDR(cout);
+  PUSH(cout, 0);
 
-      *next_addr = LABEL_IDX(cout); /* next label after finishing an if statement */
+  PUSH_LABEL(cout, CUR_IDX(cout));
+  *next_addr = LABEL_IDX(cout);
+
+  do {
+    node = node->_if._else;
+
+    if (node->type == AST_IF) {
+      compile_node(cout, node->_if.cond);
+
+      PUSH(cout, OP_JZ);
+      next_addr = CUR_ADDR(cout);
+      PUSH(cout, 0);
+
+      compile_node(cout, node->_if.comp);
+
+      if (end_addr - end_addrs != jmp_size) {
+        if (node->_if.has_else) {
+          PUSH(cout, OP_JMP);
+          *end_addr++ = CUR_ADDR(cout);
+          PUSH(cout, 0);
+        }
+      }
+
       PUSH_LABEL(cout, CUR_IDX(cout));
-
-      compile_if(cout, node->_if._else);
-
-      *end_addr = LABEL_IDX(cout);
-      PUSH_LABEL(cout, CUR_IDX(cout));
+      *next_addr = LABEL_IDX(cout);
     } else {
-      *next_addr = LABEL_IDX(cout); /* end of if statement */
-      PUSH_LABEL(cout, CUR_IDX(cout));
+      compile_node(cout, node->_else.comp);
     }
-  } else { /* AST_ELSE */
-    compile_node(cout, node->_else.comp);
+  } while (node->_if.has_else);
+
+  PUSH_LABEL(cout, CUR_IDX(cout));
+
+  for (int i = 0; i < jmp_size; i++) {
+    *end_addrs[i] = LABEL_IDX(cout);
   }
 }
 static void compile_binary(cout_t* cout, ast_t* node)
@@ -140,8 +170,8 @@ static void compile_val(cout_t* cout, ast_t* node)
       PUSH(cout, NULL_IDX);
       return;
   }
+  PUSH_CONST(cout, val); /* push constant into pool */
   uint16_t idx = CONST_IDX(cout);
   PUSH(cout, (uint8_t)idx >> 8);
   PUSH(cout, (uint8_t)idx);
-  PUSH_CONST(cout, val); /* push constant into pool */
 }
