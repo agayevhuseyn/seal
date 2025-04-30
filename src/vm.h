@@ -25,8 +25,28 @@ void eval_vm(vm_t* vm);
 static void print_stack(vm_t* vm)
 {
   svalue_t* sp = vm->sp;
-  while (sp >= vm->stack) {
-    printf("%lld\n", (*sp--).as._int);
+  while (sp > vm->stack) {
+    svalue_t val = *(--sp);
+    switch (val.type) {
+      case SEAL_NULL:
+        printf("null\n");
+        break;
+      case SEAL_INT:
+        printf("%lld\n", val.as._int);
+        break;
+      case SEAL_FLOAT:
+        printf("%f\n", val.as._float);
+        break;
+      case SEAL_STRING:
+        printf("%s\n", val.as.string);
+        break;
+      case SEAL_BOOL:
+        printf("%s\n", val.as._bool ? "true" : "false");
+        break;
+      default:
+        printf("STACK TYPE UNRECOGNIZED: %d\n", val.type);
+        break;
+    }
   }
 }
 
