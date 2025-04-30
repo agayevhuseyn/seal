@@ -1,4 +1,5 @@
 #include "compiler.h"
+#include "ast.h"
 #include "sealtypes.h"
 
 #define START_BYTECODE_CAP 1024
@@ -47,12 +48,18 @@ static void compile_node(cout_t* cout, ast_t* node)
   switch (node->type) {
     case AST_COMP:
       for (int i = 0; i < node->comp.stmt_size; i++) {
+        /*
+         * DO NOT COMPILE DUMMY STATEMENTS (like 0, 1, 'a')
+         * ONLY COMPILE FUNCTIONS AND POP THEIR VALUE 
+         */
         if (node->comp.stmts[i]->type != AST_NULL) {
           compile_node(cout, node->comp.stmts[i]);
         }
       }
     break;
     case AST_IF: compile_if(cout, node); break;
+    case AST_WHILE: compile_while(cout, node); break;
+    case AST_DOWHILE: compile_dowhile(cout, node); break;
     case AST_BINARY: compile_binary(cout, node); break;
     case AST_NULL:
     case AST_INT:
@@ -126,6 +133,36 @@ static void compile_if(cout_t* cout, ast_t* node)
   for (int i = 0; i < jmp_size; i++) {
     *end_addrs[i] = LABEL_IDX(cout);
   }
+}
+static void compile_while(cout_t* cout, ast_t* node)
+{
+  PUSH_LABEL(cout, CUR_IDX(cout)); /* remove this after debugging */
+  uint8_t start = LABEL_IDX(cout);
+  compile_node(cout, node->_while.cond);
+
+  PUSH(cout, OP_JZ);
+  uint8_t* end_addr = CUR_ADDR(cout);
+  PUSH(cout, 0);
+
+  compile_node(cout, node->_while.comp);
+  PUSH(cout, OP_PRINT); 
+
+  PUSH(cout, OP_JMP);
+  PUSH(cout, start);
+  PUSH_LABEL(cout, CUR_IDX(cout));
+  *end_addr = LABEL_IDX(cout);
+}
+static void compile_dowhile(cout_t* cout, ast_t* node)
+{
+  PUSH_LABEL(cout, CUR_IDX(cout));
+  uint8_t start = LABEL_IDX(cout);
+
+  compile_node(cout, node->_while.comp);
+  PUSH(cout, OP_PRINT); 
+  compile_node(cout, node->_while.cond);
+
+  PUSH(cout, OP_JNZ);
+  PUSH(cout, start);
 }
 static void compile_binary(cout_t* cout, ast_t* node)
 {

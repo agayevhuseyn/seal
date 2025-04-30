@@ -54,6 +54,8 @@ struct cout {
 void compile(cout_t*, ast_t*); /* init cout and compile root node into bytecode */
 static void compile_node(cout_t*, ast_t*); /* compile any node into bytecode */
 static void compile_if(cout_t*, ast_t*);
+static void compile_while(cout_t*, ast_t*);
+static void compile_dowhile(cout_t*, ast_t*);
 static void compile_binary(cout_t*, ast_t*);
 static void compile_val(cout_t*, ast_t*);
 
