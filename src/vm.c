@@ -2,7 +2,7 @@
 
 #define FETCH(vm) (*vm->ip++)
 #define PUSH(vm, val) do { \
-    if (vm->sp - vm->stack == STACK_SIZE){ \
+    if (vm->sp - vm->stack == STACK_SIZE) \
       ERROR("stack overflow"); \
     (*vm->sp++ = val); \
   } while (0)
@@ -49,12 +49,11 @@ void eval_vm(vm_t* vm)
     switch (op) {
       case OP_HALT: printf("Finish\n"); return;
       case OP_PUSH: {
-          uint8_t left  = FETCH(vm);
-          uint8_t right = FETCH(vm);
-          uint16_t idx = left ? (left << 8) | right : right;
-          PUSH(vm, GET_CONST(vm, idx));
-        }
-        break;
+        uint16_t idx = FETCH(vm) << 8;
+        idx |= FETCH(vm);
+        PUSH(vm, GET_CONST(vm, idx));
+      }
+      break;
       case OP_POP: POP(vm); break;
       case OP_ADD: {
         svalue_t right = POP(vm);
@@ -203,18 +202,23 @@ void eval_vm(vm_t* vm)
           ERROR_OP(<=, left, right);
       }
       break;
-      case OP_JMP:
-        JUMP(vm, FETCH(vm));
-        break;
+      case OP_JMP: {
+        uint16_t addr = FETCH(vm) << 8;
+        addr |= FETCH(vm);
+        JUMP(vm, addr);
+      }
+      break;
       case OP_JZ: {
-        uint16_t addr = FETCH(vm);
+        uint16_t addr = FETCH(vm) << 8;
+        addr |= FETCH(vm);
         if (!AS_BOOL(POP(vm))) {
           JUMP(vm, addr);
         }
       }
       break;
       case OP_JNZ: {
-        uint16_t addr = FETCH(vm);
+        uint16_t addr = FETCH(vm) << 8;
+        addr |= FETCH(vm);
         if (AS_BOOL(POP(vm))) {
           JUMP(vm, addr);
         }
