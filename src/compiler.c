@@ -8,7 +8,16 @@
     if (cout->bytecode_size >= cout->bytecode_cap) { \
       cout->bytecodes = SEAL_REALLOC(cout->bytecodes, sizeof(uint8_t) * (cout->bytecode_cap *= 2)); \
     } \
-    cout->bytecodes[cout->bytecode_size++] = byte; \
+    cout->bytecodes[cout->bytecode_size++] = (uint8_t)(byte); \
+  } while (0)
+
+#define PUSH_DUMMY(cout, times) for (int i = 0; i < (times); i++) { \
+    PUSH(cout, 0); \
+  }
+
+#define REPLACE_16BITS_INDEX(cout, addr, idx) do { \
+    *(addr)++ = (uint8_t)((idx) >> 8); \
+    *(addr)   = (uint8_t)(idx); \
   } while (0)
 
 #define CUR_IDX(cout) (cout->bytecode_size) /* returns index of current empty byte */
@@ -16,15 +25,15 @@
 
 #define PUSH_CONST(cout, val) ( \
     /* check bounds */ \
-    *cout->const_pool_ptr++ = val)
+    *cout->const_pool_ptr++ = (val))
 
 #define CONST_IDX(cout) ((uint16_t)(cout->const_pool_ptr - cout->const_pool - 1)) /* WARNING!! only use this before after constant */
 
 #define PUSH_LABEL(cout, addr) ( \
     /* check bounds */ \
-    *cout->label_ptr++ = addr)
+    *cout->label_ptr++ = (addr))
 
-#define LABEL_IDX(cout) ((uint8_t)(cout->label_ptr - cout->labels - 1)) /* WARNING!! only use this after pushing label */
+#define LABEL_IDX(cout) ((uint16_t)(cout->label_ptr - cout->labels - 1)) /* WARNING!! only use this after pushing label */
 
 void compile(cout_t* cout, ast_t* node)
 {
@@ -84,22 +93,22 @@ static void compile_if(cout_t* cout, ast_t* node)
 
   PUSH(cout, OP_JZ);
   next_addr = CUR_ADDR(cout);
-  PUSH(cout, 0);
+  PUSH_DUMMY(cout, 2); /* push 2 dummy values that will be changed later */
 
   compile_node(cout, node->_if.comp);
 
   if (jmp_size == 0) {
     PUSH_LABEL(cout, CUR_IDX(cout));
-    *next_addr = LABEL_IDX(cout);
+    REPLACE_16BITS_INDEX(cout, next_addr, LABEL_IDX(cout));
     return;
   }
   
   PUSH(cout, OP_JMP);
   *end_addr++ = CUR_ADDR(cout);
-  PUSH(cout, 0);
+  PUSH_DUMMY(cout, 2);
 
   PUSH_LABEL(cout, CUR_IDX(cout));
-  *next_addr = LABEL_IDX(cout);
+  REPLACE_16BITS_INDEX(cout, next_addr, LABEL_IDX(cout));
 
   do {
     node = node->_if._else;
@@ -109,7 +118,7 @@ static void compile_if(cout_t* cout, ast_t* node)
 
       PUSH(cout, OP_JZ);
       next_addr = CUR_ADDR(cout);
-      PUSH(cout, 0);
+      PUSH_DUMMY(cout, 2);
 
       compile_node(cout, node->_if.comp);
 
@@ -117,12 +126,12 @@ static void compile_if(cout_t* cout, ast_t* node)
         if (node->_if.has_else) {
           PUSH(cout, OP_JMP);
           *end_addr++ = CUR_ADDR(cout);
-          PUSH(cout, 0);
+          PUSH_DUMMY(cout, 2);
         }
       }
 
       PUSH_LABEL(cout, CUR_IDX(cout));
-      *next_addr = LABEL_IDX(cout);
+      REPLACE_16BITS_INDEX(cout, next_addr, LABEL_IDX(cout));
     } else {
       compile_node(cout, node->_else.comp);
     }
@@ -131,37 +140,39 @@ static void compile_if(cout_t* cout, ast_t* node)
   PUSH_LABEL(cout, CUR_IDX(cout));
 
   for (int i = 0; i < jmp_size; i++) {
-    *end_addrs[i] = LABEL_IDX(cout);
+    REPLACE_16BITS_INDEX(cout, end_addrs[i], LABEL_IDX(cout));
   }
 }
 static void compile_while(cout_t* cout, ast_t* node)
 {
   PUSH_LABEL(cout, CUR_IDX(cout)); /* remove this after debugging */
-  uint8_t start = LABEL_IDX(cout);
+  uint16_t start = LABEL_IDX(cout);
   compile_node(cout, node->_while.cond);
 
   PUSH(cout, OP_JZ);
   uint8_t* end_addr = CUR_ADDR(cout);
-  PUSH(cout, 0);
+  PUSH_DUMMY(cout, 2);
 
   compile_node(cout, node->_while.comp);
   PUSH(cout, OP_PRINT); 
 
   PUSH(cout, OP_JMP);
+  PUSH(cout, start << start);
   PUSH(cout, start);
   PUSH_LABEL(cout, CUR_IDX(cout));
-  *end_addr = LABEL_IDX(cout);
+  REPLACE_16BITS_INDEX(cout, end_addr, LABEL_IDX(cout));
 }
 static void compile_dowhile(cout_t* cout, ast_t* node)
 {
   PUSH_LABEL(cout, CUR_IDX(cout));
-  uint8_t start = LABEL_IDX(cout);
+  uint16_t start = LABEL_IDX(cout);
 
   compile_node(cout, node->_while.comp);
   PUSH(cout, OP_PRINT); 
   compile_node(cout, node->_while.cond);
 
   PUSH(cout, OP_JNZ);
+  PUSH(cout, start >> 8);
   PUSH(cout, start);
 }
 static void compile_binary(cout_t* cout, ast_t* node)
@@ -209,6 +220,6 @@ static void compile_val(cout_t* cout, ast_t* node)
   }
   PUSH_CONST(cout, val); /* push constant into pool */
   uint16_t idx = CONST_IDX(cout);
-  PUSH(cout, (uint8_t)idx >> 8);
+  PUSH(cout, (uint8_t)(idx >> 8));
   PUSH(cout, (uint8_t)idx);
 }

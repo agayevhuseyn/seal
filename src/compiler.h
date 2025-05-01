@@ -9,6 +9,7 @@
 typedef struct cout cout_t;
 
 #define CONST_POOL_SIZE (0xFFFF + 1)    /* 65536 */
+#define LABEL_SIZE      (0xFFFF + 1)    /* 65536 */
 
 #define NULL_IDX  0
 #define TRUE_IDX  1
@@ -38,8 +39,6 @@ typedef struct cout cout_t;
     } \
     if (i - 1 == cout.const_pool_ptr - cout.const_pool) printf("CONST POOL END-------\n"); \
   }
-
-#define LABEL_SIZE (0xFF + 1)
 
 struct cout {
   uint8_t* bytecodes;     /* bytecode array */
