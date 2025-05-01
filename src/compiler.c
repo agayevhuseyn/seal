@@ -145,7 +145,7 @@ static void compile_if(cout_t* cout, ast_t* node)
 }
 static void compile_while(cout_t* cout, ast_t* node)
 {
-  PUSH_LABEL(cout, CUR_IDX(cout)); /* remove this after debugging */
+  PUSH_LABEL(cout, CUR_IDX(cout));
   uint16_t start = LABEL_IDX(cout);
   compile_node(cout, node->_while.cond);
 

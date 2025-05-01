@@ -46,18 +46,20 @@ void eval_vm(vm_t* vm)
   while (true) {
     uint8_t op = FETCH(vm);
 
+    uint16_t idx, addr;
+    svalue_t right, left;
+
     switch (op) {
       case OP_HALT: printf("Finish\n"); return;
-      case OP_PUSH: {
-        uint16_t idx = FETCH(vm) << 8;
+      case OP_PUSH:
+        idx = FETCH(vm) << 8;
         idx |= FETCH(vm);
         PUSH(vm, GET_CONST(vm, idx));
-      }
-      break;
+        break;
       case OP_POP: POP(vm); break;
-      case OP_ADD: {
-        svalue_t right = POP(vm);
-        svalue_t left  = POP(vm);
+      case OP_ADD:
+        right = POP(vm);
+        left  = POP(vm);
         if (IS_INT(left) && IS_INT(right))
           PUSH_INT(vm, AS_INT(left) + AS_INT(right));
         else if (IS_FLOAT(left) && IS_FLOAT(right))
@@ -66,11 +68,10 @@ void eval_vm(vm_t* vm)
           PUSH_FLOAT(vm, (IS_INT(left) ? AS_INT(left) : AS_FLOAT(left)) + (IS_INT(right) ? AS_INT(right) : AS_FLOAT(right)));
         else
           ERROR_OP(+, left, right);
-      }
-      break;
-      case OP_SUB: {
-        svalue_t right = POP(vm);
-        svalue_t left  = POP(vm);
+        break;
+      case OP_SUB:
+        right = POP(vm);
+        left  = POP(vm);
         if (IS_INT(left) && IS_INT(right))
           PUSH_INT(vm, AS_INT(left) - AS_INT(right));
         else if (IS_FLOAT(left) && IS_FLOAT(right))
@@ -79,11 +80,10 @@ void eval_vm(vm_t* vm)
           PUSH_FLOAT(vm, (IS_INT(left) ? AS_INT(left) : AS_FLOAT(left)) - (IS_INT(right) ? AS_INT(right) : AS_FLOAT(right)));
         else
           ERROR_OP(-, left, right);
-      }
-      break;
-      case OP_MUL: {
-        svalue_t right = POP(vm);
-        svalue_t left  = POP(vm);
+        break;
+      case OP_MUL:
+        right = POP(vm);
+        left  = POP(vm);
         if (IS_INT(left) && IS_INT(right))
           PUSH_INT(vm, AS_INT(left) * AS_INT(right));
         else if (IS_FLOAT(left) && IS_FLOAT(right))
@@ -92,11 +92,10 @@ void eval_vm(vm_t* vm)
           PUSH_FLOAT(vm, (IS_INT(left) ? AS_INT(left) : AS_FLOAT(left)) * (IS_INT(right) ? AS_INT(right) : AS_FLOAT(right)));
         else
           ERROR_OP(*, left, right);
-      }
-      break;
-      case OP_DIV: {
-        svalue_t right = POP(vm);
-        svalue_t left  = POP(vm);
+        break;
+      case OP_DIV:
+        right = POP(vm);
+        left  = POP(vm);
         if (IS_INT(left) && IS_INT(right))
           PUSH_INT(vm, AS_INT(left) / AS_INT(right));
         else if (IS_FLOAT(left) && IS_FLOAT(right))
@@ -105,20 +104,18 @@ void eval_vm(vm_t* vm)
           PUSH_FLOAT(vm, (IS_INT(left) ? AS_INT(left) : AS_FLOAT(left)) / (IS_INT(right) ? AS_INT(right) : AS_FLOAT(right)));
         else
           ERROR_OP(*, left, right);
-      }
-      break;
-      case OP_MOD: {
-        svalue_t right = POP(vm);
-        svalue_t left  = POP(vm);
+        break;
+      case OP_MOD:
+        right = POP(vm);
+        left  = POP(vm);
         if (IS_INT(left) && IS_INT(right))
           PUSH_INT(vm, AS_INT(left) % AS_INT(right));
         else
           ERROR_OP(*, left, right);
-      }
-      break;
-      case OP_EQ: {
-        svalue_t right = POP(vm);
-        svalue_t left  = POP(vm);
+        break;
+      case OP_EQ:
+        right = POP(vm);
+        left  = POP(vm);
         if (IS_INT(left) && IS_INT(right))
           PUSH_BOOL(vm, AS_INT(left) == AS_INT(right));
         else if (IS_FLOAT(left) && IS_FLOAT(right))
@@ -131,11 +128,10 @@ void eval_vm(vm_t* vm)
           PUSH_BOOL(vm, strcmp(AS_STRING(left), AS_STRING(right)) == 0);
         else
           ERROR_OP(==, left, right);
-      }
-      break;
-      case OP_NE: {
-        svalue_t right = POP(vm);
-        svalue_t left  = POP(vm);
+        break;
+      case OP_NE:
+        right = POP(vm);
+        left  = POP(vm);
         if (IS_INT(left) && IS_INT(right))
           PUSH_BOOL(vm, AS_INT(left) != AS_INT(right));
         else if (IS_FLOAT(left) && IS_FLOAT(right))
@@ -148,11 +144,10 @@ void eval_vm(vm_t* vm)
           PUSH_BOOL(vm, strcmp(AS_STRING(left), AS_STRING(right)) != 0);
         else
           ERROR_OP(!=, left, right);
-      }
-      break;
-      case OP_GT: {
-        svalue_t right = POP(vm);
-        svalue_t left  = POP(vm);
+        break;
+      case OP_GT:
+        right = POP(vm);
+        left  = POP(vm);
         if (IS_INT(left) && IS_INT(right))
           PUSH_BOOL(vm, AS_INT(left) > AS_INT(right));
         else if (IS_FLOAT(left) && IS_FLOAT(right))
@@ -161,11 +156,10 @@ void eval_vm(vm_t* vm)
           PUSH_BOOL(vm, (IS_INT(left) ? AS_INT(left) : AS_FLOAT(left)) > (IS_INT(right) ? AS_INT(right) : AS_FLOAT(right)));
         else
           ERROR_OP(>, left, right);
-      }
-      break;
-      case OP_GE: {
-        svalue_t right = POP(vm);
-        svalue_t left  = POP(vm);
+        break;
+      case OP_GE:
+        right = POP(vm);
+        left  = POP(vm);
         if (IS_INT(left) && IS_INT(right))
           PUSH_BOOL(vm, AS_INT(left) >= AS_INT(right));
         else if (IS_FLOAT(left) && IS_FLOAT(right))
@@ -174,11 +168,10 @@ void eval_vm(vm_t* vm)
           PUSH_BOOL(vm, (IS_INT(left) ? AS_INT(left) : AS_FLOAT(left)) >= (IS_INT(right) ? AS_INT(right) : AS_FLOAT(right)));
         else
           ERROR_OP(>=, left, right);
-      }
-      break;
-      case OP_LT: {
-        svalue_t right = POP(vm);
-        svalue_t left  = POP(vm);
+        break;
+      case OP_LT:
+        right = POP(vm);
+        left  = POP(vm);
         if (IS_INT(left) && IS_INT(right))
           PUSH_BOOL(vm, AS_INT(left) < AS_INT(right));
         else if (IS_FLOAT(left) && IS_FLOAT(right))
@@ -187,11 +180,10 @@ void eval_vm(vm_t* vm)
           PUSH_BOOL(vm, (IS_INT(left) ? AS_INT(left) : AS_FLOAT(left)) < (IS_INT(right) ? AS_INT(right) : AS_FLOAT(right)));
         else
           ERROR_OP(<, left, right);
-      }
-      break;
-      case OP_LE: {
-        svalue_t right = POP(vm);
-        svalue_t left  = POP(vm);
+        break;
+      case OP_LE:
+        right = POP(vm);
+        left  = POP(vm);
         if (IS_INT(left) && IS_INT(right))
           PUSH_BOOL(vm, AS_INT(left) <= AS_INT(right));
         else if (IS_FLOAT(left) && IS_FLOAT(right))
@@ -200,30 +192,26 @@ void eval_vm(vm_t* vm)
           PUSH_BOOL(vm, (IS_INT(left) ? AS_INT(left) : AS_FLOAT(left)) <= (IS_INT(right) ? AS_INT(right) : AS_FLOAT(right)));
         else
           ERROR_OP(<=, left, right);
-      }
-      break;
-      case OP_JMP: {
-        uint16_t addr = FETCH(vm) << 8;
+        break;
+      case OP_JMP:
+        addr = FETCH(vm) << 8;
         addr |= FETCH(vm);
         JUMP(vm, addr);
-      }
-      break;
-      case OP_JZ: {
-        uint16_t addr = FETCH(vm) << 8;
+        break;
+      case OP_JZ:
+        addr = FETCH(vm) << 8;
         addr |= FETCH(vm);
         if (!AS_BOOL(POP(vm))) {
           JUMP(vm, addr);
         }
-      }
-      break;
-      case OP_JNZ: {
-        uint16_t addr = FETCH(vm) << 8;
+        break;
+      case OP_JNZ:
+        addr = FETCH(vm) << 8;
         addr |= FETCH(vm);
         if (AS_BOOL(POP(vm))) {
           JUMP(vm, addr);
         }
-      }
-      break;
+        break;
       case OP_PRINT: {
         svalue_t s = POP(vm);
         switch (s.type) {
