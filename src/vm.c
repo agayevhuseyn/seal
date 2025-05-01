@@ -1,7 +1,11 @@
 #include "vm.h"
 
 #define FETCH(vm) (*vm->ip++)
-#define PUSH(vm, val) (*vm->sp++ = val)
+#define PUSH(vm, val) do { \
+    if (vm->sp - vm->stack == STACK_SIZE){ \
+      ERROR("stack overflow"); \
+    (*vm->sp++ = val); \
+  } while (0)
 #define POP(vm) (*(--(vm->sp)))
 #define JUMP(vm, addr) (vm->ip = &vm->bytecodes[vm->label_ptr[addr]])
 #define GET_CONST(vm, i) (vm->const_pool_ptr[i])
