@@ -28,6 +28,7 @@ int main(int argc, char** argv)
   bool PRINT_OP   = false;
   bool PRINT_BYTE = false;
   bool PRINT_CONST_POOL = false;
+  bool PRINT_STACK = false;
 
   for (int i = 2; i < argc; i++) {
     if (strcmp("-pt", argv[i]) == 0) {
@@ -40,7 +41,9 @@ int main(int argc, char** argv)
       PRINT_BYTE = true;
     } else if (strcmp("-pc", argv[i]) == 0) {
       PRINT_CONST_POOL = true;
-    } else {
+    } else if (strcmp("-ps", argv[i]) == 0) {
+      PRINT_STACK = true;
+    }else {
       flags();
       return EXIT_FAILURE;
     }
@@ -73,7 +76,8 @@ int main(int argc, char** argv)
   vm_t vm;
   init_vm(&vm, &cout);
   eval_vm(&vm);
-  //print_stack(&vm);
+  if (PRINT_STACK)
+    print_stack(&vm);
 
   // FREE EVERYTHING AFTER BEING USED
   
