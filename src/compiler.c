@@ -61,8 +61,23 @@ static void compile_node(cout_t* cout, ast_t* node)
          * DO NOT COMPILE DUMMY STATEMENTS (like 0, 1, 'a')
          * ONLY COMPILE FUNCTIONS AND POP THEIR VALUE 
          */
-        if (node->comp.stmts[i]->type != AST_NULL) {
-          compile_node(cout, node->comp.stmts[i]);
+        switch (node->comp.stmts[i]->type) {
+          case AST_NULL:
+          case AST_INT:
+          case AST_FLOAT:
+          case AST_STRING:
+          case AST_BOOL:
+            break;
+          case AST_UNARY:
+          case AST_BINARY:
+          case AST_BINARY_BOOL:
+          case AST_TERNARY:
+            compile_node(cout, node->comp.stmts[i]);
+            PUSH(cout, OP_POP);
+            break;
+          default:
+            compile_node(cout, node->comp.stmts[i]);
+            break;
         }
       }
     break;
@@ -154,7 +169,7 @@ static void compile_while(cout_t* cout, ast_t* node)
   PUSH_DUMMY(cout, 2);
 
   compile_node(cout, node->_while.comp);
-  PUSH(cout, OP_PRINT); 
+  //PUSH(cout, OP_PRINT); 
 
   PUSH(cout, OP_JMP);
   PUSH(cout, start << start);
@@ -168,7 +183,7 @@ static void compile_dowhile(cout_t* cout, ast_t* node)
   uint16_t start = LABEL_IDX(cout);
 
   compile_node(cout, node->_while.comp);
-  PUSH(cout, OP_PRINT); 
+  //PUSH(cout, OP_PRINT); 
   compile_node(cout, node->_while.cond);
 
   PUSH(cout, OP_JNZ);
