@@ -20,6 +20,11 @@ https://agayevhuseyn.github.io/seal-web
 
 ```javascript
 writeln("Hello, Seal!") // output: Hello, Seal!
+
+define factor(n)
+    if n > 2
+        return n * factor(n - 1)
+    return 1
 ```
 
 ## Contributing
