@@ -6,20 +6,13 @@
 #include "gc.h"
 #include "vm.h"
 
-static inline void usage(const char* program_name)
-{
-  fprintf(stderr, "seal: usage: %s filename.seal\n", program_name);
-}
-
-static inline void flags()
-{
-  fprintf(stderr, "seal: flags: -pt (print tokens), -pa (print AST), -po (print opcodes), -pb (print bytes), -pc (print constant pool)\n");
-}
+#define USAGE(prog_name) (fprintf(stderr, "seal: usage: %s filename.seal\n", prog_name))
+#define PRINT_FLAGS() (fprintf(stderr, "seal: flags: -pt (print tokens), -pa (print AST), -po (print opcodes), -pb (print bytes), -pc (print constant pool)\n"))
 
 int main(int argc, char** argv)
 {
   if (argc < 2) {
-    usage(argv[0]);
+    USAGE(argv[0]);
     return EXIT_FAILURE;
   }
   /* FLAGS */
@@ -44,7 +37,7 @@ int main(int argc, char** argv)
     } else if (strcmp("-ps", argv[i]) == 0) {
       PRINT_STACK = true;
     }else {
-      flags();
+      PRINT_FLAGS();
       return EXIT_FAILURE;
     }
   }
@@ -57,7 +50,7 @@ int main(int argc, char** argv)
     print_tokens(lexer.toks, lexer.tok_size);
   /* parsing and generating abstract syntax tree (AST) */
   
-  create_const_asts(); // allocate constant ASTs
+  create_const_asts(); /* allocate constant ASTs */
   parser_t parser;
   init_parser(&parser, &lexer);
   ast_t* root = parser_parse(&parser);
@@ -79,7 +72,7 @@ int main(int argc, char** argv)
   if (PRINT_STACK)
     print_stack(&vm);
 
-  // FREE EVERYTHING AFTER BEING USED
+  /* FREE EVERYTHING AFTER BEING USED */
   
   return EXIT_SUCCESS;
 }
