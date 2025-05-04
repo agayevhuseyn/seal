@@ -22,7 +22,7 @@ https://agayevhuseyn.github.io/seal-web
 writeln("Hello, Seal!") // output: Hello, Seal!
 
 define factor(n)
-    if n > 2
+    if n > 1
         return n * factor(n - 1)
     return 1
 ```
