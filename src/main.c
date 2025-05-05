@@ -3,7 +3,6 @@
 
 #include "lexer.h"
 #include "parser.h"
-#include "gc.h"
 #include "vm.h"
 
 #define USAGE(prog_name) (fprintf(stderr, "seal: usage: %s filename.seal\n", prog_name))
