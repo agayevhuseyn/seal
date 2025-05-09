@@ -3,80 +3,78 @@
 
 #include "seal.h"
 
-#define TOK_EOF     0    // "end of file";
+#define TOK_EOF     0    /* "end of file" */
 /* keywords */
-#define TOK_VAR     1    // var
-#define TOK_CONST   2    // const
-#define TOK_IF      3    // if
-#define TOK_THEN    4    // then
-#define TOK_ELSE    5    // else
-#define TOK_DO      6    // do
-#define TOK_WHILE   7    // while
-#define TOK_FOR     8    // for
-#define TOK_IN      9    // in
-#define TOK_TO      10   // to
-#define TOK_BY      11   // by
-#define TOK_SKIP    12   // skip
-#define TOK_STOP    13   // stop
-#define TOK_INCLUDE 14   // include
-#define TOK_EXTERN  15   // extern
-#define TOK_AS      16   // as
-#define TOK_DEFINE  17   // define
-#define TOK_RETURN  18   // return
-#define TOK_TYPEOF  19   // typeof
-#define TOK_AND     20   // and
-#define TOK_OR      21   // or
-#define TOK_NOT     22   // not
-#define TOK_TRUE    23   // true
-#define TOK_FALSE   24   // false
-#define TOK_NULL    25   // null
-#define TOK_ID      26   // identifier
-#define TOK_INT     27   // integer value
-#define TOK_FLOAT   28   // floating value
-#define TOK_STRING  29   // string value
+#define TOK_IF      1    // if
+#define TOK_THEN    2    // then
+#define TOK_ELSE    3    // else
+#define TOK_DO      4    // do
+#define TOK_WHILE   5    // while
+#define TOK_FOR     6    // for
+#define TOK_IN      7    // in
+#define TOK_TO      8    // to
+#define TOK_BY      9    // by
+#define TOK_SKIP    10   // skip
+#define TOK_STOP    11   // stop
+#define TOK_INCLUDE 12   // include
+#define TOK_GLOBAL  13   // global
+#define TOK_AS      14   // as
+#define TOK_DEFINE  15   // define
+#define TOK_RETURN  16   // return
+#define TOK_TYPEOF  17   // typeof
+#define TOK_AND     18   // and
+#define TOK_OR      19   // or
+#define TOK_NOT     20   // not
+#define TOK_TRUE    21   // true
+#define TOK_FALSE   22   // false
+#define TOK_NULL    23   // null
+#define TOK_ID      24   // identifier
+#define TOK_INT     25   // integer value
+#define TOK_FLOAT   26   // floating value
+#define TOK_STRING  27   // string value
 /* non-words */
-#define TOK_DOT     30   // .
-#define TOK_COLON   31   // :
-#define TOK_COMMA   32   // ,
-#define TOK_PLUS    33   // +
-#define TOK_MINUS   34   // -
-#define TOK_MUL     35   // *
-#define TOK_DIV     36   // /
-#define TOK_MOD     37   // %
-#define TOK_BAND    38   // &
-#define TOK_BOR     39   // |
-#define TOK_XOR     40   // ^
-#define TOK_SHL     41   // <<
-#define TOK_SHR     42   // >>
-#define TOK_BNOT    43   // ~
-#define TOK_ASSIGN  44   // =
-#define TOK_PLUS_ASSIGN   45   // +=
-#define TOK_MINUS_ASSIGN  46   // -=
-#define TOK_MUL_ASSIGN    47   // *=
-#define TOK_DIV_ASSIGN    48   // /=
-#define TOK_MOD_ASSIGN    49   // %=
-#define TOK_BAND_ASSIGN   50   // &=
-#define TOK_BOR_ASSIGN    51   // |=
-#define TOK_XOR_ASSIGN    52   // ^=
-#define TOK_SHL_ASSIGN    53   // <<=
-#define TOK_SHR_ASSIGN    54   // >>=
-#define TOK_EQ      55   // ==
-#define TOK_NE      56   // !=
-#define TOK_GT      57   // >
-#define TOK_GE      58   // >=
-#define TOK_LT      59   // <
-#define TOK_LE      60   // <=
+#define TOK_DOT     28   // .
+#define TOK_COLON   29   // :
+#define TOK_COMMA   30   // ,
+#define TOK_PLUS    31   // +
+#define TOK_MINUS   32   // -
+#define TOK_MUL     33   // *
+#define TOK_DIV     34   // /
+#define TOK_MOD     35   // %
+#define TOK_BAND    36   // &
+#define TOK_BOR     37   // |
+#define TOK_XOR     38   // ^
+#define TOK_SHL     39   // <<
+#define TOK_SHR     40   // >>
+#define TOK_BNOT    41   // ~
+#define TOK_ASSIGN  42   // =
+#define TOK_PLUS_ASSIGN   43   // +=
+#define TOK_MINUS_ASSIGN  44   // -=
+#define TOK_MUL_ASSIGN    45   // *=
+#define TOK_DIV_ASSIGN    46   // /=
+#define TOK_MOD_ASSIGN    47   // %=
+#define TOK_BAND_ASSIGN   48   // &=
+#define TOK_BOR_ASSIGN    49   // |=
+#define TOK_XOR_ASSIGN    50   // ^=
+#define TOK_SHL_ASSIGN    51   // <<=
+#define TOK_SHR_ASSIGN    52   // >>=
+#define TOK_EQ      53   // ==
+#define TOK_NE      54   // !=
+#define TOK_GT      55   // >
+#define TOK_GE      56   // >=
+#define TOK_LT      57   // <
+#define TOK_LE      58   // <=
 /* parenthesis */
-#define TOK_LPAREN  61   // (
-#define TOK_RPAREN  62   // )
-#define TOK_LBRACK  63   // [
-#define TOK_RBRACK  64   // ]
-#define TOK_LBRACE  65   // {
-#define TOK_RBRACE  66   // }
+#define TOK_LPAREN  59   // (
+#define TOK_RPAREN  60   // )
+#define TOK_LBRACK  61   // [
+#define TOK_RBRACK  62   // ]
+#define TOK_LBRACE  63   // {
+#define TOK_RBRACE  64   // }
 /* block-related */
-#define TOK_NEWL    67   // \n
-#define TOK_INDENT  68   // \t or \s
-#define TOK_DEDENT  69   // <-\t or \s
+#define TOK_NEWL    65   // \n
+#define TOK_INDENT  66   // \t or \s
+#define TOK_DEDENT  67   // <-\t or \s
 
 #define TOK_LAST TOK_DEDENT    // last token
 
@@ -92,8 +90,6 @@ static inline const char* token_type_name(int type)
 {
   switch (type) {
     case TOK_EOF    : return "TOK_EOF";
-    case TOK_VAR    : return "TOK_VAR";
-    case TOK_CONST  : return "TOK_CONST";
     case TOK_IF     : return "TOK_IF";
     case TOK_THEN   : return "TOK_THEN";
     case TOK_ELSE   : return "TOK_ELSE";
@@ -106,7 +102,7 @@ static inline const char* token_type_name(int type)
     case TOK_SKIP   : return "TOK_SKIP";
     case TOK_STOP   : return "TOK_STOP";
     case TOK_INCLUDE: return "TOK_INCLUDE";
-    case TOK_EXTERN : return "TOK_EXTERN";
+    case TOK_GLOBAL : return "TOK_GLOBAL";
     case TOK_AS     : return "TOK_AS";
     case TOK_DEFINE : return "TOK_DEFINE";
     case TOK_RETURN : return "TOK_RETURN";
@@ -169,8 +165,6 @@ static inline const char* htoken_type_name(int type)
 {
   switch (type) {
     case TOK_EOF    : return "end of file";
-    case TOK_VAR    : return "var";
-    case TOK_CONST  : return "const";
     case TOK_IF     : return "if";
     case TOK_THEN   : return "then";
     case TOK_ELSE   : return "else";
@@ -183,7 +177,7 @@ static inline const char* htoken_type_name(int type)
     case TOK_SKIP   : return "skip";
     case TOK_STOP   : return "stop";
     case TOK_INCLUDE: return "include";
-    case TOK_EXTERN : return "extern";
+    case TOK_GLOBAL : return "global";
     case TOK_AS     : return "as";
     case TOK_DEFINE : return "define";
     case TOK_RETURN : return "return";
