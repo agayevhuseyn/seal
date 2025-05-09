@@ -295,6 +295,9 @@ static inline ast_t* parser_parse_var_ref(parser_t* parser)
 {
   ast_t* ast = static_create_ast(AST_VAR_REF, parser_line(parser));
   ast->var_ref.name = parser_eat(parser, TOK_ID)->val;
+
+  ast->var_ref.is_global = false; /* variables are local by default */
+
   return ast;
 }
 static ast_t* parser_parse_func_call(parser_t* parser)
@@ -732,6 +735,11 @@ static ast_t* parser_parse_primary(parser_t* parser)
 {
   ast_t* main = NULL;
   switch (parser_peek(parser)->type) {
+    case TOK_GLOBAL:
+      parser_advance(parser);
+      main = parser_parse_var_ref(parser);
+      main->var_ref.is_global = true;
+      break;
     case TOK_ID:
       main = parser_parse_id(parser);
       break;
