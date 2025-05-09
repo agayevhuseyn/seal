@@ -9,7 +9,7 @@ static ast_t* __ast_false = NULL;
 
 inline void create_const_asts()
 {
-  __ast_null = static_create_ast(AST_NOP, -1);
+  __ast_nop  = static_create_ast(AST_NOP, -1);
   __ast_null = static_create_ast(AST_NULL, -1);
   __ast_true = static_create_ast(AST_BOOL, -1);
   __ast_true->boolean.val = true;

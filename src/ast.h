@@ -274,6 +274,7 @@ static void print_ast(ast_t* node)
 {
   switch (node->type) {
     /* datas */
+    case AST_NOP:
     case AST_NULL:
       printf("%d: %s\n",
               node->line,

@@ -33,7 +33,7 @@ static inline ast_t* parser_error(parser_t* parser, const char* err)
 {
   fprintf(stderr, "seal: file: \'%s\', line %d\nsyntax error: %s\n", parser->file_path, parser_line(parser), err);
   exit(1);
-  return ast_null();
+  return ast_nop();
 }
 
 static inline bool is_reserved_name(const char* name)
@@ -184,10 +184,10 @@ static ast_t* parser_parse_statement(parser_t* parser,
       return parser_parse_include(parser);
     case TOK_DEDENT:
       if (is_global_scope) goto error;
-      return ast_null();
+      return ast_nop();
     case TOK_EOF:
       if (!is_global_scope) goto error;
-      return ast_null();
+      return ast_nop();
     default:
       return parser_parse_expr(parser);
   }
