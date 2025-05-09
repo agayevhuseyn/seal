@@ -6,38 +6,39 @@
 #include "token.h"
 
 /* datas */
-#define AST_NULL          0
-#define AST_INT           1
-#define AST_FLOAT         2
-#define AST_STRING        3
-#define AST_BOOL          4
-#define AST_LIST          5
-#define AST_MAP           6
-#define AST_VAR_REF       7
-#define AST_FUNC_CALL     8
-#define AST_SUBSCRIPT     9
-#define AST_MEMACC        10
-#define AST_LIB_FUNC_CALL 11
+#define AST_NOP           0
+#define AST_NULL          1
+#define AST_INT           2
+#define AST_FLOAT         3
+#define AST_STRING        4
+#define AST_BOOL          5
+#define AST_LIST          6
+#define AST_MAP           7
+#define AST_VAR_REF       8
+#define AST_FUNC_CALL     9
+#define AST_SUBSCRIPT     10
+#define AST_MEMACC        11
+#define AST_LIB_FUNC_CALL 12
 /* blocks */
-#define AST_COMP          12
-#define AST_IF            13
-#define AST_ELSE          14
-#define AST_DOWHILE       15
-#define AST_WHILE         16
-#define AST_FOR           17
-#define AST_FUNC_DEF      18
+#define AST_COMP          13
+#define AST_IF            14
+#define AST_ELSE          15
+#define AST_DOWHILE       16
+#define AST_WHILE         17
+#define AST_FOR           18
+#define AST_FUNC_DEF      19
 /* block control */
-#define AST_SKIP          19
-#define AST_STOP          20
-#define AST_RETURN        21
+#define AST_SKIP          20
+#define AST_STOP          21
+#define AST_RETURN        22
 /* operations */
-#define AST_UNARY         22
-#define AST_BINARY        23
-#define AST_BINARY_BOOL   24
-#define AST_TERNARY       25
-#define AST_ASSIGN        26
+#define AST_UNARY         23
+#define AST_BINARY        24
+#define AST_BINARY_BOOL   25
+#define AST_TERNARY       26
+#define AST_ASSIGN        27
 /* others */
-#define AST_INCLUDE       27
+#define AST_INCLUDE       28
 /* last index */
 #define AST_LAST AST_INCLUDE
 
@@ -75,6 +76,7 @@ typedef struct ast {
     } map;
     struct {
       const char* name;
+      bool is_global;
     } var_ref;
     struct {
       const char* name;
@@ -172,6 +174,7 @@ typedef struct ast {
 static inline const char* ast_type_name(int type)
 {
   switch (type) {
+    case AST_NOP          : return "AST_NOP";
     case AST_NULL         : return "AST_NULL";
     case AST_INT          : return "AST_INT";
     case AST_FLOAT        : return "AST_FLOAT";
@@ -207,6 +210,7 @@ static inline const char* ast_type_name(int type)
 static inline const char* hast_type_name(int type)
 {
   switch (type) {
+    case AST_NOP          : return "no operation";
     case AST_NULL         : return "null";
     case AST_INT          : return "int";
     case AST_FLOAT        : return "float";
@@ -261,6 +265,7 @@ static inline ast_t* static_create_ast(int type, int line)
 void create_const_asts(); /* this function must be called only once */
 
 /* constant nodes are called with these functions */
+ast_t* ast_nop();
 ast_t* ast_null();
 ast_t* ast_true();
 ast_t* ast_false();
@@ -321,8 +326,9 @@ static void print_ast(ast_t* node)
       }
       break;
     case AST_VAR_REF:
-      printf("%d: %s: \'%s\'\n",
+      printf("%d: %s%s: \'%s\'\n",
               node->line,
+              node->var_ref.is_global ? "global " : "",
               hast_type_name(node->type),
               node->var_ref.name);
       break;
