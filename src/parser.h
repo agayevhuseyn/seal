@@ -39,7 +39,6 @@ static inline ast_t* parser_parse_id(parser_t*);
 static inline ast_t* parser_parse_var_ref(parser_t*);
 static ast_t* parser_parse_func_call(parser_t*);
 /* parse blocks */
-static ast_t* parser_parse_var_def(parser_t*);
 static ast_t* parser_parse_if(parser_t*, bool can_be_ternary, bool is_func, bool is_loop);
 static ast_t* parser_parse_else(parser_t*, bool is_func, bool is_loop);
 static ast_t* parser_parse_dowhile(parser_t*, bool is_func);
@@ -47,7 +46,6 @@ static ast_t* parser_parse_while(parser_t*, bool is_func);
 static ast_t* parser_parse_for(parser_t*, bool is_func);
 static ast_t* parser_parse_func_def(parser_t*);
 static ast_t* parser_parse_struct_def(parser_t*);
-static ast_t* parser_parse_extern(parser_t*);
 /* parse block control */
 static inline ast_t* parser_parse_skip(parser_t*);
 static inline ast_t* parser_parse_stop(parser_t*);

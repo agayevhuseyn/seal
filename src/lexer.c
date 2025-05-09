@@ -366,7 +366,7 @@ static inline void lexer_add_token(lexer_t* lexer, token_t* tok)
 static token_t* lexer_get_id(lexer_t* lexer)
 {
   char* lexeme = lexer_get_lexeme(lexer, LEXEME_ID, 0);
-  for (int i = TOK_VAR; i < TOK_ID; i++) {
+  for (int i = TOK_IF; i < TOK_ID; i++) {
     if (strcmp(lexeme, htoken_type_name(i)) == 0) {
       free(lexeme);
       return create_token(i, NULL, lexer->line);

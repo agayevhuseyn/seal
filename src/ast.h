@@ -20,25 +20,24 @@
 #define AST_LIB_FUNC_CALL 11
 /* blocks */
 #define AST_COMP          12
-#define AST_VAR_DEF       13
-#define AST_IF            14
-#define AST_ELSE          15
-#define AST_DOWHILE       16
-#define AST_WHILE         17
-#define AST_FOR           18
-#define AST_FUNC_DEF      19
+#define AST_IF            13
+#define AST_ELSE          14
+#define AST_DOWHILE       15
+#define AST_WHILE         16
+#define AST_FOR           17
+#define AST_FUNC_DEF      18
 /* block control */
-#define AST_SKIP          20
-#define AST_STOP          21
-#define AST_RETURN        22
+#define AST_SKIP          19
+#define AST_STOP          20
+#define AST_RETURN        21
 /* operations */
-#define AST_UNARY         23
-#define AST_BINARY        24
-#define AST_BINARY_BOOL   25
-#define AST_TERNARY       26
-#define AST_ASSIGN        27
+#define AST_UNARY         22
+#define AST_BINARY        23
+#define AST_BINARY_BOOL   24
+#define AST_TERNARY       25
+#define AST_ASSIGN        26
 /* others */
-#define AST_INCLUDE       28
+#define AST_INCLUDE       27
 /* last index */
 #define AST_LAST AST_INCLUDE
 
@@ -100,13 +99,6 @@ typedef struct ast {
       size_t stmt_size;
     } comp;
     struct {
-      const char** names;
-      struct ast** exprs;
-      size_t size;
-      bool is_const;
-      bool is_extern;
-    } var_def;
-    struct {
       struct ast* cond;
       struct ast* comp;
       struct ast* _else;
@@ -137,7 +129,6 @@ typedef struct ast {
       const char** param_names;
       size_t param_size;
       struct ast* comp;
-      bool is_extern;
     } func_def;
     /* block control */
     struct {
@@ -230,7 +221,6 @@ static inline const char* hast_type_name(int type)
     case AST_MEMACC       : return "member access";
     case AST_LIB_FUNC_CALL: return "library function call";
     case AST_COMP         : return "compound";
-    case AST_VAR_DEF      : return "variable definition";
     case AST_IF           : return "if";
     case AST_ELSE         : return "else";
     case AST_DOWHILE      : return "do while";
@@ -394,17 +384,6 @@ static void print_ast(ast_t* node)
       for (int i = 0; i < node->comp.stmt_size; i++) {
         printf("comp node %d:\n", i);
         print_ast(node->comp.stmts[i]);
-      }
-      break;
-    case AST_VAR_DEF:
-      printf("%d: %s definition: size: %zu\n",
-              node->line,
-              node->var_def.is_const ? "constant" : "variable",
-              node->var_def.size);
-      for (int i = 0; i < node->var_def.size; i++) {
-        printf("def %d:\n\t", i);
-        printf("name: %s, expr:\n\t", node->var_def.names[i]);
-        print_ast(node->var_def.exprs[i]);
       }
       break;
     case AST_IF:

@@ -155,10 +155,6 @@ static ast_t* parser_parse_statement(parser_t* parser,
 {
   bool is_global_scope = !is_func && !is_ifelse && !is_loop;
   switch (parser_peek(parser)->type) {
-    case TOK_VAR:
-    case TOK_CONST:
-      if (is_inline) goto error;
-      return parser_parse_var_def(parser);
     case TOK_IF:
       if (is_inline) goto error;
       return parser_parse_if(parser, true, is_func, is_loop);
@@ -174,9 +170,6 @@ static ast_t* parser_parse_statement(parser_t* parser,
     case TOK_DEFINE:
       if (!is_global_scope) goto error;
       return parser_parse_func_def(parser);
-    case TOK_EXTERN:
-      if (!is_global_scope) goto error;
-      return parser_parse_extern(parser);
     case TOK_SKIP:
       if (!is_loop) goto error;
       return parser_parse_skip(parser);
@@ -332,82 +325,6 @@ static ast_t* parser_parse_func_call(parser_t* parser)
 }
 
 /* parse blocks */
-static ast_t* parser_parse_var_def(parser_t* parser)
-{
-  ast_t* ast = static_create_ast(AST_VAR_DEF, parser_line(parser));
-  bool is_const = ast->var_def.is_const = parser_match(parser, TOK_CONST); // constant when declared with 'const'
-  parser_eat(parser, is_const ? TOK_CONST : TOK_VAR); // either 'var' or 'const'
-
-  // at lemain 1 definition
-  ast->var_def.size = 1;
-  ast->var_def.names = SEAL_CALLOC(1, sizeof(char*));
-  ast->var_def.exprs = SEAL_CALLOC(1, sizeof(ast_t*));
-
-  if (parser_match(parser, TOK_NEWL)) { // declare line-by-line
-    parser_advance(parser); // newline
-    parser_eat(parser, TOK_INDENT); // require indentation
-
-    ast->var_def.names[0] = parser_eat(parser, TOK_ID)->val;
-    kill_if_reserved_name(parser, ast->var_def.names[0]); // kill if reserved name
-    if (is_const || parser_match(parser, TOK_ASSIGN)) { // assign value
-      parser_eat(parser, TOK_ASSIGN); // '='
-      ast->var_def.exprs[0] = parser_parse_expr(parser);
-    } else
-      ast->var_def.exprs[0] = ast_null();
-
-  get_def_line:
-    parser_eat(parser, TOK_NEWL); // newl
-
-    if (parser_match(parser, TOK_DEDENT)) {
-      parser_advance(parser);
-      return ast;
-    }
-
-    ast->var_def.size++;
-    ast->var_def.names = SEAL_REALLOC(ast->var_def.names, ast->var_def.size * sizeof(char*));
-    ast->var_def.exprs = SEAL_REALLOC(ast->var_def.exprs, ast->var_def.size * sizeof(ast_t*));
-
-    ast->var_def.names[ast->var_def.size - 1] = parser_eat(parser, TOK_ID)->val;
-    kill_if_reserved_name(parser, ast->var_def.names[ast->var_def.size - 1]); // kill if reserved name
-    if (is_const || parser_match(parser, TOK_ASSIGN)) { // assign value
-      parser_eat(parser, TOK_ASSIGN); // '='
-      ast->var_def.exprs[ast->var_def.size - 1] = parser_parse_expr(parser);
-    } else
-      ast->var_def.exprs[ast->var_def.size - 1] = ast_null();
-
-    goto get_def_line; // repeat
-  } else { // declare comma-by-comma
-    ast->var_def.names[0] = parser_eat(parser, TOK_ID)->val;
-    kill_if_reserved_name(parser, ast->var_def.names[0]); // kill if reserved name
-    if (is_const || parser_match(parser, TOK_ASSIGN)) { // assign value
-      parser_eat(parser, TOK_ASSIGN); // '='
-      ast->var_def.exprs[0] = parser_parse_expr(parser);
-    } else
-      ast->var_def.exprs[0] = ast_null();
-
-  get_def_comma:
-    if (parser_match(parser, TOK_COMMA)) {
-      parser_advance(parser); // ','
-
-      ast->var_def.size++;
-      ast->var_def.names = SEAL_REALLOC(ast->var_def.names, ast->var_def.size * sizeof(char*));
-      ast->var_def.exprs = SEAL_REALLOC(ast->var_def.exprs, ast->var_def.size * sizeof(ast_t*));
-
-      ast->var_def.names[ast->var_def.size - 1] = parser_eat(parser, TOK_ID)->val;
-      kill_if_reserved_name(parser, ast->var_def.names[ast->var_def.size - 1]); // kill if reserved name
-      if (is_const || parser_match(parser, TOK_ASSIGN)) { // assign value
-        parser_eat(parser, TOK_ASSIGN); // '='
-        ast->var_def.exprs[ast->var_def.size - 1] = parser_parse_expr(parser);
-      } else
-        ast->var_def.exprs[ast->var_def.size - 1] = ast_null();
-
-      goto get_def_comma; // repeat
-    }
-  }
-
-  return ast;
-}
-
 static ast_t* parser_parse_if(parser_t* parser, bool can_be_ternary, bool is_func, bool is_loop)
 {
   if (can_be_ternary) {
@@ -579,7 +496,6 @@ static ast_t* parser_parse_func_def(parser_t* parser)
 
   ast_t* ast = static_create_ast(AST_FUNC_DEF, parser_line(parser));
   ast->func_def.param_size = 0;
-  ast->func_def.is_extern = false;
 
   kill_if_reserved_name(parser, ast->func_def.name = parser_eat(parser, TOK_ID)->val); // kill if reserved name
 
@@ -613,18 +529,6 @@ static ast_t* parser_parse_func_def(parser_t* parser)
   parser_eat(parser, TOK_DEDENT);
 
   return ast;
-}
-static ast_t* parser_parse_extern(parser_t* parser)
-{
-  parser_advance(parser); // 'extern'
-  if (parser_match(parser, TOK_DEFINE)) {
-    ast_t* func_def = parser_parse_func_def(parser);
-    func_def->func_def.is_extern = true;
-    return func_def;
-  }
-  ast_t* var_def = parser_parse_var_def(parser);
-  var_def->var_def.is_extern = true;
-  return var_def;
 }
 /* parse block control */
 static inline ast_t* parser_parse_skip(parser_t* parser)
