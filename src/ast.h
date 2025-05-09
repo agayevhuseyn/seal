@@ -185,7 +185,6 @@ static inline const char* ast_type_name(int type)
     case AST_MEMACC       : return "AST_MEMACC";
     case AST_LIB_FUNC_CALL: return "AST_LIB_FUNC_CALL";
     case AST_COMP         : return "AST_COMP";
-    case AST_VAR_DEF      : return "AST_VAR_DEF";
     case AST_IF           : return "AST_IF";
     case AST_ELSE         : return "AST_ELSE";
     case AST_DOWHILE      : return "AST_DOWHILE";
