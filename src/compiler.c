@@ -4,15 +4,15 @@
 
 #define START_BYTECODE_CAP 1024
 
-#define PUSH(cout, byte) do { \
+#define EMIT(cout, byte) do { \
     if (cout->bytecode_size >= cout->bytecode_cap) { \
       cout->bytecodes = SEAL_REALLOC(cout->bytecodes, sizeof(uint8_t) * (cout->bytecode_cap *= 2)); \
     } \
     cout->bytecodes[cout->bytecode_size++] = (uint8_t)(byte); \
   } while (0)
 
-#define PUSH_DUMMY(cout, times) for (int i = 0; i < (times); i++) { \
-    PUSH(cout, 0); \
+#define EMIT_DUMMY(cout, times) for (int i = 0; i < (times); i++) { \
+    EMIT(cout, 0); \
   }
 
 #define REPLACE_16BITS_INDEX(cout, addr, idx) do { \
@@ -23,13 +23,13 @@
 #define CUR_IDX(cout) (cout->bytecode_size) /* returns index of current empty byte */
 #define CUR_ADDR(cout) (&(cout->bytecodes[CUR_IDX(cout)])) /* returns address of current empty byte */
 
-#define PUSH_CONST(cout, val) ( \
+#define EMIT_CONST(cout, val) ( \
     /* check bounds */ \
     *cout->const_pool_ptr++ = (val))
 
 #define CONST_IDX(cout) ((uint16_t)(cout->const_pool_ptr - cout->const_pool - 1)) /* WARNING!! only use this before after constant */
 
-#define PUSH_LABEL(cout, addr) ( \
+#define EMIT_LABEL(cout, addr) ( \
     /* check bounds */ \
     *cout->label_ptr++ = (addr))
 
@@ -43,55 +43,60 @@ void compile(cout_t* cout, ast_t* node)
   cout->label_ptr = cout->labels;
   cout->bytecodes = SEAL_CALLOC(START_BYTECODE_CAP, sizeof(uint8_t));
 
-  PUSH_CONST(cout, (svalue_t) { .type = SEAL_NULL }); /* push constant null */
-  PUSH_CONST(cout, sval(SEAL_BOOL, _bool, true)); /* push constant true */
-  PUSH_CONST(cout, sval(SEAL_BOOL, _bool, false)); /* push constant false */
+  EMIT_CONST(cout, (svalue_t) { .type = SEAL_NULL }); /* push constant null */
+  EMIT_CONST(cout, sval(SEAL_BOOL, _bool, true)); /* push constant true */
+  EMIT_CONST(cout, sval(SEAL_BOOL, _bool, false)); /* push constant false */
 
   compile_node(cout, node);
 
-  PUSH(cout, OP_PRINT);
-  PUSH(cout, OP_HALT); /* push halt opcode for termination */
+  EMIT(cout, OP_HALT); /* push halt opcode for termination */
 }
 static void compile_node(cout_t* cout, ast_t* node)
 {
   switch (node->type) {
-    case AST_COMP:
-      for (int i = 0; i < node->comp.stmt_size; i++) {
-        /*
-         * DO NOT COMPILE DUMMY STATEMENTS (like 0, 1, 'a')
-         * ONLY COMPILE FUNCTIONS AND POP THEIR VALUE 
-         */
-        switch (node->comp.stmts[i]->type) {
-          case AST_NULL:
-          case AST_INT:
-          case AST_FLOAT:
-          case AST_STRING:
-          case AST_BOOL:
-            break;
-          case AST_UNARY:
-          case AST_BINARY:
-          case AST_BINARY_BOOL:
-          case AST_TERNARY:
-            compile_node(cout, node->comp.stmts[i]);
-            PUSH(cout, OP_POP);
-            break;
-          default:
-            compile_node(cout, node->comp.stmts[i]);
-            break;
-        }
+  case AST_COMP:
+    for (int i = 0; i < node->comp.stmt_size; i++) {
+      /*
+       * DO NOT COMPILE DUMMY STATEMENTS (like 0, 1, 'a')
+       * ONLY COMPILE FUNCTIONS AND POP THEIR VALUE 
+       */
+      switch (node->comp.stmts[i]->type) {
+        case AST_NULL:
+        case AST_INT:
+        case AST_FLOAT:
+        case AST_STRING:
+        case AST_BOOL:
+          break;
+        case AST_UNARY:
+        case AST_BINARY:
+        case AST_BINARY_BOOL:
+        case AST_TERNARY:
+          compile_node(cout, node->comp.stmts[i]);
+          EMIT(cout, OP_POP);
+          break;
+        default:
+          compile_node(cout, node->comp.stmts[i]);
+          break;
       }
+    }
+  break;
+  case AST_IF: compile_if(cout, node); break;
+  case AST_WHILE: compile_while(cout, node); break;
+  case AST_DOWHILE: compile_dowhile(cout, node); break;
+  case AST_BINARY: compile_binary(cout, node); break;
+  case AST_FUNC_CALL: compile_func_call(cout, node); break;
+  case AST_NULL:
+  case AST_INT:
+  case AST_FLOAT:
+  case AST_STRING:
+  case AST_BOOL:
+    compile_val(cout, node);
     break;
-    case AST_IF: compile_if(cout, node); break;
-    case AST_WHILE: compile_while(cout, node); break;
-    case AST_DOWHILE: compile_dowhile(cout, node); break;
-    case AST_BINARY: compile_binary(cout, node); break;
-    case AST_NULL:
-    case AST_INT:
-    case AST_FLOAT:
-    case AST_STRING:
-    case AST_BOOL:
-      compile_val(cout, node);
-      break;
+  case AST_NOP:
+    break;
+  default:
+    printf("%s is not implemented yet\n", hast_type_name(ast_type(node)));
+    exit(1);
   }
 }
 static void compile_if(cout_t* cout, ast_t* node)
@@ -106,23 +111,23 @@ static void compile_if(cout_t* cout, ast_t* node)
 
   compile_node(cout, node->_if.cond);
 
-  PUSH(cout, OP_JZ);
+  EMIT(cout, OP_JFALSE);
   next_addr = CUR_ADDR(cout);
-  PUSH_DUMMY(cout, 2); /* push 2 dummy values that will be changed later */
+  EMIT_DUMMY(cout, 2); /* push 2 dummy values that will be changed later */
 
   compile_node(cout, node->_if.comp);
 
   if (jmp_size == 0) {
-    PUSH_LABEL(cout, CUR_IDX(cout));
+    EMIT_LABEL(cout, CUR_IDX(cout));
     REPLACE_16BITS_INDEX(cout, next_addr, LABEL_IDX(cout));
     return;
   }
   
-  PUSH(cout, OP_JMP);
+  EMIT(cout, OP_JUMP);
   *end_addr++ = CUR_ADDR(cout);
-  PUSH_DUMMY(cout, 2);
+  EMIT_DUMMY(cout, 2);
 
-  PUSH_LABEL(cout, CUR_IDX(cout));
+  EMIT_LABEL(cout, CUR_IDX(cout));
   REPLACE_16BITS_INDEX(cout, next_addr, LABEL_IDX(cout));
 
   do {
@@ -131,28 +136,28 @@ static void compile_if(cout_t* cout, ast_t* node)
     if (node->type == AST_IF) {
       compile_node(cout, node->_if.cond);
 
-      PUSH(cout, OP_JZ);
+      EMIT(cout, OP_JFALSE);
       next_addr = CUR_ADDR(cout);
-      PUSH_DUMMY(cout, 2);
+      EMIT_DUMMY(cout, 2);
 
       compile_node(cout, node->_if.comp);
 
       if (end_addr - end_addrs != jmp_size) {
         if (node->_if.has_else) {
-          PUSH(cout, OP_JMP);
+          EMIT(cout, OP_JUMP);
           *end_addr++ = CUR_ADDR(cout);
-          PUSH_DUMMY(cout, 2);
+          EMIT_DUMMY(cout, 2);
         }
       }
 
-      PUSH_LABEL(cout, CUR_IDX(cout));
+      EMIT_LABEL(cout, CUR_IDX(cout));
       REPLACE_16BITS_INDEX(cout, next_addr, LABEL_IDX(cout));
     } else {
       compile_node(cout, node->_else.comp);
     }
   } while (node->_if.has_else);
 
-  PUSH_LABEL(cout, CUR_IDX(cout));
+  EMIT_LABEL(cout, CUR_IDX(cout));
 
   for (int i = 0; i < jmp_size; i++) {
     REPLACE_16BITS_INDEX(cout, end_addrs[i], LABEL_IDX(cout));
@@ -160,35 +165,33 @@ static void compile_if(cout_t* cout, ast_t* node)
 }
 static void compile_while(cout_t* cout, ast_t* node)
 {
-  PUSH_LABEL(cout, CUR_IDX(cout));
+  EMIT_LABEL(cout, CUR_IDX(cout));
   uint16_t start = LABEL_IDX(cout);
   compile_node(cout, node->_while.cond);
 
-  PUSH(cout, OP_JZ);
+  EMIT(cout, OP_JFALSE);
   uint8_t* end_addr = CUR_ADDR(cout);
-  PUSH_DUMMY(cout, 2);
+  EMIT_DUMMY(cout, 2);
 
   compile_node(cout, node->_while.comp);
-  //PUSH(cout, OP_PRINT); 
 
-  PUSH(cout, OP_JMP);
-  PUSH(cout, start << start);
-  PUSH(cout, start);
-  PUSH_LABEL(cout, CUR_IDX(cout));
+  EMIT(cout, OP_JUMP);
+  EMIT(cout, start << start);
+  EMIT(cout, start);
+  EMIT_LABEL(cout, CUR_IDX(cout));
   REPLACE_16BITS_INDEX(cout, end_addr, LABEL_IDX(cout));
 }
 static void compile_dowhile(cout_t* cout, ast_t* node)
 {
-  PUSH_LABEL(cout, CUR_IDX(cout));
+  EMIT_LABEL(cout, CUR_IDX(cout));
   uint16_t start = LABEL_IDX(cout);
 
   compile_node(cout, node->_while.comp);
-  //PUSH(cout, OP_PRINT); 
   compile_node(cout, node->_while.cond);
 
-  PUSH(cout, OP_JNZ);
-  PUSH(cout, start >> 8);
-  PUSH(cout, start);
+  EMIT(cout, OP_JTRUE);
+  EMIT(cout, start >> 8);
+  EMIT(cout, start);
 }
 static void compile_binary(cout_t* cout, ast_t* node)
 {
@@ -210,11 +213,11 @@ static void compile_binary(cout_t* cout, ast_t* node)
     case TOK_LE   : opcode = OP_LE;  break;
   }
 
-  PUSH(cout, opcode);
+  EMIT(cout, opcode);
 }
 static void compile_val(cout_t* cout, ast_t* node)
 {
-  PUSH(cout, OP_PUSH); /* push opcode */
+  EMIT(cout, OP_PUSH); /* push opcode */
 
   svalue_t val;
   switch (node->type) {
@@ -224,17 +227,31 @@ static void compile_val(cout_t* cout, ast_t* node)
     case AST_BOOL:
       val.type = SEAL_BOOL;
       val.as._bool  = node->boolean.val;
-      PUSH(cout, 0);
-      PUSH(cout, val.as._bool ? TRUE_IDX : FALSE_IDX);
+      EMIT(cout, 0);
+      EMIT(cout, val.as._bool ? TRUE_IDX : FALSE_IDX);
       return;
     case AST_NULL:
       val.type = SEAL_NULL;
-      PUSH(cout, 0);
-      PUSH(cout, NULL_IDX);
+      EMIT(cout, 0);
+      EMIT(cout, NULL_IDX);
       return;
   }
-  PUSH_CONST(cout, val); /* push constant into pool */
+  EMIT_CONST(cout, val); /* push constant into pool */
   uint16_t idx = CONST_IDX(cout);
-  PUSH(cout, (uint8_t)(idx >> 8));
-  PUSH(cout, (uint8_t)idx);
+  EMIT(cout, (uint8_t)(idx >> 8));
+  EMIT(cout, (uint8_t)idx);
+}
+static void compile_func_call(cout_t* cout, ast_t* node)
+{
+  const char* name = node->func_call.name;
+
+  for (int i = 0; i < node->func_call.arg_size; i++)
+    compile_node(cout, node->func_call.args[i]);
+
+  if (strcmp(name, "print") == 0)
+    EMIT(cout, OP_PRINT);
+  else if (strcmp(name, "scan") == 0)
+    EMIT(cout, OP_SCAN);
+
+  EMIT(cout, (uint8_t)node->func_call.arg_size);
 }
