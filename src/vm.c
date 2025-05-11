@@ -193,19 +193,19 @@ void eval_vm(vm_t* vm)
         else
           ERROR_OP(<=, left, right);
         break;
-      case OP_JMP:
+      case OP_JUMP:
         addr = FETCH(vm) << 8;
         addr |= FETCH(vm);
         JUMP(vm, addr);
         break;
-      case OP_JZ:
+      case OP_JFALSE:
         addr = FETCH(vm) << 8;
         addr |= FETCH(vm);
         if (!AS_BOOL(POP(vm))) {
           JUMP(vm, addr);
         }
         break;
-      case OP_JNZ:
+      case OP_JTRUE:
         addr = FETCH(vm) << 8;
         addr |= FETCH(vm);
         if (AS_BOOL(POP(vm))) {
@@ -213,26 +213,35 @@ void eval_vm(vm_t* vm)
         }
         break;
       case OP_PRINT: {
-        svalue_t s = POP(vm);
-        switch (s.type) {
-          case SEAL_INT:
-            printf("%lld\n", s.as._int);
-            break;
-          case SEAL_FLOAT:
-            printf("%f\n", s.as._float);
-            break;
-          case SEAL_STRING:
-            printf("%s\n", s.as.string);
-            break;
-          case SEAL_BOOL:
-            printf("%s\n", s.as._bool ? "true" : "false");
-            break;
-          case SEAL_NULL:
-            printf("null\n");
-            break;
-          default:
-            printf("UNRECOGNIZED DATA TYPE TO PRINT\n");
+        size_t argc = FETCH(vm);
+        svalue_t args[argc];
+        for (int i = argc - 1; i >= 0; i--)
+          args[i] = POP(vm);
+
+        for (int i = 0; i < argc; i++) {
+          svalue_t s = args[i];
+
+          switch (s.type) {
+            case SEAL_INT:
+              printf("%lld ", s.as._int);
+              break;
+            case SEAL_FLOAT:
+              printf("%f ", s.as._float);
+              break;
+            case SEAL_STRING:
+              printf("%s ", s.as.string);
+              break;
+            case SEAL_BOOL:
+              printf("%s ", s.as._bool ? "true" : "false");
+              break;
+            case SEAL_NULL:
+              printf("null ");
+              break;
+            default:
+              printf("UNRECOGNIZED DATA TYPE TO PRINT\n");
+          }
         }
+        printf("\n");
       }
       break;
       default: fprintf(stderr, "unrecognized op type: %d\n", op); return;
