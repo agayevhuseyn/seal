@@ -112,28 +112,29 @@ static inline void print_op(uint8_t* bytes, size_t byte_size, uint16_t* labels, 
     uint8_t op = bytes[i++];
     printf("%s ", op_name(op)); 
     switch (op) { /* check if opcode requires byte(s) */
-      case OP_PUSH: {
-        uint8_t left  = bytes[i++];
-        uint8_t right = bytes[i++];
-        uint16_t idx  = (left << 8) | right;
-        switch (idx) {
-          case 0: printf("NULL");  break;
-          case 1: printf("TRUE");  break;
-          case 2: printf("FALSE"); break;
-          default:
-            printf("%d", idx);
-            break;
-        }
+    case OP_PUSH: {
+      uint8_t left  = bytes[i++];
+      uint8_t right = bytes[i++];
+      uint16_t idx  = (left << 8) | right;
+      switch (idx) {
+        case 0: printf("NULL");  break;
+        case 1: printf("TRUE");  break;
+        case 2: printf("FALSE"); break;
+        default:
+          printf("%d", idx);
+          break;
       }
-      break;
-      case OP_JMP:
-      case OP_JZ:
-      case OP_JNZ: {
-        uint8_t left  = bytes[i++];
-        uint8_t right = bytes[i++];
-        uint16_t idx  = (left << 8) | right;
-        printf("%d", idx);
-      }
+    }
+    break;
+    case OP_JUMP: case OP_JFALSE: case OP_JTRUE: {
+      uint8_t left  = bytes[i++];
+      uint8_t right = bytes[i++];
+      uint16_t idx  = (left << 8) | right;
+      printf("%d", idx);
+    }
+    break;
+    case OP_PRINT:
+      printf("%d", bytes[i++]);   
       break;
     }
     printf("\n");
