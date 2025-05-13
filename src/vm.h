@@ -4,8 +4,10 @@
 #include "seal.h"
 #include "compiler.h"
 #include "sealtypes.h"
+#include "hashmap.h"
 
 #define STACK_SIZE (0xFFFF + 1)
+#define GLOBAL_SIZE (0xFF + 1)
 
 typedef struct vm vm_t;
 
@@ -17,6 +19,7 @@ struct vm {
  svalue_t  stack[STACK_SIZE]; /* stack */
  svalue_t* sp;    /* stack pointer */
  svalue_t* bp;    /* base pointer */
+ hashmap_t globals; /* hashmap for globals */
 };
 
 void init_vm(vm_t* vm, cout_t* cout);

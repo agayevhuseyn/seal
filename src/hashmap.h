@@ -30,13 +30,13 @@ static inline unsigned int hash_str(const char* key) {
   return hash;
 }
 
-static inline void hashmap_init(hashmap_t* hashmap, struct h_entry* entries, size_t size)
+static inline void hashmap_init(hashmap_t* hashmap, size_t size)
 {
   hashmap->cap = size;
-  hashmap->entries = entries;
+  hashmap->entries = SEAL_CALLOC(size, sizeof(struct h_entry));
   for (int i = 0; i < size; i++) {
-    entries[i].key = NULL;
-    entries[i].is_tombstone = false;
+    hashmap->entries[i].key = NULL;
+    hashmap->entries[i].is_tombstone = false;
   }
 }
 

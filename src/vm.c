@@ -39,6 +39,7 @@ void init_vm(vm_t* vm, cout_t* cout)
   vm->label_ptr = cout->labels;
   vm->sp = vm->stack;
   vm->ip = vm->bytecodes = cout->bytecodes;
+  hashmap_init(&vm->globals, 255);
 }
 
 void eval_vm(vm_t* vm)
