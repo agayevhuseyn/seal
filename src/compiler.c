@@ -35,7 +35,7 @@
 
 #define LABEL_IDX(cout) ((uint16_t)(cout->label_ptr - cout->labels - 1)) /* WARNING!! only use this after pushing label */
 
-#define compiler_error(...) do { \
+#define __compiler_error(...) do { \
     fprintf(stderr, __VA_ARGS__); \
     exit(1); \
   } while (0)
@@ -85,20 +85,18 @@ static void compile_node(cout_t* cout, ast_t* node)
       }
     }
   break;
+  case AST_NULL: case AST_INT: case AST_FLOAT: case AST_STRING: case AST_BOOL:
+    compile_val(cout, node);
+    break;
+  case AST_NOP:
+    break;
   case AST_IF: compile_if(cout, node); break;
   case AST_WHILE: compile_while(cout, node); break;
   case AST_DOWHILE: compile_dowhile(cout, node); break;
   case AST_BINARY: compile_binary(cout, node); break;
   case AST_FUNC_CALL: compile_func_call(cout, node); break;
-  case AST_NULL:
-  case AST_INT:
-  case AST_FLOAT:
-  case AST_STRING:
-  case AST_BOOL:
-    compile_val(cout, node);
-    break;
-  case AST_NOP:
-    break;
+  case AST_ASSIGN: compile_assign(cout, node); break;
+  case AST_VAR_REF: compile_var_ref(cout, node); break;
   default:
     printf("%s is not implemented yet\n", hast_type_name(ast_type(node)));
     exit(1);
@@ -258,7 +256,35 @@ static void compile_func_call(cout_t* cout, ast_t* node)
   else if (strcmp(name, "scan") == 0)
     EMIT(cout, OP_SCAN);
   else
-    compiler_error("%s function is not defined\n", name);
+    __compiler_error("%s function is not defined\n", name);
 
   EMIT(cout, (uint8_t)node->func_call.arg_size);
+}
+static void compile_assign(cout_t* cout, ast_t* node)
+{
+  compile_node(cout, node->assign.expr);
+
+  int lval_type = node->assign.var->type;
+  svalue_t sym;
+  switch (lval_type) {
+  case AST_VAR_REF:
+    EMIT(cout, OP_SET_GLOBAL);
+    sym.type = SEAL_INT;
+    sym.as.string = node->assign.var->var_ref.name;
+    PUSH_CONST(cout, sym);
+    EMIT(cout, CONST_IDX(cout) >> 8);
+    EMIT(cout, CONST_IDX(cout));
+    break;
+  default:
+    __compiler_error("assigning to %s is not implemented yet", hast_type_name(lval_type));
+    break;
+  }
+}
+static void compile_var_ref(cout_t* cout, ast_t* node)
+{
+  EMIT(cout, OP_GET_GLOBAL);
+  svalue_t sym = { .type = SEAL_STRING, .as.string = node->var_ref.name };
+  PUSH_CONST(cout, sym);
+  EMIT(cout, CONST_IDX(cout) >> 8);
+  EMIT(cout, CONST_IDX(cout));
 }

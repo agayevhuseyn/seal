@@ -58,5 +58,7 @@ static void compile_dowhile(cout_t*, ast_t*);
 static void compile_binary(cout_t*, ast_t*);
 static void compile_val(cout_t*, ast_t*);
 static void compile_func_call(cout_t*, ast_t*);
+static void compile_assign(cout_t*, ast_t*);
+static void compile_var_ref(cout_t*, ast_t*);
 
 #endif /* SEAL_COMPILER_H */

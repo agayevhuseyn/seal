@@ -245,7 +245,7 @@ void eval_vm(vm_t* vm)
         printf("\n");
       }
       break;
-      default: fprintf(stderr, "unrecognized op type: %d\n", op); return;
+      default: fprintf(stderr, "unrecognized op type: %s\n", op_name(op)); return;
     }
   }
 }

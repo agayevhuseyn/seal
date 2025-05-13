@@ -126,7 +126,7 @@ static inline void print_op(uint8_t* bytes, size_t byte_size, uint16_t* labels, 
       }
     }
     break;
-    case OP_JUMP: case OP_JFALSE: case OP_JTRUE: {
+    case OP_JUMP: case OP_JFALSE: case OP_JTRUE: case OP_GET_GLOBAL: case OP_SET_GLOBAL: {
       uint8_t left  = bytes[i++];
       uint8_t right = bytes[i++];
       uint16_t idx  = (left << 8) | right;
