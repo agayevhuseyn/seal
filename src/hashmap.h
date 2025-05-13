@@ -1,0 +1,106 @@
+#ifndef SEAL_HASHMAP_H
+#define SEAL_HASHMAP_H
+
+#include "seal.h"
+
+#define __hashmap_error(...) do { \
+  fprintf(stderr, "error: "); \
+  fprintf(stderr, __VA_ARGS__); \
+  exit(1); \
+} while (0)
+
+struct h_entry {
+  unsigned int hash;
+  const char* key;
+  void* value;
+  bool is_tombstone;
+};
+
+typedef struct hashmap {
+  h_entry* entries;
+  size_t cap;
+  size_t filled;
+} hashmap_t;
+
+static inline unsigned int hash_str(const char* key) {
+  unsigned int hash = 0;
+  while (*key)
+    hash = *key++ + (hash << 6) + (hash << 16) - hash;
+
+  return hash;
+}
+
+static inline void hashmap_init(hashmap_t* hashmap, h_entry* entries, size_t size)
+{
+  hashmap->cap = size;
+  hashmap->entries = entries;
+  for (int i = 0; i < size; i++) {
+    entries[i].key = NULL;
+    entries[i].is_tombstone = false;
+  }
+}
+
+static inline struct h_entry* hashmap_search(hashmap_t* hashmap, const char* key)
+{
+  unsigned int idx = hash_str(key) % hashmap->cap;
+  struct h_entry* tombstone = NULL;
+
+  struct h_entry* e;
+  while (true) {
+    e = &hashmap->entries[idx];
+    if (e->key == NULL) {
+      if (e->is_tombstone) {
+        if (tombstone == NULL)
+          tombstone = e;
+      } else {
+        return tombstone != NULL ? tombstone : e;
+      }
+    } else if (strcmp(e->key, key) == 0) {
+      return e;
+    }
+    idx = (idx + 1) % hashmap->cap;
+  }
+}
+
+static inline bool hashmap_insert(hashmap_t* hashmap, const char* key, void* val)
+{
+  if (hashmap->filled >= hashmap->cap)
+    __hashmap_error("hashmap is full");
+
+  struct h_entry e = {
+    hash_str(key),
+    key,
+    val,
+    true
+  };
+
+  h_entry* searched = hashmap_search(hashmap, key);
+
+  bool is_new = searched->key == NULL;
+  if (is_new)
+    hashmap->filled++;
+
+  *searched = e;
+
+  return is_new;
+}
+
+static inline bool hashmap_remove(hashmap_t* hashmap, const char* key)
+{
+  if (hashmap->filled <= 0)
+    __hashmap_error("hashmap is empty");
+
+  h_entry* searched = hashmap_search(hashmap, key);
+
+  if (searched->key == NULL)
+    return false;
+
+  searched->is_tombstone = true;
+  searched->key = NULL;
+
+  hashmap->filled--;
+
+  return true;
+}
+
+#endif /* SEAL_HASHMAP_H */
