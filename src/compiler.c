@@ -76,6 +76,8 @@ static void compile_node(cout_t* cout, ast_t* node)
         case AST_BINARY:
         case AST_BINARY_BOOL:
         case AST_TERNARY:
+        case AST_ASSIGN:
+        case AST_VAR_REF:
           compile_node(cout, node->comp.stmts[i]);
           EMIT(cout, OP_POP);
           break;
