@@ -17,7 +17,7 @@ struct h_entry {
 };
 
 typedef struct hashmap {
-  h_entry* entries;
+  struct h_entry* entries;
   size_t cap;
   size_t filled;
 } hashmap_t;
@@ -30,7 +30,7 @@ static inline unsigned int hash_str(const char* key) {
   return hash;
 }
 
-static inline void hashmap_init(hashmap_t* hashmap, h_entry* entries, size_t size)
+static inline void hashmap_init(hashmap_t* hashmap, struct h_entry* entries, size_t size)
 {
   hashmap->cap = size;
   hashmap->entries = entries;
@@ -74,7 +74,7 @@ static inline bool hashmap_insert(hashmap_t* hashmap, const char* key, void* val
     true
   };
 
-  h_entry* searched = hashmap_search(hashmap, key);
+  struct h_entry* searched = hashmap_search(hashmap, key);
 
   bool is_new = searched->key == NULL;
   if (is_new)
@@ -90,7 +90,7 @@ static inline bool hashmap_remove(hashmap_t* hashmap, const char* key)
   if (hashmap->filled <= 0)
     __hashmap_error("hashmap is empty");
 
-  h_entry* searched = hashmap_search(hashmap, key);
+  struct h_entry* searched = hashmap_search(hashmap, key);
 
   if (searched->key == NULL)
     return false;
