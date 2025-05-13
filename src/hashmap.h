@@ -2,6 +2,7 @@
 #define SEAL_HASHMAP_H
 
 #include "seal.h"
+#include "sealtypes.h"
 
 #define __hashmap_error(...) do { \
   fprintf(stderr, "error: "); \
@@ -12,7 +13,7 @@
 struct h_entry {
   unsigned int hash;
   const char* key;
-  void* value;
+  svalue_t val;
   bool is_tombstone;
 };
 
@@ -62,7 +63,7 @@ static inline struct h_entry* hashmap_search(hashmap_t* hashmap, const char* key
   }
 }
 
-static inline bool hashmap_insert(hashmap_t* hashmap, const char* key, void* val)
+static inline bool hashmap_insert(hashmap_t* hashmap, const char* key, svalue_t val)
 {
   if (hashmap->filled >= hashmap->cap)
     __hashmap_error("hashmap is full");
