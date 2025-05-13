@@ -6,15 +6,15 @@
       ERROR("stack overflow"); \
     (*vm->sp++ = val); \
   } while (0)
+#define DUP(vm) do { \
+    svalue_t top = *(vm->sp - 1); \
+    PUSH(vm, top); \
+  } while (0)
 #define POP(vm) (*(--(vm->sp)))
 #define JUMP(vm, addr) (vm->ip = &vm->bytecodes[vm->label_ptr[addr]])
 #define GET_CONST(vm, i) (vm->const_pool_ptr[i])
-#define ERROR(err) (fprintf(stderr, "seal vm: %s\n", err), exit(EXIT_FAILURE))
-#define ERROR_OP(op, left, right) do { \
-    char err[ERR_LEN]; \
-    sprintf(err, "\'%s\' operator is not supported for \'%s\' and \'%s\'", #op, seal_type_name(left.type), seal_type_name(right.type)); \
-    ERROR(err); \
-  } while (0)
+#define ERROR(...) (fprintf(stderr, __VA_ARGS__), exit(EXIT_FAILURE))
+#define ERROR_OP(op, left, right) ERROR("\'%s\' operator is not supported for \'%s\' and \'%s\'\n", #op, seal_type_name(left.type), seal_type_name(right.type))
 
 #define PUSH_NULL(vm)        PUSH(vm, GET_CONST(vm, NULL_IDX))
 #define PUSH_INT(vm, val)    PUSH(vm, sval(SEAL_INT, _int, val))
@@ -49,6 +49,8 @@ void eval_vm(vm_t* vm)
 
     uint16_t idx, addr;
     svalue_t right, left;
+    struct h_entry* entry;
+    const char* sym;
 
     switch (op) {
       case OP_HALT: printf("Finish\n"); return;
@@ -212,6 +214,23 @@ void eval_vm(vm_t* vm)
         if (AS_BOOL(POP(vm))) {
           JUMP(vm, addr);
         }
+        break;
+      case OP_GET_GLOBAL:
+        addr = FETCH(vm) << 8;
+        addr |= FETCH(vm);
+        sym = AS_STRING(GET_CONST(vm, addr));
+        entry = hashmap_search(&vm->globals, sym);
+        if (entry->key) {
+          PUSH(vm, entry->val);
+        } else {
+          ERROR("vm: %s is not defined\n", sym);
+        }
+        break;
+      case OP_SET_GLOBAL:
+        DUP(vm);
+        addr = FETCH(vm) << 8;
+        addr |= FETCH(vm);
+        hashmap_insert(&vm->globals, AS_STRING(GET_CONST(vm, addr)), POP(vm));
         break;
       case OP_PRINT: {
         size_t argc = FETCH(vm);

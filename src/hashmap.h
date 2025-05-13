@@ -68,14 +68,14 @@ static inline bool hashmap_insert(hashmap_t* hashmap, const char* key, svalue_t 
   if (hashmap->filled >= hashmap->cap)
     __hashmap_error("hashmap is full");
 
+  struct h_entry* searched = hashmap_search(hashmap, key);
+  
   struct h_entry e = {
     hash_str(key),
     key,
     val,
     true
   };
-
-  struct h_entry* searched = hashmap_search(hashmap, key);
 
   bool is_new = searched->key == NULL;
   if (is_new)
