@@ -33,6 +33,71 @@
 #define IS_STRING(val) (val.type == SEAL_STRING)
 #define IS_BOOL(val)   (val.type == SEAL_BOOL)
 
+/* arithmetic */
+#define BIN_OP_INT(vm, left, right, op)   PUSH_INT(vm, AS_INT(left) op AS_INT(right))
+#define BIN_OP_FLOAT(vm, left, right, op) PUSH_FLOAT(vm, AS_FLOAT(left) op AS_FLOAT(right))
+#define BIN_OP_INT_AND_FLOAT(vm, left, right, op) \
+  PUSH_FLOAT(vm, (IS_INT(left) ? AS_INT(left) : AS_FLOAT(left)) op (IS_INT(right) ? AS_INT(right) : AS_FLOAT(right)))
+
+#define BIN_OP(vm, left, right, op) do { \
+  if (IS_INT(left) && IS_INT(right)) \
+    BIN_OP_INT(vm, left, right, op); \
+  else if (IS_FLOAT(left) && IS_FLOAT(right)) \
+    BIN_OP_FLOAT(vm, left, right, op); \
+  else if (IS_INT(left) && IS_FLOAT(right) || IS_FLOAT(left) && IS_INT(right)) \
+    BIN_OP_INT_AND_FLOAT(vm, left, right, op); \
+  else \
+    ERROR_OP(op, left, right); \
+} while (0)
+
+#define MOD_OP(vm, left, right) do { \
+  if (IS_INT(left) && IS_INT(right)) \
+    PUSH_INT(vm, AS_INT(left) % AS_INT(right)); \
+  else \
+    ERROR_OP(%, left, right); \
+} while (0)
+
+/* equality */
+#define EQUAL_OP_STRING(vm, left, right, op) PUSH_BOOL(vm, strcmp(AS_STRING(left), AS_STRING(right)) op 0)
+#define EQUAL_OP_BOOL(vm, left, right, op)   PUSH_BOOL(vm, AS_BOOL(left) op AS_BOOL(right))
+#define EQUAL_OP_INT(vm, left, right, op)    PUSH_BOOL(vm, AS_INT(left) op AS_INT(right))
+#define EQUAL_OP_FLOAT(vm, left, right, op)  PUSH_BOOL(vm, AS_FLOAT(left) op AS_FLOAT(right))
+#define EQUAL_OP_INT_AND_FLOAT(vm, left, right, op) \
+  PUSH_BOOL(vm, (IS_INT(left) ? AS_INT(left) : AS_FLOAT(left)) op (IS_INT(right) ? AS_INT(right) : AS_FLOAT(right)))
+
+#define EQUAL_OP(vm, left, right, op) do { \
+  if (IS_INT(left) && IS_INT(right)) \
+    EQUAL_OP_INT(vm, left, right, op); \
+  else if (IS_FLOAT(left) && IS_FLOAT(right)) \
+    EQUAL_OP_FLOAT(vm, left, right, op); \
+  else if (IS_INT(left) && IS_FLOAT(right) || IS_FLOAT(left) && IS_INT(right)) \
+    EQUAL_OP_INT_AND_FLOAT(vm, left, right, op); \
+  else if (IS_STRING(left) && IS_STRING(right)) \
+    EQUAL_OP_STRING(vm, left, right, op); \
+  else if (IS_BOOL(left) && IS_BOOL(right)) \
+    EQUAL_OP_BOOL(vm, left, right, op); \
+  else \
+    ERROR_OP(op, left, right); \
+} while (0)
+
+/* comparison */
+#define CMP_OP_INT(vm, left, right, op)    PUSH_BOOL(vm, AS_INT(left) op AS_INT(right))
+#define CMP_OP_FLOAT(vm, left, right, op)  PUSH_BOOL(vm, AS_FLOAT(left) op AS_FLOAT(right))
+#define CMP_OP_INT_AND_FLOAT(vm, left, right, op) \
+  PUSH_BOOL(vm, (IS_INT(left) ? AS_INT(left) : AS_FLOAT(left)) op (IS_INT(right) ? AS_INT(right) : AS_FLOAT(right)))
+
+#define CMP_OP(vm, left, right, op) do { \
+  if (IS_INT(left) && IS_INT(right)) \
+    CMP_OP_INT(vm, left, right, op); \
+  else if (IS_FLOAT(left) && IS_FLOAT(right)) \
+    CMP_OP_FLOAT(vm, left, right, op); \
+  else if (IS_INT(left) && IS_FLOAT(right) || IS_FLOAT(left) && IS_INT(right)) \
+    CMP_OP_INT_AND_FLOAT(vm, left, right, op); \
+  else \
+    ERROR_OP(op, left, right); \
+} while (0)
+
+
 void init_vm(vm_t* vm, cout_t* cout)
 {
   vm->const_pool_ptr = cout->const_pool;
@@ -53,148 +118,71 @@ void eval_vm(vm_t* vm)
     const char* sym;
 
     switch (op) {
-      case OP_HALT: printf("Finish\n"); return;
+      case OP_HALT:
+        printf("Finish\n");
+        return;
       case OP_PUSH:
         idx = FETCH(vm) << 8;
         idx |= FETCH(vm);
         PUSH(vm, GET_CONST(vm, idx));
         break;
-      case OP_POP: POP(vm); break;
+      case OP_POP:
+        POP(vm);
+        break;
       case OP_ADD:
         right = POP(vm);
         left  = POP(vm);
-        if (IS_INT(left) && IS_INT(right))
-          PUSH_INT(vm, AS_INT(left) + AS_INT(right));
-        else if (IS_FLOAT(left) && IS_FLOAT(right))
-          PUSH_FLOAT(vm, AS_FLOAT(left) + AS_FLOAT(right));
-        else if (IS_INT(left) && IS_FLOAT(right) || IS_FLOAT(left) && IS_INT(right))
-          PUSH_FLOAT(vm, (IS_INT(left) ? AS_INT(left) : AS_FLOAT(left)) + (IS_INT(right) ? AS_INT(right) : AS_FLOAT(right)));
-        else
-          ERROR_OP(+, left, right);
+        BIN_OP(vm, left, right, +);
         break;
       case OP_SUB:
         right = POP(vm);
         left  = POP(vm);
-        if (IS_INT(left) && IS_INT(right))
-          PUSH_INT(vm, AS_INT(left) - AS_INT(right));
-        else if (IS_FLOAT(left) && IS_FLOAT(right))
-          PUSH_FLOAT(vm, AS_FLOAT(left) - AS_FLOAT(right));
-        else if (IS_INT(left) && IS_FLOAT(right) || IS_FLOAT(left) && IS_INT(right))
-          PUSH_FLOAT(vm, (IS_INT(left) ? AS_INT(left) : AS_FLOAT(left)) - (IS_INT(right) ? AS_INT(right) : AS_FLOAT(right)));
-        else
-          ERROR_OP(-, left, right);
+        BIN_OP(vm, left, right, -);
         break;
       case OP_MUL:
         right = POP(vm);
         left  = POP(vm);
-        if (IS_INT(left) && IS_INT(right))
-          PUSH_INT(vm, AS_INT(left) * AS_INT(right));
-        else if (IS_FLOAT(left) && IS_FLOAT(right))
-          PUSH_FLOAT(vm, AS_FLOAT(left) * AS_FLOAT(right));
-        else if (IS_INT(left) && IS_FLOAT(right) || IS_FLOAT(left) && IS_INT(right))
-          PUSH_FLOAT(vm, (IS_INT(left) ? AS_INT(left) : AS_FLOAT(left)) * (IS_INT(right) ? AS_INT(right) : AS_FLOAT(right)));
-        else
-          ERROR_OP(*, left, right);
+        BIN_OP(vm, left, right, *);
         break;
       case OP_DIV:
         right = POP(vm);
         left  = POP(vm);
-        if (IS_INT(left) && IS_INT(right))
-          PUSH_INT(vm, AS_INT(left) / AS_INT(right));
-        else if (IS_FLOAT(left) && IS_FLOAT(right))
-          PUSH_FLOAT(vm, AS_FLOAT(left) / AS_FLOAT(right));
-        else if (IS_INT(left) && IS_FLOAT(right) || IS_FLOAT(left) && IS_INT(right))
-          PUSH_FLOAT(vm, (IS_INT(left) ? AS_INT(left) : AS_FLOAT(left)) / (IS_INT(right) ? AS_INT(right) : AS_FLOAT(right)));
-        else
-          ERROR_OP(*, left, right);
+        BIN_OP(vm, left, right, /);
         break;
       case OP_MOD:
         right = POP(vm);
         left  = POP(vm);
-        if (IS_INT(left) && IS_INT(right))
-          PUSH_INT(vm, AS_INT(left) % AS_INT(right));
-        else
-          ERROR_OP(*, left, right);
+        MOD_OP(vm, left, right);
         break;
       case OP_EQ:
         right = POP(vm);
         left  = POP(vm);
-        if (IS_INT(left) && IS_INT(right))
-          PUSH_BOOL(vm, AS_INT(left) == AS_INT(right));
-        else if (IS_FLOAT(left) && IS_FLOAT(right))
-          PUSH_BOOL(vm, AS_FLOAT(left) == AS_FLOAT(right));
-        else if (IS_INT(left) && IS_FLOAT(right) || IS_FLOAT(left) && IS_INT(right))
-          PUSH_BOOL(vm, (IS_INT(left) ? AS_INT(left) : AS_FLOAT(left)) == (IS_INT(right) ? AS_INT(right) : AS_FLOAT(right)));
-        else if (IS_BOOL(left) && IS_BOOL(right))
-          PUSH_BOOL(vm, AS_BOOL(left) == AS_BOOL(right));
-        else if (IS_STRING(left) && IS_STRING(right))
-          PUSH_BOOL(vm, strcmp(AS_STRING(left), AS_STRING(right)) == 0);
-        else
-          ERROR_OP(==, left, right);
+        EQUAL_OP(vm, left, right, ==);
         break;
       case OP_NE:
         right = POP(vm);
         left  = POP(vm);
-        if (IS_INT(left) && IS_INT(right))
-          PUSH_BOOL(vm, AS_INT(left) != AS_INT(right));
-        else if (IS_FLOAT(left) && IS_FLOAT(right))
-          PUSH_BOOL(vm, AS_FLOAT(left) != AS_FLOAT(right));
-        else if (IS_INT(left) && IS_FLOAT(right) || IS_FLOAT(left) && IS_INT(right))
-          PUSH_BOOL(vm, (IS_INT(left) ? AS_INT(left) : AS_FLOAT(left)) != (IS_INT(right) ? AS_INT(right) : AS_FLOAT(right)));
-        else if (IS_BOOL(left) && IS_BOOL(right))
-          PUSH_BOOL(vm, AS_BOOL(left) != AS_BOOL(right));
-        else if (IS_STRING(left) && IS_STRING(right))
-          PUSH_BOOL(vm, strcmp(AS_STRING(left), AS_STRING(right)) != 0);
-        else
-          ERROR_OP(!=, left, right);
+        EQUAL_OP(vm, left, right, !=);
         break;
       case OP_GT:
         right = POP(vm);
         left  = POP(vm);
-        if (IS_INT(left) && IS_INT(right))
-          PUSH_BOOL(vm, AS_INT(left) > AS_INT(right));
-        else if (IS_FLOAT(left) && IS_FLOAT(right))
-          PUSH_BOOL(vm, AS_FLOAT(left) > AS_FLOAT(right));
-        else if (IS_INT(left) && IS_FLOAT(right) || IS_FLOAT(left) && IS_INT(right))
-          PUSH_BOOL(vm, (IS_INT(left) ? AS_INT(left) : AS_FLOAT(left)) > (IS_INT(right) ? AS_INT(right) : AS_FLOAT(right)));
-        else
-          ERROR_OP(>, left, right);
+        CMP_OP(vm, left, right, >);
         break;
       case OP_GE:
         right = POP(vm);
         left  = POP(vm);
-        if (IS_INT(left) && IS_INT(right))
-          PUSH_BOOL(vm, AS_INT(left) >= AS_INT(right));
-        else if (IS_FLOAT(left) && IS_FLOAT(right))
-          PUSH_BOOL(vm, AS_FLOAT(left) >= AS_FLOAT(right));
-        else if (IS_INT(left) && IS_FLOAT(right) || IS_FLOAT(left) && IS_INT(right))
-          PUSH_BOOL(vm, (IS_INT(left) ? AS_INT(left) : AS_FLOAT(left)) >= (IS_INT(right) ? AS_INT(right) : AS_FLOAT(right)));
-        else
-          ERROR_OP(>=, left, right);
+        CMP_OP(vm, left, right, >=);
         break;
       case OP_LT:
         right = POP(vm);
         left  = POP(vm);
-        if (IS_INT(left) && IS_INT(right))
-          PUSH_BOOL(vm, AS_INT(left) < AS_INT(right));
-        else if (IS_FLOAT(left) && IS_FLOAT(right))
-          PUSH_BOOL(vm, AS_FLOAT(left) < AS_FLOAT(right));
-        else if (IS_INT(left) && IS_FLOAT(right) || IS_FLOAT(left) && IS_INT(right))
-          PUSH_BOOL(vm, (IS_INT(left) ? AS_INT(left) : AS_FLOAT(left)) < (IS_INT(right) ? AS_INT(right) : AS_FLOAT(right)));
-        else
-          ERROR_OP(<, left, right);
+        CMP_OP(vm, left, right, <);
         break;
       case OP_LE:
         right = POP(vm);
         left  = POP(vm);
-        if (IS_INT(left) && IS_INT(right))
-          PUSH_BOOL(vm, AS_INT(left) <= AS_INT(right));
-        else if (IS_FLOAT(left) && IS_FLOAT(right))
-          PUSH_BOOL(vm, AS_FLOAT(left) <= AS_FLOAT(right));
-        else if (IS_INT(left) && IS_FLOAT(right) || IS_FLOAT(left) && IS_INT(right))
-          PUSH_BOOL(vm, (IS_INT(left) ? AS_INT(left) : AS_FLOAT(left)) <= (IS_INT(right) ? AS_INT(right) : AS_FLOAT(right)));
-        else
-          ERROR_OP(<=, left, right);
+        CMP_OP(vm, left, right, <=);
         break;
       case OP_JUMP:
         addr = FETCH(vm) << 8;
