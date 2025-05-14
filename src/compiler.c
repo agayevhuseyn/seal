@@ -208,17 +208,22 @@ static void compile_binary(cout_t* cout, ast_t* node)
   
   uint8_t opcode;
   switch (node->binary.op_type) {
-    case TOK_PLUS : opcode = OP_ADD; break;
-    case TOK_MINUS: opcode = OP_SUB; break;
-    case TOK_MUL  : opcode = OP_MUL; break;
-    case TOK_DIV  : opcode = OP_DIV; break;
-    case TOK_MOD  : opcode = OP_MOD; break;
-    case TOK_EQ   : opcode = OP_EQ;  break;
-    case TOK_NE   : opcode = OP_NE;  break;
-    case TOK_GT   : opcode = OP_GT;  break;
-    case TOK_GE   : opcode = OP_GE;  break;
-    case TOK_LT   : opcode = OP_LT;  break;
-    case TOK_LE   : opcode = OP_LE;  break;
+  case TOK_PLUS : opcode = OP_ADD; break;
+  case TOK_MINUS: opcode = OP_SUB; break;
+  case TOK_MUL  : opcode = OP_MUL; break;
+  case TOK_DIV  : opcode = OP_DIV; break;
+  case TOK_MOD  : opcode = OP_MOD; break;
+  case TOK_BAND : opcode = OP_BAND; break;
+  case TOK_BOR  : opcode = OP_BOR; break;
+  case TOK_XOR  : opcode = OP_XOR; break;
+  case TOK_SHL  : opcode = OP_SHL; break;
+  case TOK_SHR  : opcode = OP_SHR; break;
+  case TOK_EQ   : opcode = OP_EQ;  break;
+  case TOK_NE   : opcode = OP_NE;  break;
+  case TOK_GT   : opcode = OP_GT;  break;
+  case TOK_GE   : opcode = OP_GE;  break;
+  case TOK_LT   : opcode = OP_LT;  break;
+  case TOK_LE   : opcode = OP_LE;  break;
   }
 
   EMIT(cout, opcode);
@@ -229,20 +234,20 @@ static void compile_val(cout_t* cout, ast_t* node)
 
   svalue_t val;
   switch (node->type) {
-    case AST_INT   : val.type = SEAL_INT;    val.as._int   = node->integer.val; break;
-    case AST_FLOAT : val.type = SEAL_FLOAT;  val.as._float = node->floating.val; break;
-    case AST_STRING: val.type = SEAL_STRING; val.as.string = node->string.val; break;
-    case AST_BOOL:
-      val.type = SEAL_BOOL;
-      val.as._bool  = node->boolean.val;
-      EMIT(cout, 0);
-      EMIT(cout, val.as._bool ? TRUE_IDX : FALSE_IDX);
-      return;
-    case AST_NULL:
-      val.type = SEAL_NULL;
-      EMIT(cout, 0);
-      EMIT(cout, NULL_IDX);
-      return;
+  case AST_INT   : val.type = SEAL_INT;    val.as._int   = node->integer.val; break;
+  case AST_FLOAT : val.type = SEAL_FLOAT;  val.as._float = node->floating.val; break;
+  case AST_STRING: val.type = SEAL_STRING; val.as.string = node->string.val; break;
+  case AST_BOOL:
+    val.type = SEAL_BOOL;
+    val.as._bool  = node->boolean.val;
+    EMIT(cout, 0);
+    EMIT(cout, val.as._bool ? TRUE_IDX : FALSE_IDX);
+    return;
+  case AST_NULL:
+    val.type = SEAL_NULL;
+    EMIT(cout, 0);
+    EMIT(cout, NULL_IDX);
+    return;
   }
   PUSH_CONST(cout, val); /* push constant into pool */
   SET_16BITS_INDEX(cout, CONST_IDX(cout));

@@ -57,6 +57,13 @@
     ERROR_OP(%, left, right); \
 } while (0)
 
+#define BITWISE_OP(vm, left, right, op) do { \
+  if (IS_INT(left) && IS_INT(right)) \
+    PUSH_INT(vm, AS_INT(left) op AS_INT(right)); \
+  else \
+    ERROR_OP(op, left, right); \
+} while (0)
+
 /* equality */
 #define EQUAL_OP_STRING(vm, left, right, op) PUSH_BOOL(vm, strcmp(AS_STRING(left), AS_STRING(right)) op 0)
 #define EQUAL_OP_BOOL(vm, left, right, op)   PUSH_BOOL(vm, AS_BOOL(left) op AS_BOOL(right))
@@ -153,6 +160,31 @@ void eval_vm(vm_t* vm)
         right = POP(vm);
         left  = POP(vm);
         MOD_OP(vm, left, right);
+        break;
+      case OP_BAND:
+        right = POP(vm);
+        left  = POP(vm);
+        BITWISE_OP(vm, left, right, &);
+        break;
+      case OP_BOR:
+        right = POP(vm);
+        left  = POP(vm);
+        BITWISE_OP(vm, left, right, |);
+        break;
+      case OP_XOR:
+        right = POP(vm);
+        left  = POP(vm);
+        BITWISE_OP(vm, left, right, ^);
+        break;
+      case OP_SHL:
+        right = POP(vm);
+        left  = POP(vm);
+        BITWISE_OP(vm, left, right, <<);
+        break;
+      case OP_SHR:
+        right = POP(vm);
+        left  = POP(vm);
+        BITWISE_OP(vm, left, right, >>);
         break;
       case OP_EQ:
         right = POP(vm);
