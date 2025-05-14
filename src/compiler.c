@@ -20,6 +20,11 @@
     *(addr)   = (uint8_t)(idx); \
   } while (0)
 
+#define SET_16BITS_INDEX(cout, idx) do { \
+    EMIT(cout, (idx) >> 8); \
+    EMIT(cout, (idx)); \
+  } while (0)
+
 #define CUR_IDX(cout) (cout->bytecode_size) /* returns index of current empty byte */
 #define CUR_ADDR(cout) (&(cout->bytecodes[CUR_IDX(cout)])) /* returns address of current empty byte */
 
@@ -181,8 +186,7 @@ static void compile_while(cout_t* cout, ast_t* node)
   compile_node(cout, node->_while.comp);
 
   EMIT(cout, OP_JUMP);
-  EMIT(cout, start << start);
-  EMIT(cout, start);
+  SET_16BITS_INDEX(cout, start);
   PUSH_LABEL(cout, CUR_IDX(cout));
   REPLACE_16BITS_INDEX(cout, end_addr, LABEL_IDX(cout));
 }
@@ -195,8 +199,7 @@ static void compile_dowhile(cout_t* cout, ast_t* node)
   compile_node(cout, node->_while.cond);
 
   EMIT(cout, OP_JTRUE);
-  EMIT(cout, start >> 8);
-  EMIT(cout, start);
+  SET_16BITS_INDEX(cout, start);
 }
 static void compile_binary(cout_t* cout, ast_t* node)
 {
@@ -242,9 +245,7 @@ static void compile_val(cout_t* cout, ast_t* node)
       return;
   }
   PUSH_CONST(cout, val); /* push constant into pool */
-  uint16_t idx = CONST_IDX(cout);
-  EMIT(cout, (uint8_t)(idx >> 8));
-  EMIT(cout, (uint8_t)idx);
+  SET_16BITS_INDEX(cout, CONST_IDX(cout));
 }
 static void compile_func_call(cout_t* cout, ast_t* node)
 {
@@ -271,11 +272,9 @@ static void compile_assign(cout_t* cout, ast_t* node)
   switch (lval_type) {
   case AST_VAR_REF:
     EMIT(cout, OP_SET_GLOBAL);
-    sym.type = SEAL_INT;
-    sym.as.string = node->assign.var->var_ref.name;
+    sym = sval(SEAL_STRING, string, node->assign.var->var_ref.name);
     PUSH_CONST(cout, sym);
-    EMIT(cout, CONST_IDX(cout) >> 8);
-    EMIT(cout, CONST_IDX(cout));
+    SET_16BITS_INDEX(cout, CONST_IDX(cout));
     break;
   default:
     __compiler_error("assigning to %s is not implemented yet", hast_type_name(lval_type));
@@ -285,8 +284,6 @@ static void compile_assign(cout_t* cout, ast_t* node)
 static void compile_var_ref(cout_t* cout, ast_t* node)
 {
   EMIT(cout, OP_GET_GLOBAL);
-  svalue_t sym = { .type = SEAL_STRING, .as.string = node->var_ref.name };
-  PUSH_CONST(cout, sym);
-  EMIT(cout, CONST_IDX(cout) >> 8);
-  EMIT(cout, CONST_IDX(cout));
+  PUSH_CONST(cout, sval(SEAL_STRING, string, node->var_ref.name));
+  SET_16BITS_INDEX(cout, CONST_IDX(cout));
 }

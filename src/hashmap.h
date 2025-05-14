@@ -7,6 +7,7 @@
 #define __hashmap_error(...) do { \
   fprintf(stderr, "error: "); \
   fprintf(stderr, __VA_ARGS__); \
+  fprintf(stderr, "\n"); \
   exit(1); \
 } while (0)
 
