@@ -200,13 +200,13 @@ static void compile_while(cout_t* cout, ast_t* node)
       REPLACE_16BITS_INDEX(cout, cout->skip_addr_stack[i], start);
     }
   }
-  cout->skip_size -= skip_start_size;
+  cout->skip_size = skip_start_size;
   if (stop_start_size < cout->stop_size) {
     for (int i = stop_start_size; i < cout->stop_size; i++) {
       REPLACE_16BITS_INDEX(cout, cout->stop_addr_stack[i], LABEL_IDX(cout));
     }
   }
-  cout->stop_size -= stop_start_size;
+  cout->stop_size = stop_start_size;
 }
 static void compile_dowhile(cout_t* cout, ast_t* node)
 {
