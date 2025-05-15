@@ -10,6 +10,7 @@ typedef struct cout cout_t;
 
 #define CONST_POOL_SIZE (0xFFFF + 1)    /* 65536 */
 #define LABEL_SIZE      (0xFFFF + 1)    /* 65536 */
+#define UNCOND_JMP_MAX_SIZE 1024
 
 #define NULL_IDX  0
 #define TRUE_IDX  1
@@ -48,6 +49,10 @@ struct cout {
   svalue_t* const_pool_ptr; /* pointer for tracking constant pool values */
   uint16_t labels[LABEL_SIZE]; /* array of labels to store */
   uint16_t* label_ptr; /* pointer for tracking labels */
+  uint8_t* skip_addr_stack[UNCOND_JMP_MAX_SIZE]; /* stack for skip statements */
+  uint8_t* stop_addr_stack[UNCOND_JMP_MAX_SIZE]; /* stack for stop statements */
+  size_t skip_size; /* skip statements size */
+  size_t stop_size; /* stop statements size */
 };
 
 void compile(cout_t*, ast_t*); /* init cout and compile root node into bytecode */
@@ -55,6 +60,8 @@ static void compile_node(cout_t*, ast_t*); /* compile any node into bytecode */
 static void compile_if(cout_t*, ast_t*);
 static void compile_while(cout_t*, ast_t*);
 static void compile_dowhile(cout_t*, ast_t*);
+static inline void compile_skip(cout_t*);
+static inline void compile_stop(cout_t*);
 static void compile_binary(cout_t*, ast_t*);
 static void compile_val(cout_t*, ast_t*);
 static void compile_func_call(cout_t*, ast_t*);

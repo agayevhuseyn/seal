@@ -100,6 +100,8 @@ static void compile_node(cout_t* cout, ast_t* node)
   case AST_IF: compile_if(cout, node); break;
   case AST_WHILE: compile_while(cout, node); break;
   case AST_DOWHILE: compile_dowhile(cout, node); break;
+  case AST_SKIP: compile_skip(cout); break;
+  case AST_STOP: compile_stop(cout); break;
   case AST_BINARY: compile_binary(cout, node); break;
   case AST_FUNC_CALL: compile_func_call(cout, node); break;
   case AST_ASSIGN: compile_assign(cout, node); break;
@@ -175,6 +177,9 @@ static void compile_if(cout_t* cout, ast_t* node)
 }
 static void compile_while(cout_t* cout, ast_t* node)
 {
+  size_t skip_start_size = cout->skip_size;
+  size_t stop_start_size = cout->stop_size;
+
   PUSH_LABEL(cout, CUR_IDX(cout));
   uint16_t start = LABEL_IDX(cout);
   compile_node(cout, node->_while.cond);
@@ -189,6 +194,19 @@ static void compile_while(cout_t* cout, ast_t* node)
   SET_16BITS_INDEX(cout, start);
   PUSH_LABEL(cout, CUR_IDX(cout));
   REPLACE_16BITS_INDEX(cout, end_addr, LABEL_IDX(cout));
+
+  if (skip_start_size < cout->skip_size) {
+    for (int i = skip_start_size; i < cout->skip_size; i++) {
+      REPLACE_16BITS_INDEX(cout, cout->skip_addr_stack[i], start);
+    }
+  }
+  cout->skip_size -= skip_start_size;
+  if (stop_start_size < cout->stop_size) {
+    for (int i = stop_start_size; i < cout->stop_size; i++) {
+      REPLACE_16BITS_INDEX(cout, cout->stop_addr_stack[i], LABEL_IDX(cout));
+    }
+  }
+  cout->stop_size -= stop_start_size;
 }
 static void compile_dowhile(cout_t* cout, ast_t* node)
 {
@@ -200,6 +218,22 @@ static void compile_dowhile(cout_t* cout, ast_t* node)
 
   EMIT(cout, OP_JTRUE);
   SET_16BITS_INDEX(cout, start);
+}
+static inline void compile_skip(cout_t* cout)
+{
+  if (cout->skip_size >= UNCOND_JMP_MAX_SIZE)
+    __compiler_error("maximum number of skip has exceeded");
+  EMIT(cout, OP_JUMP);
+  cout->skip_addr_stack[cout->skip_size++] = CUR_ADDR(cout);
+  EMIT_DUMMY(cout, 2);
+}
+static inline void compile_stop(cout_t* cout)
+{
+  if (cout->stop_size >= UNCOND_JMP_MAX_SIZE)
+    __compiler_error("maximum number of stop has exceeded");
+  EMIT(cout, OP_JUMP);
+  cout->stop_addr_stack[cout->stop_size++] = CUR_ADDR(cout);
+  EMIT_DUMMY(cout, 2);
 }
 static void compile_binary(cout_t* cout, ast_t* node)
 {
