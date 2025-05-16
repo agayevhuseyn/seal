@@ -21,8 +21,8 @@
   } while (0)
 
 #define SET_16BITS_INDEX(cout, idx) do { \
-    EMIT(cout, (idx) >> 8); \
-    EMIT(cout, (idx)); \
+    EMIT(cout, (uint16_t)(idx) >> 8); \
+    EMIT(cout, (uint16_t)(idx)); \
   } while (0)
 
 #define CUR_IDX(cout) (cout->bytecode_size) /* returns index of current empty byte */
@@ -44,6 +44,20 @@
     fprintf(stderr, __VA_ARGS__); \
     exit(1); \
   } while (0)
+
+#define AUG_ASSIGN_OP_TYPE(type) ( \
+  (type) == TOK_PLUS_ASSIGN ? OP_ADD : \
+  (type) == TOK_MINUS_ASSIGN ? OP_SUB : \
+  (type) == TOK_MUL_ASSIGN ? OP_MUL : \
+  (type) == TOK_DIV_ASSIGN ? OP_DIV : \
+  (type) == TOK_MOD_ASSIGN ? OP_MOD : \
+  (type) == TOK_BAND_ASSIGN ? OP_BAND : \
+  (type) == TOK_BOR_ASSIGN ? OP_BOR : \
+  (type) == TOK_XOR_ASSIGN ? OP_XOR : \
+  (type) == TOK_SHL_ASSIGN ? OP_SHL : \
+  (type) == TOK_SHR_ASSIGN ? OP_SHR : \
+  -1)
+
 
 void compile(cout_t* cout, ast_t* node)
 {
@@ -304,20 +318,43 @@ static void compile_func_call(cout_t* cout, ast_t* node)
 }
 static void compile_assign(cout_t* cout, ast_t* node)
 {
-  compile_node(cout, node->assign.expr);
-
   int lval_type = node->assign.var->type;
   svalue_t sym;
-  switch (lval_type) {
-  case AST_VAR_REF:
-    EMIT(cout, OP_SET_GLOBAL);
-    sym = sval(SEAL_STRING, string, node->assign.var->var_ref.name);
-    PUSH_CONST(cout, sym);
-    SET_16BITS_INDEX(cout, CONST_IDX(cout));
-    break;
-  default:
-    __compiler_error("assigning to %s is not implemented yet", hast_type_name(lval_type));
-    break;
+
+  if (node->assign.op_type == TOK_ASSIGN) {
+    compile_node(cout, node->assign.expr);
+
+    switch (lval_type) {
+    case AST_VAR_REF:
+      EMIT(cout, OP_SET_GLOBAL);
+      sym = sval(SEAL_STRING, string, node->assign.var->var_ref.name);
+      PUSH_CONST(cout, sym);
+      SET_16BITS_INDEX(cout, CONST_IDX(cout));
+      break;
+    default:
+      __compiler_error("assigning to %s is not implemented yet", hast_type_name(lval_type));
+      break;
+    }
+  }
+  else {
+    uint16_t sym_idx;
+    int aug_type = node->assign.op_type;
+    switch (lval_type) {
+    case AST_VAR_REF:
+      EMIT(cout, OP_GET_GLOBAL);
+      sym = sval(SEAL_STRING, string, node->assign.var->var_ref.name);
+      PUSH_CONST(cout, sym);
+      sym_idx = CONST_IDX(cout);
+      SET_16BITS_INDEX(cout, sym_idx);
+      compile_node(cout, node->assign.expr);
+      EMIT(cout, AUG_ASSIGN_OP_TYPE(aug_type));
+      EMIT(cout, OP_SET_GLOBAL);
+      SET_16BITS_INDEX(cout, sym_idx);
+      break;
+    default:
+      __compiler_error("assigning to %s is not implemented yet", hast_type_name(lval_type));
+      break;
+    }
   }
 }
 static void compile_var_ref(cout_t* cout, ast_t* node)

@@ -136,6 +136,9 @@ void eval_vm(vm_t* vm)
       case OP_POP:
         POP(vm);
         break;
+      case OP_DUP:
+        DUP(vm);
+        break;
       case OP_ADD:
         right = POP(vm);
         left  = POP(vm);
