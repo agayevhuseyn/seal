@@ -5,3 +5,4 @@ TODO.txt
 !examples/*.seal
 *.exe
 seal_visitor
+*.swp
