@@ -19,7 +19,7 @@ https://agayevhuseyn.github.io/seal-web
 ## Hello, Seal!
 
 ```javascript
-writeln("Hello, Seal!") // output: Hello, Seal!
+print("Hello, Seal!") // output: Hello, Seal!
 
 define factor(n)
     if n > 1
