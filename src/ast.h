@@ -147,11 +147,6 @@ typedef struct ast {
       int op_type;
     } binary;
     struct {
-      struct ast* left;
-      struct ast* right;
-      int op_type;
-    } binary_bool;
-    struct {
       struct ast* cond;
       struct ast* expr_true;
       struct ast* expr_false;
@@ -494,10 +489,10 @@ static void print_ast(ast_t* node)
       printf("%d: %s, op: \'%s\',\nleft side:\n",
               node->line,
               hast_type_name(node->type),
-              htoken_type_name(node->binary_bool.op_type));
-      print_ast(node->binary_bool.left);
+              htoken_type_name(node->binary.op_type));
+      print_ast(node->binary.left);
       printf("right side:\n");
-      print_ast(node->binary_bool.right);
+      print_ast(node->binary.right);
       break;
     case AST_TERNARY:
       printf("%d: %s, condition:\n",

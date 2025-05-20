@@ -25,26 +25,28 @@
 #define OP_MUL        0x0f
 #define OP_DIV        0x10
 #define OP_MOD        0x11
-/* bitwise */
+/* bitwise binary */
 #define OP_BAND       0x12
 #define OP_BOR        0x13
 #define OP_XOR        0x14
 #define OP_SHL        0x15
 #define OP_SHR        0x16
-#define OP_BNOT       0x17
 /* comparison */
-#define OP_EQ         0x18
-#define OP_NE         0x19
-#define OP_GT         0x1a
-#define OP_GE         0x1b
-#define OP_LT         0x1c
-#define OP_LE         0x1d
-/* logical */
-#define OP_AND        0x1e
-#define OP_OR         0x1f
-#define OP_NOT        0x20
-/* typeof */
+#define OP_GT         0x19
+#define OP_GE         0x1a
+#define OP_LT         0x1b
+#define OP_LE         0x1c
+/* equality */
+#define OP_EQ         0x17
+#define OP_NE         0x18
+/* logical binary */
+#define OP_AND        0x1d
+#define OP_OR         0x1e
+/* unary */
+#define OP_NOT        0x1f
+#define OP_NEG        0x20
 #define OP_TYPOF      0x21
+#define OP_BNOT       0x22
 
 
 #define PRINT_BYTE(bytecodes, size) for(int i = 0; i < size; i++) { \

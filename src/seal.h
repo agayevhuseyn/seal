@@ -16,6 +16,8 @@
 
 typedef long long seal_int;
 typedef double    seal_float;
+typedef uint8_t   seal_byte;
+typedef uint16_t  seal_word;
 
 #define RESERVED_NAMES ( \
     (char*[]) { "writeln",\

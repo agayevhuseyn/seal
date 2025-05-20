@@ -6,9 +6,9 @@
 
 #define EMIT(cout, byte) do { \
     if (cout->bytecode_size >= cout->bytecode_cap) { \
-      cout->bytecodes = SEAL_REALLOC(cout->bytecodes, sizeof(uint8_t) * (cout->bytecode_cap *= 2)); \
+      cout->bytecodes = SEAL_REALLOC(cout->bytecodes, sizeof(seal_byte) * (cout->bytecode_cap *= 2)); \
     } \
-    cout->bytecodes[cout->bytecode_size++] = (uint8_t)(byte); \
+    cout->bytecodes[cout->bytecode_size++] = (seal_byte)(byte); \
   } while (0)
 
 #define EMIT_DUMMY(cout, times) for (int i = 0; i < (times); i++) { \
@@ -16,13 +16,13 @@
   }
 
 #define REPLACE_16BITS_INDEX(cout, addr, idx) do { \
-    *(addr)++ = (uint8_t)((idx) >> 8); \
-    *(addr)   = (uint8_t)(idx); \
+    *(addr)++ = (seal_byte)((idx) >> 8); \
+    *(addr)   = (seal_byte)(idx); \
   } while (0)
 
 #define SET_16BITS_INDEX(cout, idx) do { \
-    EMIT(cout, (uint16_t)(idx) >> 8); \
-    EMIT(cout, (uint16_t)(idx)); \
+    EMIT(cout, (seal_word)(idx) >> 8); \
+    EMIT(cout, (seal_word)(idx)); \
   } while (0)
 
 #define CUR_IDX(cout) (cout->bytecode_size) /* returns index of current empty byte */
@@ -32,13 +32,13 @@
     /* check bounds */ \
     *cout->const_pool_ptr++ = (val))
 
-#define CONST_IDX(cout) ((uint16_t)(cout->const_pool_ptr - cout->const_pool - 1)) /* WARNING!! only use this before after constant */
+#define CONST_IDX(cout) ((seal_word)(cout->const_pool_ptr - cout->const_pool - 1)) /* WARNING!! only use this before after constant */
 
 #define PUSH_LABEL(cout, addr) ( \
     /* check bounds */ \
     *cout->label_ptr++ = (addr))
 
-#define LABEL_IDX(cout) ((uint16_t)(cout->label_ptr - cout->labels - 1)) /* WARNING!! only use this after pushing label */
+#define LABEL_IDX(cout) ((seal_word)(cout->label_ptr - cout->labels - 1)) /* WARNING!! only use this after pushing label */
 
 #define __compiler_error(...) do { \
     fprintf(stderr, __VA_ARGS__); \
@@ -65,7 +65,7 @@ void compile(cout_t* cout, ast_t* node)
   cout->bytecode_cap  = START_BYTECODE_CAP;
   cout->const_pool_ptr = cout->const_pool;
   cout->label_ptr = cout->labels;
-  cout->bytecodes = SEAL_CALLOC(START_BYTECODE_CAP, sizeof(uint8_t));
+  cout->bytecodes = SEAL_CALLOC(START_BYTECODE_CAP, sizeof(seal_byte));
 
   PUSH_CONST(cout, (svalue_t) { .type = SEAL_NULL }); /* push constant null */
   PUSH_CONST(cout, sval(SEAL_BOOL, _bool, true)); /* push constant true */
@@ -116,7 +116,9 @@ static void compile_node(cout_t* cout, ast_t* node)
   case AST_DOWHILE: compile_dowhile(cout, node); break;
   case AST_SKIP: compile_skip(cout); break;
   case AST_STOP: compile_stop(cout); break;
+  case AST_UNARY: compile_unary(cout, node); break;
   case AST_BINARY: compile_binary(cout, node); break;
+  case AST_BINARY_BOOL: compile_logical_binary(cout, node); break;
   case AST_FUNC_CALL: compile_func_call(cout, node); break;
   case AST_ASSIGN: compile_assign(cout, node); break;
   case AST_VAR_REF: compile_var_ref(cout, node); break;
@@ -133,7 +135,7 @@ static void compile_if(cout_t* cout, ast_t* node)
     temp_node = temp_node->_if._else;
     jmp_size++;
   }
-  uint8_t *end_addrs[jmp_size], **end_addr = end_addrs, *next_addr = NULL;
+  seal_byte *end_addrs[jmp_size], **end_addr = end_addrs, *next_addr = NULL;
 
   compile_node(cout, node->_if.cond);
 
@@ -195,11 +197,11 @@ static void compile_while(cout_t* cout, ast_t* node)
   size_t stop_start_size = cout->stop_size;
 
   PUSH_LABEL(cout, CUR_IDX(cout));
-  uint16_t start = LABEL_IDX(cout);
+  seal_word start = LABEL_IDX(cout);
   compile_node(cout, node->_while.cond);
 
   EMIT(cout, OP_JFALSE);
-  uint8_t* end_addr = CUR_ADDR(cout);
+  seal_byte* end_addr = CUR_ADDR(cout);
   EMIT_DUMMY(cout, 2);
 
   compile_node(cout, node->_while.comp);
@@ -225,7 +227,7 @@ static void compile_while(cout_t* cout, ast_t* node)
 static void compile_dowhile(cout_t* cout, ast_t* node)
 {
   PUSH_LABEL(cout, CUR_IDX(cout));
-  uint16_t start = LABEL_IDX(cout);
+  seal_word start = LABEL_IDX(cout);
 
   compile_node(cout, node->_while.comp);
   compile_node(cout, node->_while.cond);
@@ -249,12 +251,27 @@ static inline void compile_stop(cout_t* cout)
   cout->stop_addr_stack[cout->stop_size++] = CUR_ADDR(cout);
   EMIT_DUMMY(cout, 2);
 }
+static void compile_unary(cout_t* cout, ast_t* node)
+{
+  compile_node(cout, node->unary.expr);
+
+  seal_byte opcode;
+  switch (node->unary.op_type) {
+  case TOK_NOT   : opcode = OP_NOT; break;
+  case TOK_MINUS : opcode = OP_NEG; break;
+  case TOK_PLUS  : return;
+  case TOK_TYPEOF: opcode = OP_TYPOF; break;
+  case TOK_BNOT  : opcode = OP_BNOT; break;
+  }
+
+  EMIT(cout, opcode);
+}
 static void compile_binary(cout_t* cout, ast_t* node)
 {
   compile_node(cout, node->binary.left);
   compile_node(cout, node->binary.right);
   
-  uint8_t opcode;
+  seal_byte opcode;
   switch (node->binary.op_type) {
   case TOK_PLUS : opcode = OP_ADD; break;
   case TOK_MINUS: opcode = OP_SUB; break;
@@ -275,6 +292,23 @@ static void compile_binary(cout_t* cout, ast_t* node)
   }
 
   EMIT(cout, opcode);
+}
+static void compile_logical_binary(cout_t* cout, ast_t* node)
+{
+  compile_node(cout, node->binary.left);
+
+  if (node->binary.op_type == TOK_AND) {
+    EMIT(cout, OP_JFALSE);
+  } else {
+    EMIT(cout, OP_JTRUE);
+  }
+  seal_byte* end_addr = CUR_ADDR(cout); /* store end address */
+  EMIT_DUMMY(cout, 2); /* push zero bytes */
+
+  compile_node(cout, node->binary.right); /* compile right side */
+
+  PUSH_LABEL(cout, CUR_IDX(cout)); /* push end label */
+  REPLACE_16BITS_INDEX(cout, end_addr, LABEL_IDX(cout)); /* replace zero bytes with end label index */
 }
 static void compile_val(cout_t* cout, ast_t* node)
 {
@@ -314,7 +348,7 @@ static void compile_func_call(cout_t* cout, ast_t* node)
   else
     __compiler_error("%s function is not defined\n", name);
 
-  EMIT(cout, (uint8_t)node->func_call.arg_size);
+  EMIT(cout, (seal_byte)node->func_call.arg_size);
 }
 static void compile_assign(cout_t* cout, ast_t* node)
 {
@@ -337,7 +371,7 @@ static void compile_assign(cout_t* cout, ast_t* node)
     }
   }
   else {
-    uint16_t sym_idx;
+    seal_word sym_idx;
     int aug_type = node->assign.op_type;
     switch (lval_type) {
     case AST_VAR_REF:

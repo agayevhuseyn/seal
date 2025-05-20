@@ -575,9 +575,9 @@ static ast_t* parser_parse_or(parser_t* parser)
 
   while (parser_match(parser, TOK_OR)) {
     ast_t* bin = static_create_ast(AST_BINARY_BOOL, parser_line(parser));
-    bin->binary_bool.left = left;
-    bin->binary_bool.op_type = parser_advance(parser)->type; // optype
-    bin->binary_bool.right = parser_parse_and(parser);
+    bin->binary.left = left;
+    bin->binary.op_type = parser_advance(parser)->type; // optype
+    bin->binary.right = parser_parse_and(parser);
     left = bin;
   }
 
@@ -589,9 +589,9 @@ static ast_t* parser_parse_and(parser_t* parser)
 
   while (parser_match(parser, TOK_AND)) {
     ast_t* bin = static_create_ast(AST_BINARY_BOOL, parser_line(parser));
-    bin->binary_bool.left = left;
-    bin->binary_bool.op_type = parser_advance(parser)->type; // optype
-    bin->binary_bool.right = parser_parse_bor(parser);
+    bin->binary.left = left;
+    bin->binary.op_type = parser_advance(parser)->type; // optype
+    bin->binary.right = parser_parse_bor(parser);
     left = bin;
   }
 

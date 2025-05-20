@@ -13,8 +13,9 @@
 #define POP(vm) (*(--(vm->sp)))
 #define JUMP(vm, addr) (vm->ip = &vm->bytecodes[vm->label_ptr[addr]])
 #define GET_CONST(vm, i) (vm->const_pool_ptr[i])
-#define ERROR(...) (fprintf(stderr, __VA_ARGS__), exit(EXIT_FAILURE))
-#define ERROR_OP(op, left, right) ERROR("\'%s\' operator is not supported for \'%s\' and \'%s\'\n", #op, seal_type_name(left.type), seal_type_name(right.type))
+#define ERROR(...) (fprintf(stderr, __VA_ARGS__), fprintf(stderr, "\n"), exit(EXIT_FAILURE))
+#define ERROR_UNRY_OP(op, val) ERROR("\'%s\' unary operator is not supported for \'%s\'", #op, seal_type_name(val.type))
+#define ERROR_BIN_OP(op, left, right) ERROR("\'%s\' operator is not supported for \'%s\' and \'%s\'", #op, seal_type_name(left.type), seal_type_name(right.type))
 
 #define PUSH_NULL(vm)        PUSH(vm, GET_CONST(vm, NULL_IDX))
 #define PUSH_INT(vm, val)    PUSH(vm, sval(SEAL_INT, _int, val))
@@ -47,21 +48,22 @@
   else if (IS_INT(left) && IS_FLOAT(right) || IS_FLOAT(left) && IS_INT(right)) \
     BIN_OP_INT_AND_FLOAT(vm, left, right, op); \
   else \
-    ERROR_OP(op, left, right); \
+    ERROR_BIN_OP(op, left, right); \
 } while (0)
 
 #define MOD_OP(vm, left, right) do { \
   if (IS_INT(left) && IS_INT(right)) \
     PUSH_INT(vm, AS_INT(left) % AS_INT(right)); \
   else \
-    ERROR_OP(%, left, right); \
+    ERROR_BIN_OP(%, left, right); \
 } while (0)
 
+/* bitwise binary */
 #define BITWISE_OP(vm, left, right, op) do { \
   if (IS_INT(left) && IS_INT(right)) \
     PUSH_INT(vm, AS_INT(left) op AS_INT(right)); \
   else \
-    ERROR_OP(op, left, right); \
+    ERROR_BIN_OP(op, left, right); \
 } while (0)
 
 /* equality */
@@ -84,7 +86,7 @@
   else if (IS_BOOL(left) && IS_BOOL(right)) \
     EQUAL_OP_BOOL(vm, left, right, op); \
   else \
-    ERROR_OP(op, left, right); \
+    ERROR_BIN_OP(op, left, right); \
 } while (0)
 
 /* comparison */
@@ -101,9 +103,36 @@
   else if (IS_INT(left) && IS_FLOAT(right) || IS_FLOAT(left) && IS_INT(right)) \
     CMP_OP_INT_AND_FLOAT(vm, left, right, op); \
   else \
-    ERROR_OP(op, left, right); \
+    ERROR_BIN_OP(op, left, right); \
 } while (0)
 
+/* logical binary */
+/* unary */
+#define UNRY_OP(vm, val, op) do { \
+  switch (op) { \
+  case OP_NEG: \
+    if (IS_INT(val)) \
+      PUSH_INT(vm, -(AS_INT(val))); \
+    else \
+      ERROR_UNRY_OP(-, val); \
+    break; \
+  case OP_BNOT: \
+    if (IS_INT(val)) \
+      PUSH_INT(vm, ~(AS_INT(val))); \
+    else \
+      ERROR_UNRY_OP(~, val); \
+    break; \
+  case OP_TYPOF: \
+    PUSH_STRING(vm, seal_type_name((val).type)); \
+    break; \
+  case OP_NOT: \
+    if (IS_BOOL(val)) \
+      PUSH_BOOL(vm, !(AS_BOOL(val))); \
+    else \
+      ERROR_UNRY_OP(not, val); \
+    break; \
+  } \
+} while (0)
 
 void init_vm(vm_t* vm, cout_t* cout)
 {
@@ -117,10 +146,10 @@ void init_vm(vm_t* vm, cout_t* cout)
 void eval_vm(vm_t* vm)
 {
   while (true) {
-    uint8_t op = FETCH(vm);
+    seal_byte op = FETCH(vm);
 
-    uint16_t idx, addr;
-    svalue_t right, left;
+    seal_word idx, addr;
+    svalue_t  left, right;
     struct h_entry* entry;
     const char* sym;
 
@@ -219,6 +248,13 @@ void eval_vm(vm_t* vm)
         left  = POP(vm);
         CMP_OP(vm, left, right, <=);
         break;
+      case OP_NOT:
+      case OP_NEG:
+      case OP_TYPOF:
+      case OP_BNOT:
+        left = POP(vm);
+        UNRY_OP(vm, left, op);
+        break;
       case OP_JUMP:
         addr = FETCH(vm) << 8;
         addr |= FETCH(vm);
@@ -227,15 +263,23 @@ void eval_vm(vm_t* vm)
       case OP_JFALSE:
         addr = FETCH(vm) << 8;
         addr |= FETCH(vm);
-        if (!AS_BOOL(POP(vm))) {
-          JUMP(vm, addr);
+        left = POP(vm);
+        if (IS_BOOL(left)) {
+          if (!AS_BOOL(left))
+            JUMP(vm, addr);
+        } else {
+          ERROR("bool is required");
         }
         break;
       case OP_JTRUE:
         addr = FETCH(vm) << 8;
         addr |= FETCH(vm);
-        if (AS_BOOL(POP(vm))) {
-          JUMP(vm, addr);
+        left = POP(vm);
+        if (IS_BOOL(left)) {
+          if (!AS_BOOL(left))
+            JUMP(vm, addr);
+        } else {
+          ERROR("bool is required");
         }
         break;
       case OP_GET_GLOBAL:
