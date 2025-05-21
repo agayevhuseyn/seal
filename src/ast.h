@@ -474,10 +474,13 @@ static void print_ast(ast_t* node)
       break;
     /* operations */
     case AST_UNARY:
-      printf("%d: %s, op: \'%s\', expr:\n",
+      printf("%d: %s, op: \'%s\'%s, expr:\n",
               node->line,
               hast_type_name(node->type),
-              htoken_type_name(node->unary.op_type));
+              htoken_type_name(node->unary.op_type),
+              node->unary.op_type == TOK_INC || node->unary.op_type == TOK_DEC ?
+                node->unary.type == POSTFIX ? " postfix" : " prefix"
+                : "");
       print_ast(node->unary.expr);
       break;
     case AST_BINARY:
