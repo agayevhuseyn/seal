@@ -34,6 +34,17 @@
 #define IS_STRING(val) (val.type == SEAL_STRING)
 #define IS_BOOL(val)   (val.type == SEAL_BOOL)
 
+#define TO_INT(val)
+#define TO_FLOAT(val)
+#define TO_STRING(val)
+#define TO_BOOL(val) ( \
+  IS_NULL(val) ? false : \
+  IS_INT(val) ? AS_INT(val) != 0 : \
+  IS_FLOAT(val) ? AS_FLOAT(val) != 0.0 : \
+  IS_STRING(val) ? true : \
+  IS_BOOL(val) ? AS_BOOL(val) : \
+  (ERROR("cannot convert to bool type"), -1))
+
 /* arithmetic */
 #define BIN_OP_INT(vm, left, right, op)   PUSH_INT(vm, AS_INT(left) op AS_INT(right))
 #define BIN_OP_FLOAT(vm, left, right, op) PUSH_FLOAT(vm, AS_FLOAT(left) op AS_FLOAT(right))
@@ -264,23 +275,15 @@ void eval_vm(vm_t* vm)
         addr = FETCH(vm) << 8;
         addr |= FETCH(vm);
         left = POP(vm);
-        if (IS_BOOL(left)) {
-          if (!AS_BOOL(left))
-            JUMP(vm, addr);
-        } else {
-          ERROR("bool is required");
-        }
+        if (!TO_BOOL(left))
+          JUMP(vm, addr);
         break;
       case OP_JTRUE:
         addr = FETCH(vm) << 8;
         addr |= FETCH(vm);
         left = POP(vm);
-        if (IS_BOOL(left)) {
-          if (!AS_BOOL(left))
-            JUMP(vm, addr);
-        } else {
-          ERROR("bool is required");
-        }
+        if (TO_BOOL(left))
+          JUMP(vm, addr);
         break;
       case OP_GET_GLOBAL:
         addr = FETCH(vm) << 8;

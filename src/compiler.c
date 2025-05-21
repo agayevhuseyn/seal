@@ -297,6 +297,8 @@ static void compile_logical_binary(cout_t* cout, ast_t* node)
 {
   compile_node(cout, node->binary.left);
 
+  EMIT(cout, OP_DUP); /* duplicate to compare for jumping */
+
   if (node->binary.op_type == TOK_AND) {
     EMIT(cout, OP_JFALSE);
   } else {
@@ -304,6 +306,7 @@ static void compile_logical_binary(cout_t* cout, ast_t* node)
   }
   seal_byte* end_addr = CUR_ADDR(cout); /* store end address */
   EMIT_DUMMY(cout, 2); /* push zero bytes */
+  EMIT(cout, OP_POP); /* pop first value if no jump */
 
   compile_node(cout, node->binary.right); /* compile right side */
 
