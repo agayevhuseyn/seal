@@ -17,11 +17,11 @@
 #define ERROR_UNRY_OP(op, val) ERROR("\'%s\' unary operator is not supported for \'%s\'", #op, seal_type_name(val.type))
 #define ERROR_BIN_OP(op, left, right) ERROR("\'%s\' operator is not supported for \'%s\' and \'%s\'", #op, seal_type_name(left.type), seal_type_name(right.type))
 
-#define PUSH_NULL(vm)        PUSH(vm, GET_CONST(vm, NULL_IDX))
+#define PUSH_NULL(vm)        PUSH(vm, (svalue_t) { .type = SEAL_NULL })
 #define PUSH_INT(vm, val)    PUSH(vm, sval(SEAL_INT, _int, val))
 #define PUSH_FLOAT(vm, val)  PUSH(vm, sval(SEAL_FLOAT, _float, val))
 #define PUSH_STRING(vm, val) PUSH(vm, sval(SEAL_STRING, string, val))
-#define PUSH_BOOL(vm, val)   PUSH(vm, GET_CONST(vm, val ? TRUE_IDX : FALSE_IDX))
+#define PUSH_BOOL(vm, val)   PUSH(vm, sval(SEAL_BOOL, _bool, val))
 
 #define AS_INT(val)    (val.as._int)
 #define AS_FLOAT(val)  (val.as._float)
@@ -168,10 +168,24 @@ void eval_vm(vm_t* vm)
       case OP_HALT:
         printf("Finish\n");
         return;
-      case OP_PUSH:
+      case OP_PUSH_CONST:
         idx = FETCH(vm) << 8;
         idx |= FETCH(vm);
         PUSH(vm, GET_CONST(vm, idx));
+        break;
+      case OP_PUSH_INT:
+        idx = FETCH(vm) << 8;
+        idx |= FETCH(vm);
+        PUSH_INT(vm, idx);
+        break;
+      case OP_PUSH_NULL:
+        PUSH_NULL(vm);
+        break;
+      case OP_PUSH_TRUE:
+        PUSH_BOOL(vm, true);
+        break;
+      case OP_PUSH_FALSE:
+        PUSH_BOOL(vm, false);
         break;
       case OP_POP:
         POP(vm);
@@ -293,7 +307,7 @@ void eval_vm(vm_t* vm)
         if (entry->key) {
           PUSH(vm, entry->val);
         } else {
-          ERROR("vm: %s is not defined\n", sym);
+          ERROR("vm: %s is not defined", sym);
         }
         break;
       case OP_SET_GLOBAL:
