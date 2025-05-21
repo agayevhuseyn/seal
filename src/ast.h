@@ -140,6 +140,10 @@ typedef struct ast {
     struct {
       struct ast* expr;
       int op_type;
+      enum {
+        PREFIX,
+        POSTFIX
+      } type;
     } unary;
     struct {
       struct ast* left;
