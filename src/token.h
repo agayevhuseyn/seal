@@ -47,34 +47,36 @@
 #define TOK_SHL     39   // <<
 #define TOK_SHR     40   // >>
 #define TOK_BNOT    41   // ~
-#define TOK_ASSIGN  42   // =
-#define TOK_PLUS_ASSIGN   43   // +=
-#define TOK_MINUS_ASSIGN  44   // -=
-#define TOK_MUL_ASSIGN    45   // *=
-#define TOK_DIV_ASSIGN    46   // /=
-#define TOK_MOD_ASSIGN    47   // %=
-#define TOK_BAND_ASSIGN   48   // &=
-#define TOK_BOR_ASSIGN    49   // |=
-#define TOK_XOR_ASSIGN    50   // ^=
-#define TOK_SHL_ASSIGN    51   // <<=
-#define TOK_SHR_ASSIGN    52   // >>=
-#define TOK_EQ      53   // ==
-#define TOK_NE      54   // !=
-#define TOK_GT      55   // >
-#define TOK_GE      56   // >=
-#define TOK_LT      57   // <
-#define TOK_LE      58   // <=
+#define TOK_INC     42   // ++
+#define TOK_DEC     43   // ++
+#define TOK_ASSIGN  44   // =
+#define TOK_PLUS_ASSIGN   45   // +=
+#define TOK_MINUS_ASSIGN  46   // -=
+#define TOK_MUL_ASSIGN    47   // *=
+#define TOK_DIV_ASSIGN    48   // /=
+#define TOK_MOD_ASSIGN    49   // %=
+#define TOK_BAND_ASSIGN   50   // &=
+#define TOK_BOR_ASSIGN    51   // |=
+#define TOK_XOR_ASSIGN    52   // ^=
+#define TOK_SHL_ASSIGN    53   // <<=
+#define TOK_SHR_ASSIGN    54   // >>=
+#define TOK_EQ      55   // ==
+#define TOK_NE      56   // !=
+#define TOK_GT      57   // >
+#define TOK_GE      58   // >=
+#define TOK_LT      59   // <
+#define TOK_LE      60   // <=
 /* parenthesis */
-#define TOK_LPAREN  59   // (
-#define TOK_RPAREN  60   // )
-#define TOK_LBRACK  61   // [
-#define TOK_RBRACK  62   // ]
-#define TOK_LBRACE  63   // {
-#define TOK_RBRACE  64   // }
+#define TOK_LPAREN  61   // (
+#define TOK_RPAREN  62   // )
+#define TOK_LBRACK  63   // [
+#define TOK_RBRACK  64   // ]
+#define TOK_LBRACE  65   // {
+#define TOK_RBRACE  66   // }
 /* block-related */
-#define TOK_NEWL    65   // \n
-#define TOK_INDENT  66   // \t or \s
-#define TOK_DEDENT  67   // <-\t or \s
+#define TOK_NEWL    67   // \n
+#define TOK_INDENT  68   // \t or \s
+#define TOK_DEDENT  69   // <-\t or \s
 
 #define TOK_LAST TOK_DEDENT    // last token
 
@@ -131,6 +133,8 @@ static inline const char* token_type_name(int type)
     case TOK_SHL    : return "TOK_SHL";
     case TOK_SHR    : return "TOK_SHR";
     case TOK_BNOT   : return "TOK_BNOT";
+    case TOK_INC    : return "TOK_INC";
+    case TOK_DEC    : return "TOK_DEC";
     case TOK_ASSIGN : return "TOK_ASSIGN";
     case TOK_PLUS_ASSIGN  : return "TOK_PLUS_ASSIGN";
     case TOK_MINUS_ASSIGN : return "TOK_MINUS_ASSIGN";
@@ -206,6 +210,8 @@ static inline const char* htoken_type_name(int type)
     case TOK_SHL    : return "<<";
     case TOK_SHR    : return ">>";
     case TOK_BNOT   : return "~";
+    case TOK_INC    : return "++";
+    case TOK_DEC    : return "--";
     case TOK_ASSIGN : return "=";
     case TOK_PLUS_ASSIGN  : return "+=";
     case TOK_MINUS_ASSIGN : return "-=";
