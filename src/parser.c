@@ -719,6 +719,23 @@ static ast_t* parser_parse_factor(parser_t* parser)
 }
 static ast_t* parser_parse_unary(parser_t* parser)
 {
+  if (parser_match(parser, TOK_INC) ||
+      parser_match(parser, TOK_DEC)) {
+    ast_t* ast = static_create_ast(AST_UNARY, parser_line(parser));
+    ast->unary.op_type = parser_advance(parser)->type;
+    ast->unary.type = PREFIX;
+    ast_t* expr = parser_parse_primary(parser);
+
+    if (!is_lvalue(expr)) {
+      char err[ERR_LEN];
+      sprintf(err, "\'%s\' requires assignable value", htoken_type_name(ast->unary.op_type));
+      parser_error(parser, err);
+    }
+
+    ast->unary.expr = expr;
+
+    return ast;
+  }
   if (parser_match(parser, TOK_NOT) ||
       parser_match(parser, TOK_MINUS) ||
       parser_match(parser, TOK_PLUS) ||
@@ -780,7 +797,7 @@ static ast_t* parser_parse_primary(parser_t* parser)
       break;
     default: {
       char err[ERR_LEN];
-      sprintf(err, "invalid primary expression: \'%s\'", parser_peek(parser)->val);
+      sprintf(err, "invalid expression: \'%s\'", parser_peek(parser)->val);
       return parser_error(parser, err);
     }
   }
@@ -826,7 +843,8 @@ static ast_t* parser_parse_primary(parser_t* parser)
   }
 
   // handle assignment
-  if ((parser_match(parser, TOK_ASSIGN) ||
+  if (is_lvalue(main) &&
+      (parser_match(parser, TOK_ASSIGN) ||
        parser_match(parser, TOK_PLUS_ASSIGN) ||
        parser_match(parser, TOK_MINUS_ASSIGN) ||
        parser_match(parser, TOK_MUL_ASSIGN) ||
@@ -836,13 +854,20 @@ static ast_t* parser_parse_primary(parser_t* parser)
        parser_match(parser, TOK_BOR_ASSIGN) || 
        parser_match(parser, TOK_XOR_ASSIGN) || 
        parser_match(parser, TOK_SHL_ASSIGN) || 
-       parser_match(parser, TOK_SHR_ASSIGN)) &&
-      is_lvalue(main)) {
+       parser_match(parser, TOK_SHR_ASSIGN)
+      )
+     ) {
     ast_t* assign = static_create_ast(AST_ASSIGN, parser_line(parser));
     assign->assign.op_type = parser_advance(parser)->type; // assign type
     assign->assign.var = main;
     assign->assign.expr = parser_parse_expr(parser);
     main = assign;
+  } else if (is_lvalue(main) && (parser_match(parser, TOK_INC) || parser_match(parser, TOK_DEC))) {
+    ast_t* unary = static_create_ast(AST_UNARY, parser_line(parser));
+    unary->unary.expr = main;
+    unary->unary.op_type = parser_advance(parser)->type;
+    unary->unary.type = POSTFIX;
+    main = unary;
   }
 
   return main;
