@@ -12,10 +12,6 @@ typedef struct cout cout_t;
 #define LABEL_SIZE      (0xFFFF + 1)    /* 65536 */
 #define UNCOND_JMP_MAX_SIZE 1024
 
-#define NULL_IDX  0
-#define TRUE_IDX  1
-#define FALSE_IDX 2
-
 #define PRINT_CONST_POOL(cout) for (int i = 0; i < cout.const_pool_ptr - cout.const_pool; i++) { \
     if (i == 0) printf("CONST POOL START-------\n"); \
     svalue_t s = cout.const_pool[i]; \
