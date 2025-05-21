@@ -148,13 +148,17 @@ static void lexer_get_token(lexer_t* lexer)
       tok = create_token(TOK_COMMA, NULL, lexer->line);
       break;
     case '+':
-      if (lexer_match(lexer, '='))
+      if (lexer_match(lexer, '+'))
+        tok = create_token(TOK_INC, NULL, lexer->line);
+      else if (lexer_match(lexer, '='))
         tok = create_token(TOK_PLUS_ASSIGN, NULL, lexer->line);
       else
         tok = create_token(TOK_PLUS, NULL, lexer->line);
       break;
     case '-':
-      if (lexer_match(lexer, '='))
+      if (lexer_match(lexer, '-'))
+        tok = create_token(TOK_DEC, NULL, lexer->line);
+      else if (lexer_match(lexer, '='))
         tok = create_token(TOK_MINUS_ASSIGN, NULL, lexer->line);
       else
         tok = create_token(TOK_MINUS, NULL, lexer->line);
