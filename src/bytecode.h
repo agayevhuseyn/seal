@@ -26,8 +26,8 @@
 #define OP_DIV        0x10
 #define OP_MOD        0x11
 /* bitwise binary */
-#define OP_BAND       0x12
-#define OP_BOR        0x13
+#define OP_AND        0x12
+#define OP_OR         0x13
 #define OP_XOR        0x14
 #define OP_SHL        0x15
 #define OP_SHR        0x16
@@ -39,9 +39,6 @@
 /* equality */
 #define OP_EQ         0x17
 #define OP_NE         0x18
-/* logical binary */
-#define OP_AND        0x1d
-#define OP_OR         0x1e
 /* unary */
 #define OP_NOT        0x1f
 #define OP_NEG        0x20
@@ -80,8 +77,8 @@ static inline const char* op_name(int op)
   case OP_DIV       :  return "OP_DIV";
   case OP_MOD       :  return "OP_MOD";
   /* bitwise */
-  case OP_BAND      :  return "OP_BAND";
-  case OP_BOR       :  return "OP_BOR";
+  case OP_AND       :  return "OP_AND";
+  case OP_OR        :  return "OP_OR";
   case OP_XOR       :  return "OP_XOR";
   case OP_SHL       :  return "OP_SHL";
   case OP_SHR       :  return "OP_SHR";
@@ -94,8 +91,6 @@ static inline const char* op_name(int op)
   case OP_LT        :  return "OP_LT";
   case OP_LE        :  return "OP_LE";
   /* logical */
-  case OP_AND       :  return "OP_AND";
-  case OP_OR        :  return "OP_OR";
   case OP_NOT       :  return "OP_NOT";
   /* typeof */
   case OP_TYPOF     :  return "OP_TYPOF";

@@ -193,12 +193,12 @@ void eval_vm(vm_t* vm)
         left  = POP(vm);
         MOD_OP(vm, left, right);
         break;
-      case OP_BAND:
+      case OP_AND:
         right = POP(vm);
         left  = POP(vm);
         BITWISE_OP(vm, left, right, &);
         break;
-      case OP_BOR:
+      case OP_OR:
         right = POP(vm);
         left  = POP(vm);
         BITWISE_OP(vm, left, right, |);

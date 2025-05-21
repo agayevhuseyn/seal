@@ -51,8 +51,8 @@
   (type) == TOK_MUL_ASSIGN ? OP_MUL : \
   (type) == TOK_DIV_ASSIGN ? OP_DIV : \
   (type) == TOK_MOD_ASSIGN ? OP_MOD : \
-  (type) == TOK_BAND_ASSIGN ? OP_BAND : \
-  (type) == TOK_BOR_ASSIGN ? OP_BOR : \
+  (type) == TOK_BAND_ASSIGN ? OP_AND : \
+  (type) == TOK_BOR_ASSIGN ? OP_OR : \
   (type) == TOK_XOR_ASSIGN ? OP_XOR : \
   (type) == TOK_SHL_ASSIGN ? OP_SHL : \
   (type) == TOK_SHR_ASSIGN ? OP_SHR : \
@@ -278,8 +278,8 @@ static void compile_binary(cout_t* cout, ast_t* node)
   case TOK_MUL  : opcode = OP_MUL; break;
   case TOK_DIV  : opcode = OP_DIV; break;
   case TOK_MOD  : opcode = OP_MOD; break;
-  case TOK_BAND : opcode = OP_BAND; break;
-  case TOK_BOR  : opcode = OP_BOR; break;
+  case TOK_BAND : opcode = OP_AND; break;
+  case TOK_BOR  : opcode = OP_OR;  break;
   case TOK_XOR  : opcode = OP_XOR; break;
   case TOK_SHL  : opcode = OP_SHL; break;
   case TOK_SHR  : opcode = OP_SHR; break;
