@@ -67,10 +67,6 @@ void compile(cout_t* cout, ast_t* node)
   cout->label_ptr = cout->labels;
   cout->bytecodes = SEAL_CALLOC(START_BYTECODE_CAP, sizeof(seal_byte));
 
-  PUSH_CONST(cout, (svalue_t) { .type = SEAL_NULL }); /* push constant null */
-  PUSH_CONST(cout, sval(SEAL_BOOL, _bool, true)); /* push constant true */
-  PUSH_CONST(cout, sval(SEAL_BOOL, _bool, false)); /* push constant false */
-
   compile_node(cout, node);
 
   EMIT(cout, OP_HALT); /* push halt opcode for termination */
@@ -315,25 +311,30 @@ static void compile_logical_binary(cout_t* cout, ast_t* node)
 }
 static void compile_val(cout_t* cout, ast_t* node)
 {
-  EMIT(cout, OP_PUSH); /* push opcode */
-
   svalue_t val;
   switch (node->type) {
-  case AST_INT   : val.type = SEAL_INT;    val.as._int   = node->integer.val; break;
-  case AST_FLOAT : val.type = SEAL_FLOAT;  val.as._float = node->floating.val; break;
-  case AST_STRING: val.type = SEAL_STRING; val.as.string = node->string.val; break;
   case AST_BOOL:
-    val.type = SEAL_BOOL;
-    val.as._bool  = node->boolean.val;
-    EMIT(cout, 0);
-    EMIT(cout, val.as._bool ? TRUE_IDX : FALSE_IDX);
+    EMIT(cout, node->boolean.val ? OP_PUSH_TRUE : OP_PUSH_FALSE);
     return;
   case AST_NULL:
-    val.type = SEAL_NULL;
-    EMIT(cout, 0);
-    EMIT(cout, NULL_IDX);
+    EMIT(cout, OP_PUSH_NULL);
     return;
+  case AST_INT:
+    if (node->integer.val <= 0xFFFF) {
+      EMIT(cout, OP_PUSH_INT);
+      SET_16BITS_INDEX(cout, node->integer.val);
+      return;
+    }
+    val = sval(SEAL_INT, _int, node->integer.val);
+    break;
+  case AST_FLOAT:
+    val = sval(SEAL_FLOAT, _float, node->floating.val);
+    break;
+  case AST_STRING:
+    val = sval(SEAL_STRING, string, node->string.val);
+    break;
   }
+  EMIT(cout, OP_PUSH_CONST); /* push opcode */
   PUSH_CONST(cout, val); /* push constant into pool */
   SET_16BITS_INDEX(cout, CONST_IDX(cout));
 }
