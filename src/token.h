@@ -33,50 +33,51 @@
 #define TOK_FLOAT   26   // floating value
 #define TOK_STRING  27   // string value
 /* non-words */
-#define TOK_DOT     28   // .
-#define TOK_COLON   29   // :
-#define TOK_COMMA   30   // ,
-#define TOK_PLUS    31   // +
-#define TOK_MINUS   32   // -
-#define TOK_MUL     33   // *
-#define TOK_DIV     34   // /
-#define TOK_MOD     35   // %
-#define TOK_BAND    36   // &
-#define TOK_BOR     37   // |
-#define TOK_XOR     38   // ^
-#define TOK_SHL     39   // <<
-#define TOK_SHR     40   // >>
-#define TOK_BNOT    41   // ~
-#define TOK_INC     42   // ++
-#define TOK_DEC     43   // ++
-#define TOK_ASSIGN  44   // =
-#define TOK_PLUS_ASSIGN   45   // +=
-#define TOK_MINUS_ASSIGN  46   // -=
-#define TOK_MUL_ASSIGN    47   // *=
-#define TOK_DIV_ASSIGN    48   // /=
-#define TOK_MOD_ASSIGN    49   // %=
-#define TOK_BAND_ASSIGN   50   // &=
-#define TOK_BOR_ASSIGN    51   // |=
-#define TOK_XOR_ASSIGN    52   // ^=
-#define TOK_SHL_ASSIGN    53   // <<=
-#define TOK_SHR_ASSIGN    54   // >>=
-#define TOK_EQ      55   // ==
-#define TOK_NE      56   // !=
-#define TOK_GT      57   // >
-#define TOK_GE      58   // >=
-#define TOK_LT      59   // <
-#define TOK_LE      60   // <=
+#define TOK_PERIOD  28   // .
+#define TOK_DPERIOD 29   // ..
+#define TOK_COLON   30   // :
+#define TOK_COMMA   31   // ,
+#define TOK_PLUS    32   // +
+#define TOK_MINUS   33   // -
+#define TOK_MUL     34   // *
+#define TOK_DIV     35   // /
+#define TOK_MOD     36   // %
+#define TOK_BAND    37   // &
+#define TOK_BOR     38   // |
+#define TOK_XOR     39   // ^
+#define TOK_SHL     40   // <<
+#define TOK_SHR     41   // >>
+#define TOK_BNOT    42   // ~
+#define TOK_INC     43   // ++
+#define TOK_DEC     44   // ++
+#define TOK_ASSIGN  45   // =
+#define TOK_PLUS_ASSIGN   46   // +=
+#define TOK_MINUS_ASSIGN  47   // -=
+#define TOK_MUL_ASSIGN    48   // *=
+#define TOK_DIV_ASSIGN    49   // /=
+#define TOK_MOD_ASSIGN    50   // %=
+#define TOK_BAND_ASSIGN   51   // &=
+#define TOK_BOR_ASSIGN    52   // |=
+#define TOK_XOR_ASSIGN    53   // ^=
+#define TOK_SHL_ASSIGN    54   // <<=
+#define TOK_SHR_ASSIGN    55   // >>=
+#define TOK_EQ      56   // ==
+#define TOK_NE      57   // !=
+#define TOK_GT      58   // >
+#define TOK_GE      59   // >=
+#define TOK_LT      60   // <
+#define TOK_LE      61   // <=
 /* parenthesis */
-#define TOK_LPAREN  61   // (
-#define TOK_RPAREN  62   // )
-#define TOK_LBRACK  63   // [
-#define TOK_RBRACK  64   // ]
-#define TOK_LBRACE  65   // {
-#define TOK_RBRACE  66   // }
+#define TOK_LPAREN  62   // (
+#define TOK_RPAREN  63   // )
+#define TOK_LBRACK  64   // [
+#define TOK_RBRACK  65   // ]
+#define TOK_LBRACE  66   // {
+#define TOK_RBRACE  67   // }
 /* block-related */
-#define TOK_NEWL    67   // \n
-#define TOK_INDENT  68   // \t or \s
-#define TOK_DEDENT  69   // <-\t or \s
+#define TOK_NEWL    68   // \n
+#define TOK_INDENT  69   // \t or \s
+#define TOK_DEDENT  70   // <-\t or \s
 
 #define TOK_LAST TOK_DEDENT    // last token
 
@@ -119,7 +120,8 @@ static inline const char* token_type_name(int type)
     case TOK_INT    : return "TOK_INT";
     case TOK_FLOAT  : return "TOK_FLOAT";
     case TOK_STRING : return "TOK_STRING";
-    case TOK_DOT    : return "TOK_DOT";
+    case TOK_PERIOD : return "TOK_PERIOD";
+    case TOK_DPERIOD: return "TOK_DPERIOD";
     case TOK_COLON  : return "TOK_COLON";
     case TOK_COMMA  : return "TOK_COMMA";
     case TOK_PLUS   : return "TOK_PLUS";
@@ -196,7 +198,8 @@ static inline const char* htoken_type_name(int type)
     case TOK_INT    : return "<int value>";
     case TOK_FLOAT  : return "<float value>";
     case TOK_STRING : return "<string value>";
-    case TOK_DOT    : return ".";
+    case TOK_PERIOD : return ".";
+    case TOK_DPERIOD: return "..";
     case TOK_COLON  : return ":";
     case TOK_COMMA  : return ",";
     case TOK_PLUS   : return "+";
