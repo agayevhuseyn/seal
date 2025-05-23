@@ -16,17 +16,29 @@
 #define SEAL_ANY         (SEAL_NULL | SEAL_INT | SEAL_FLOAT | SEAL_STRING | \
                           SEAL_BOOL | SEAL_LIST | SEAL_MAP)  /* 11111111 */
 
-struct seal_func {
-  seal_byte* bytecode;
-  seal_byte  arg_size;
-};
-
 typedef int seal_type;
-
 typedef struct svalue svalue_t;
 
+struct seal_func {
+  enum {
+    FUNC_BUILTIN,
+    FUNC_USERDEF
+  } type;
+  union {
+    struct {
+      seal_byte* bytecode;
+      seal_byte  argc;
+    } userdef;
+    struct {
+      svalue_t (*cfunc)(seal_byte argc, svalue_t* argv);
+      seal_byte  argc;
+    } builtin;
+  } as;
+  bool is_vararg;
+};
+
 struct svalue {
-  int type;
+  seal_type type;
   union {
     seal_int    _int;
     seal_float  _float;
@@ -41,6 +53,9 @@ struct svalue {
 };
 
 #define sval(t, mem, val) (svalue_t) { .type = t, .as.mem = val}
+#define SEAL_NULL_VALUE   (svalue_t) { .type = SEAL_NULL }
+#define SEAL_TRUE_VALUE   sval(SEAL_BOOL, _bool, true)
+#define SEAL_FALSE_VALUE  sval(SEAL_BOOL, _bool, false)
 
 static inline const char*
 seal_type_name(int type)
