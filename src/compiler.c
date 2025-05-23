@@ -93,6 +93,7 @@ static void compile_node(cout_t* cout, ast_t* node)
         case AST_TERNARY:
         case AST_ASSIGN:
         case AST_VAR_REF:
+        case AST_FUNC_CALL:
           compile_node(cout, node->comp.stmts[i]);
           EMIT(cout, OP_POP);
           break;
@@ -340,19 +341,15 @@ static void compile_val(cout_t* cout, ast_t* node)
 }
 static void compile_func_call(cout_t* cout, ast_t* node)
 {
-  const char* name = node->func_call.name;
+  EMIT(cout, OP_GET_GLOBAL);
+  PUSH_CONST(cout, sval(SEAL_STRING, string, node->func_call.name));
+  SET_16BITS_INDEX(cout, CONST_IDX(cout));
 
   for (int i = 0; i < node->func_call.arg_size; i++)
     compile_node(cout, node->func_call.args[i]);
 
-  if (strcmp(name, "print") == 0)
-    EMIT(cout, OP_PRINT);
-  else if (strcmp(name, "scan") == 0)
-    EMIT(cout, OP_SCAN);
-  else
-    __compiler_error("%s function is not defined\n", name);
-
-  EMIT(cout, (seal_byte)node->func_call.arg_size);
+  EMIT(cout, OP_CALL);
+  EMIT(cout, node->func_call.arg_size);
 }
 static void compile_assign(cout_t* cout, ast_t* node)
 {
