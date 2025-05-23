@@ -1,6 +1,6 @@
 #include "builtins.h"
 
-svalue_t seal_print(seal_byte argc, svalue_t* argv)
+svalue_t __seal_print(seal_byte argc, svalue_t* argv)
 {
   for (int i = 0; i < argc; i++) {
     svalue_t s = argv[i];
