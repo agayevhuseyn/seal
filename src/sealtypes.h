@@ -31,9 +31,10 @@ struct seal_func {
     } userdef;
     struct {
       svalue_t (*cfunc)(seal_byte argc, svalue_t* argv);
-      seal_byte  argc;
+      seal_byte argc;
     } builtin;
   } as;
+  const char* name;
   bool is_vararg;
 };
 
