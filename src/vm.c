@@ -1,15 +1,16 @@
 #include "vm.h"
+#include "builtins.h"
 
 #define FETCH(vm) (*vm->ip++)
 #define PUSH(vm, val) do { \
-    if (vm->sp - vm->stack == STACK_SIZE) \
-      ERROR("stack overflow"); \
-    (*vm->sp++ = val); \
-  } while (0)
+  if (vm->sp - vm->stack == STACK_SIZE) \
+    ERROR("stack overflow"); \
+  (*vm->sp++ = val); \
+} while (0)
 #define DUP(vm) do { \
-    svalue_t top = *(vm->sp - 1); \
-    PUSH(vm, top); \
-  } while (0)
+  svalue_t top = *(vm->sp - 1); \
+  PUSH(vm, top); \
+} while (0)
 #define POP(vm) (*(--(vm->sp)))
 #define JUMP(vm, addr) (vm->ip = &vm->bytecodes[vm->label_ptr[addr]])
 #define GET_CONST(vm, i) (vm->const_pool_ptr[i])
@@ -27,12 +28,14 @@
 #define AS_FLOAT(val)  (val.as._float)
 #define AS_STRING(val) (val.as.string)
 #define AS_BOOL(val)   (val.as._bool)
+#define AS_FUNC(val)   (val.as.func)
 
 #define IS_NULL(val)   (val.type == SEAL_NULL)
 #define IS_INT(val)    (val.type == SEAL_INT)
 #define IS_FLOAT(val)  (val.type == SEAL_FLOAT)
 #define IS_STRING(val) (val.type == SEAL_STRING)
 #define IS_BOOL(val)   (val.type == SEAL_BOOL)
+#define IS_FUNC(val)   (val.type == SEAL_FUNC)
 
 #define TO_INT(val)
 #define TO_FLOAT(val)
@@ -117,7 +120,6 @@
     ERROR_BIN_OP(op, left, right); \
 } while (0)
 
-/* logical binary */
 /* unary */
 #define UNRY_OP(vm, val, op) do { \
   switch (op) { \
@@ -145,6 +147,21 @@
   } \
 } while (0)
 
+/* initialization */
+#define REGISTER_BUILTIN_FUNC(map, name, str, arg_count, is_vararg) do { \
+  svalue_t func = { \
+    .type = SEAL_FUNC, \
+    .as.func = (struct seal_func) { \
+      .type = FUNC_BUILTIN, \
+      .as.builtin = { \
+        .cfunc = name, \
+        .argc = arg_count \
+      } \
+    } \
+  }; \
+  hashmap_insert(map, str, func); \
+} while (0)
+
 void init_vm(vm_t* vm, cout_t* cout)
 {
   vm->const_pool_ptr = cout->const_pool;
@@ -152,6 +169,7 @@ void init_vm(vm_t* vm, cout_t* cout)
   vm->sp = vm->stack;
   vm->ip = vm->bytecodes = cout->bytecodes;
   hashmap_init(&vm->globals, 255);
+  REGISTER_BUILTIN_FUNC(&vm->globals, seal_print, "print", 0, true);
 }
 
 void eval_vm(vm_t* vm)
@@ -316,36 +334,24 @@ void eval_vm(vm_t* vm)
         addr |= FETCH(vm);
         hashmap_insert(&vm->globals, AS_STRING(GET_CONST(vm, addr)), POP(vm));
         break;
-      case OP_PRINT: {
+      case OP_CALL: {
         size_t argc = FETCH(vm);
-        svalue_t args[argc];
+        svalue_t argv[argc];
         for (int i = argc - 1; i >= 0; i--)
-          args[i] = POP(vm);
+          argv[i] = POP(vm);
 
-        for (int i = 0; i < argc; i++) {
-          svalue_t s = args[i];
+        svalue_t caller = POP(vm);
+        if (!IS_FUNC(caller))
+          ERROR("calling non-function: \'%s\'", seal_type_name(caller.type));
 
-          switch (s.type) {
-            case SEAL_INT:
-              printf("%lld ", s.as._int);
-              break;
-            case SEAL_FLOAT:
-              printf("%f ", s.as._float);
-              break;
-            case SEAL_STRING:
-              printf("%s ", s.as.string);
-              break;
-            case SEAL_BOOL:
-              printf("%s ", s.as._bool ? "true" : "false");
-              break;
-            case SEAL_NULL:
-              printf("null ");
-              break;
-            default:
-              printf("UNRECOGNIZED DATA TYPE TO PRINT\n");
-          }
+        svalue_t res;
+        if (AS_FUNC(caller).type == FUNC_BUILTIN) {
+          res = AS_FUNC(caller).as.builtin.cfunc(argc, argv);
+        } else {
+          ERROR("user defined functions not defined yet");
         }
-        printf("\n");
+
+        PUSH(vm, res);
       }
       break;
       default: fprintf(stderr, "unrecognized op type: %s\n", op_name(op)); return;
