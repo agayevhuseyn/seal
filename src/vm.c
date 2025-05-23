@@ -48,6 +48,16 @@
   IS_BOOL(val) ? AS_BOOL(val) : \
   (ERROR("cannot convert to bool type"), -1))
 
+/* macros for seal functions */
+#define IS_FUNC_VARARG(val)    (AS_FUNC(val).is_vararg)
+#define IS_BUILTIN_FUNC(val)   (AS_FUNC(val).type == FUNC_BUILTIN)
+#define IS_USERDEF_FUNC(val)   (AS_FUNC(val).type == FUNC_USERDEF)
+#define AS_BUILTIN_FUNC(val)   (AS_FUNC(val).as.builtin)
+#define AS_USERDEF_FUNC(val)   (AS_FUNC(val).as.userdef)
+#define FUNC_ARGC(val)         (IS_BUILTIN_FUNC(val) ? AS_BUILTIN_FUNC(val).argc : AS_USERDEF_FUNC(val).argc)
+#define FUNC_NAME(val)         (AS_FUNC(val).name)
+#define CALL_BUILTIN_FUNC(val) (AS_BUILTIN_FUNC(val).cfunc)
+
 /* arithmetic */
 #define BIN_OP_INT(vm, left, right, op)   PUSH_INT(vm, AS_INT(left) op AS_INT(right))
 #define BIN_OP_FLOAT(vm, left, right, op) PUSH_FLOAT(vm, AS_FLOAT(left) op AS_FLOAT(right))
@@ -148,14 +158,16 @@
 } while (0)
 
 /* initialization */
-#define REGISTER_BUILTIN_FUNC(map, name, str, arg_count, is_vararg) do { \
+#define REGISTER_BUILTIN_FUNC(map, _name, str, _argc, _is_vararg) do { \
   svalue_t func = { \
     .type = SEAL_FUNC, \
-    .as.func = (struct seal_func) { \
+    .as.func = { \
       .type = FUNC_BUILTIN, \
+      .name = str, \
+      .is_vararg = _is_vararg, \
       .as.builtin = { \
-        .cfunc = name, \
-        .argc = arg_count \
+        .cfunc = _name, \
+        .argc = _argc \
       } \
     } \
   }; \
@@ -169,7 +181,7 @@ void init_vm(vm_t* vm, cout_t* cout)
   vm->sp = vm->stack;
   vm->ip = vm->bytecodes = cout->bytecodes;
   hashmap_init(&vm->globals, 255);
-  REGISTER_BUILTIN_FUNC(&vm->globals, seal_print, "print", 0, true);
+  REGISTER_BUILTIN_FUNC(&vm->globals, __seal_print, "print", 0, true);
 }
 
 void eval_vm(vm_t* vm)
@@ -335,18 +347,26 @@ void eval_vm(vm_t* vm)
         hashmap_insert(&vm->globals, AS_STRING(GET_CONST(vm, addr)), POP(vm));
         break;
       case OP_CALL: {
-        size_t argc = FETCH(vm);
+        seal_byte argc = FETCH(vm);
         svalue_t argv[argc];
         for (int i = argc - 1; i >= 0; i--)
           argv[i] = POP(vm);
 
-        svalue_t caller = POP(vm);
-        if (!IS_FUNC(caller))
-          ERROR("calling non-function: \'%s\'", seal_type_name(caller.type));
+        svalue_t callee = POP(vm);
+        if (!IS_FUNC(callee))
+          ERROR("calling non-function: \'%s\'", seal_type_name(callee.type));
+
+        if (!IS_FUNC_VARARG(callee) && argc != FUNC_ARGC(callee) || IS_FUNC_VARARG(callee) && argc < FUNC_ARGC(callee))
+          ERROR("\'%s\' function expected%s %d argument%s, got %d",
+                FUNC_NAME(callee),
+                IS_FUNC_VARARG(callee) ? " at least" : "",
+                FUNC_ARGC(callee),
+                FUNC_ARGC(callee) != 1 ? "s" : "",
+                argc);
 
         svalue_t res;
-        if (AS_FUNC(caller).type == FUNC_BUILTIN) {
-          res = AS_FUNC(caller).as.builtin.cfunc(argc, argv);
+        if (IS_BUILTIN_FUNC(callee)) {
+          res = CALL_BUILTIN_FUNC(callee)(argc, argv);
         } else {
           ERROR("user defined functions not defined yet");
         }
