@@ -15,39 +15,37 @@
 #define OP_JUMP       0x09
 #define OP_JTRUE      0x0a
 #define OP_JFALSE     0x0b
-/* built-in functions */
-#define OP_PRINT      0x0c
-#define OP_SCAN       0x0d
+#define OP_CALL       0x0c
 /* variable */
-#define OP_GET_GLOBAL 0x0e
-#define OP_SET_GLOBAL 0x0f
-#define OP_GET_LOCAL  0x10
-#define OP_SET_LOCAL  0x11
+#define OP_GET_GLOBAL 0x0d
+#define OP_SET_GLOBAL 0x0e
+#define OP_GET_LOCAL  0x0f
+#define OP_SET_LOCAL  0x10
 /* arithmetic */
-#define OP_ADD        0x12
-#define OP_SUB        0x13
-#define OP_MUL        0x14
-#define OP_DIV        0x15
-#define OP_MOD        0x16
+#define OP_ADD        0x11
+#define OP_SUB        0x12
+#define OP_MUL        0x13
+#define OP_DIV        0x14
+#define OP_MOD        0x15
 /* bitwise binary */
-#define OP_AND        0x17
-#define OP_OR         0x18
-#define OP_XOR        0x19
-#define OP_SHL        0x1a
-#define OP_SHR        0x1b
+#define OP_AND        0x16
+#define OP_OR         0x17
+#define OP_XOR        0x18
+#define OP_SHL        0x19
+#define OP_SHR        0x1a
 /* comparison */
-#define OP_GT         0x1c
-#define OP_GE         0x1d
-#define OP_LT         0x1e
-#define OP_LE         0x1f
+#define OP_GT         0x1b
+#define OP_GE         0x1c
+#define OP_LT         0x1d
+#define OP_LE         0x1e
 /* equality */
-#define OP_EQ         0x20
-#define OP_NE         0x21
+#define OP_EQ         0x1f
+#define OP_NE         0x20
 /* unary */
-#define OP_NOT        0x22
-#define OP_NEG        0x23
-#define OP_TYPOF      0x24
-#define OP_BNOT       0x25
+#define OP_NOT        0x21
+#define OP_NEG        0x22
+#define OP_TYPOF      0x23
+#define OP_BNOT       0x24
 
 
 #define PRINT_BYTE(bytecodes, size) for(int i = 0; i < size; i++) { \
@@ -70,9 +68,7 @@ static inline const char* op_name(int op)
   case OP_JUMP      :  return "OP_JUMP";
   case OP_JTRUE     :  return "OP_JTRUE";
   case OP_JFALSE    :  return "OP_JFALSE";
-  /* builtin-in functions */
-  case OP_PRINT     :  return "OP_PRINT";
-  case OP_SCAN      :  return "OP_SCAN";
+  case OP_CALL      :  return "OP_CALL";
   /* variable */
   case OP_GET_GLOBAL:  return "OP_GET_GLOBAL";
   case OP_SET_GLOBAL:  return "OP_SET_GLOBAL";
@@ -131,7 +127,7 @@ static inline void print_op(seal_byte* bytes, size_t byte_size, seal_word* label
       printf("%d", idx);
     }
     break;
-    case OP_PRINT:
+    case OP_CALL:
       printf("%d", bytes[i++]);   
       break;
     }
