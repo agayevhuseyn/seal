@@ -287,8 +287,6 @@ static ast_t* parser_parse_map(parser_t* parser)
 
 static inline ast_t* parser_parse_id(parser_t* parser)
 {
-  if (parser_peek_offset(parser, 1)->type == TOK_LPAREN)
-    return parser_parse_func_call(parser);
   return parser_parse_var_ref(parser);
 }
 static inline ast_t* parser_parse_var_ref(parser_t* parser)
@@ -304,7 +302,6 @@ static ast_t* parser_parse_func_call(parser_t* parser)
 {
   ast_t* ast = static_create_ast(AST_FUNC_CALL, parser_line(parser));
 
-  ast->func_call.name = parser_eat(parser, TOK_ID)->val;
   ast->func_call.arg_size = 0;
   parser_eat(parser, TOK_LPAREN);
 
@@ -814,29 +811,36 @@ static ast_t* parser_parse_primary(parser_t* parser)
       subscript->subscript.index = index;
 
       main = subscript; // assign to 'main'
-    } else if (parser_match(parser, TOK_DOT)) { // member access
+    } else if (parser_match(parser, TOK_PERIOD)) { // member access
       parser_advance(parser); // '.'
-      ast_t* mem = parser_parse_var_ref(parser); // must be only 'identifier' (variable reference)
+      ast_t* mem = parser_parse_var_ref(parser);
 
       ast_t* memacc = static_create_ast(AST_MEMACC, main->line);
       memacc->memacc.main = main;
       memacc->memacc.mem = mem;
 
       main = memacc; // assign to 'main'
-    } else if (parser_match(parser, TOK_COLON)) { // library function call
-      if (main->type != AST_VAR_REF) {
-        char err[ERR_LEN];
-        sprintf(err, "invalid library name");
-        return parser_error(parser, err);
-      }
-      parser_advance(parser); // ':'
+    } else if (parser_match(parser, TOK_DPERIOD)) { // method call
+      parser_advance(parser); // '..'
+      ast_t* mem = parser_parse_var_ref(parser);
+
+      ast_t* memacc = static_create_ast(AST_MEMACC, main->line);
+      memacc->memacc.main = main;
+      memacc->memacc.mem = mem;
+      main = memacc;
+
+      ast_t* meth_call = parser_parse_func_call(parser);
+      meth_call->func_call.is_method = true;
+      meth_call->func_call.main = main;
+
+      main = meth_call;
+    } else if (parser_match(parser, TOK_LPAREN)) { // func call
       ast_t* func_call = parser_parse_func_call(parser); // must be only 'function call'
 
-      ast_t* lib_fcall = static_create_ast(AST_LIB_FUNC_CALL, main->line);
-      lib_fcall->lib_func_call.lib = main;
-      lib_fcall->lib_func_call.func_call = func_call;
+      func_call->func_call.is_method = false;
+      func_call->func_call.main = main;
 
-      main = lib_fcall; // assign to 'main'
+      main = func_call;
     } else {
       break;
     }

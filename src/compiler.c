@@ -342,7 +342,7 @@ static void compile_val(cout_t* cout, ast_t* node)
 static void compile_func_call(cout_t* cout, ast_t* node)
 {
   EMIT(cout, OP_GET_GLOBAL);
-  PUSH_CONST(cout, sval(SEAL_STRING, string, node->func_call.name));
+  //PUSH_CONST(cout, sval(SEAL_STRING, string, node->func_call.name));
   SET_16BITS_INDEX(cout, CONST_IDX(cout));
 
   for (int i = 0; i < node->func_call.arg_size; i++)

@@ -18,7 +18,6 @@
 #define AST_FUNC_CALL     9
 #define AST_SUBSCRIPT     10
 #define AST_MEMACC        11
-#define AST_LIB_FUNC_CALL 12
 /* blocks */
 #define AST_COMP          13
 #define AST_IF            14
@@ -79,9 +78,10 @@ typedef struct ast {
       bool is_global;
     } var_ref;
     struct {
-      const char* name;
+      struct ast* main;
       struct ast** args;
       size_t arg_size;
+      bool is_method;
     } func_call;
     struct {
       struct ast* main;
@@ -91,10 +91,6 @@ typedef struct ast {
       struct ast* main;
       struct ast* mem;
     } memacc;
-    struct {
-      struct ast* lib;
-      struct ast* func_call;
-    } lib_func_call;
     /* blocks */
     struct {
       struct ast** stmts;
@@ -185,7 +181,6 @@ static inline const char* ast_type_name(int type)
     case AST_FUNC_CALL    : return "AST_FUNC_CALL";
     case AST_SUBSCRIPT    : return "AST_SUBSCRIPT";
     case AST_MEMACC       : return "AST_MEMACC";
-    case AST_LIB_FUNC_CALL: return "AST_LIB_FUNC_CALL";
     case AST_COMP         : return "AST_COMP";
     case AST_IF           : return "AST_IF";
     case AST_ELSE         : return "AST_ELSE";
@@ -221,7 +216,6 @@ static inline const char* hast_type_name(int type)
     case AST_FUNC_CALL    : return "function call";
     case AST_SUBSCRIPT    : return "subscript";
     case AST_MEMACC       : return "member access";
-    case AST_LIB_FUNC_CALL: return "library function call";
     case AST_COMP         : return "compound";
     case AST_IF           : return "if";
     case AST_ELSE         : return "else";
@@ -333,16 +327,18 @@ static void print_ast(ast_t* node)
               node->var_ref.name);
       break;
     case AST_FUNC_CALL:
-      printf("%d: %s: \'%s\', arg size: %zu%s\n",
+      printf("%d: %s: is method: %d, arg size: %zu%s\n",
               node->line,
               hast_type_name(node->type),
-              node->func_call.name,
+              node->func_call.is_method,
               node->func_call.arg_size,
               node->func_call.arg_size > 0 ? ", args:" : "");
       for (int i = 0; i < node->func_call.arg_size; i++) {
         printf("\targ %d:\n", i);
         print_ast(node->func_call.args[i]);
       }
+      printf("callee:\n");
+      print_ast(node->func_call.main);
       break;
     case AST_SUBSCRIPT:
       printf("%d: %s: main:\n",
@@ -367,18 +363,6 @@ static void print_ast(ast_t* node)
               hast_type_name(node->type));
       printf("\t");
       print_ast(node->memacc.mem);
-      break;
-    case AST_LIB_FUNC_CALL:
-      printf("%d: %s: library:\n",
-              node->line,
-              hast_type_name(node->type));
-      printf("\t");
-      print_ast(node->lib_func_call.lib);
-      printf("%d: %s: function:\n",
-              node->line,
-              hast_type_name(node->type));
-      printf("\t");
-      print_ast(node->lib_func_call.func_call);
       break;
     /* blocks */
     case AST_COMP:
@@ -448,7 +432,7 @@ static void print_ast(ast_t* node)
               node->func_def.name,
               node->func_def.param_size,
               node->func_def.param_size > 0 ? ", parameters:" : "");
-      for (int i = 0; i < node->func_call.arg_size; i++) {
+      for (int i = 0; i < node->func_def.param_size; i++) {
         printf("\tparameter %d: \'%s\'\n", i, node->func_def.param_names[i]);
       }
       printf("function body:\n");
