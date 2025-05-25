@@ -749,7 +749,7 @@ static ast_t* parser_parse_primary(parser_t* parser)
 {
   ast_t* main = NULL;
   switch (parser_peek(parser)->type) {
-    case TOK_GLOBAL:
+    case TOK_DOLLAR:
       parser_advance(parser);
       main = parser_parse_var_ref(parser);
       main->var_ref.is_global = true;

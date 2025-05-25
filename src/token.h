@@ -17,22 +17,22 @@
 #define TOK_SKIP    10   // skip
 #define TOK_STOP    11   // stop
 #define TOK_INCLUDE 12   // include
-#define TOK_GLOBAL  13   // global
-#define TOK_AS      14   // as
-#define TOK_DEFINE  15   // define
-#define TOK_RETURN  16   // return
-#define TOK_TYPEOF  17   // typeof
-#define TOK_AND     18   // and
-#define TOK_OR      19   // or
-#define TOK_NOT     20   // not
-#define TOK_TRUE    21   // true
-#define TOK_FALSE   22   // false
-#define TOK_NULL    23   // null
-#define TOK_ID      24   // identifier
-#define TOK_INT     25   // integer value
-#define TOK_FLOAT   26   // floating value
-#define TOK_STRING  27   // string value
+#define TOK_AS      13   // as
+#define TOK_DEFINE  14   // define
+#define TOK_RETURN  15   // return
+#define TOK_TYPEOF  16   // typeof
+#define TOK_AND     17   // and
+#define TOK_OR      18   // or
+#define TOK_NOT     19   // not
+#define TOK_TRUE    20   // true
+#define TOK_FALSE   21   // false
+#define TOK_NULL    22   // null
+#define TOK_ID      23   // identifier
+#define TOK_INT     24   // integer value
+#define TOK_FLOAT   25   // floating value
+#define TOK_STRING  26   // string value
 /* non-words */
+#define TOK_DOLLAR  27   // $
 #define TOK_PERIOD  28   // .
 #define TOK_DPERIOD 29   // ..
 #define TOK_COLON   30   // :
@@ -105,7 +105,6 @@ static inline const char* token_type_name(int type)
     case TOK_SKIP   : return "TOK_SKIP";
     case TOK_STOP   : return "TOK_STOP";
     case TOK_INCLUDE: return "TOK_INCLUDE";
-    case TOK_GLOBAL : return "TOK_GLOBAL";
     case TOK_AS     : return "TOK_AS";
     case TOK_DEFINE : return "TOK_DEFINE";
     case TOK_RETURN : return "TOK_RETURN";
@@ -120,6 +119,7 @@ static inline const char* token_type_name(int type)
     case TOK_INT    : return "TOK_INT";
     case TOK_FLOAT  : return "TOK_FLOAT";
     case TOK_STRING : return "TOK_STRING";
+    case TOK_DOLLAR : return "TOK_DOLLAR";
     case TOK_PERIOD : return "TOK_PERIOD";
     case TOK_DPERIOD: return "TOK_DPERIOD";
     case TOK_COLON  : return "TOK_COLON";
@@ -183,7 +183,6 @@ static inline const char* htoken_type_name(int type)
     case TOK_SKIP   : return "skip";
     case TOK_STOP   : return "stop";
     case TOK_INCLUDE: return "include";
-    case TOK_GLOBAL : return "global";
     case TOK_AS     : return "as";
     case TOK_DEFINE : return "define";
     case TOK_RETURN : return "return";
@@ -198,6 +197,7 @@ static inline const char* htoken_type_name(int type)
     case TOK_INT    : return "<int value>";
     case TOK_FLOAT  : return "<float value>";
     case TOK_STRING : return "<string value>";
+    case TOK_DOLLAR : return "$";
     case TOK_PERIOD : return ".";
     case TOK_DPERIOD: return "..";
     case TOK_COLON  : return ":";

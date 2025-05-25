@@ -135,6 +135,9 @@ static void lexer_get_token(lexer_t* lexer)
       lexer->token_after_comment = false;
       lexer->line++;
       break;
+    case '$':
+      tok = create_token(TOK_DOLLAR, NULL, lexer->line);
+      break;
     case '.':
       if (lexer_is_digit(lexer_peek(lexer)))
         tok = lexer_get_digit(lexer, LEXEME_FRACTION_BEGIN_DIGIT);
