@@ -1,5 +1,6 @@
 #include "compiler.h"
 #include "ast.h"
+#include "hashmap.h"
 #include "sealtypes.h"
 
 #define START_BYTECODE_CAP 1024
@@ -67,11 +68,14 @@ void compile(cout_t* cout, ast_t* node)
   cout->label_ptr = cout->labels;
   cout->bytecodes = SEAL_CALLOC(START_BYTECODE_CAP, sizeof(seal_byte));
 
-  compile_node(cout, node);
+  hashmap_t main_scope;
+  struct h_entry entries[LOCAL_MAX];
+  hashmap_init_static(&main_scope, entries, LOCAL_MAX);
+  compile_node(cout, node, &main_scope);
 
   EMIT(cout, OP_HALT); /* push halt opcode for termination */
 }
-static void compile_node(cout_t* cout, ast_t* node)
+static void compile_node(cout_t* cout, ast_t* node, hashmap_t* scope)
 {
   switch (node->type) {
   case AST_COMP:
@@ -94,37 +98,37 @@ static void compile_node(cout_t* cout, ast_t* node)
         case AST_ASSIGN:
         case AST_VAR_REF:
         case AST_FUNC_CALL:
-          compile_node(cout, node->comp.stmts[i]);
+          compile_node(cout, node->comp.stmts[i], scope);
           EMIT(cout, OP_POP);
           break;
         default:
-          compile_node(cout, node->comp.stmts[i]);
+          compile_node(cout, node->comp.stmts[i], scope);
           break;
       }
     }
   break;
   case AST_NULL: case AST_INT: case AST_FLOAT: case AST_STRING: case AST_BOOL:
-    compile_val(cout, node);
+    compile_val(cout, node, scope);
     break;
   case AST_NOP:
     break;
-  case AST_IF: compile_if(cout, node); break;
-  case AST_WHILE: compile_while(cout, node); break;
-  case AST_DOWHILE: compile_dowhile(cout, node); break;
+  case AST_IF: compile_if(cout, node, scope); break;
+  case AST_WHILE: compile_while(cout, node, scope); break;
+  case AST_DOWHILE: compile_dowhile(cout, node, scope); break;
   case AST_SKIP: compile_skip(cout); break;
   case AST_STOP: compile_stop(cout); break;
-  case AST_UNARY: compile_unary(cout, node); break;
-  case AST_BINARY: compile_binary(cout, node); break;
-  case AST_BINARY_BOOL: compile_logical_binary(cout, node); break;
-  case AST_FUNC_CALL: compile_func_call(cout, node); break;
-  case AST_ASSIGN: compile_assign(cout, node); break;
-  case AST_VAR_REF: compile_var_ref(cout, node); break;
+  case AST_UNARY: compile_unary(cout, node, scope); break;
+  case AST_BINARY: compile_binary(cout, node, scope); break;
+  case AST_BINARY_BOOL: compile_logical_binary(cout, node, scope); break;
+  case AST_FUNC_CALL: compile_func_call(cout, node, scope); break;
+  case AST_ASSIGN: compile_assign(cout, node, scope); break;
+  case AST_VAR_REF: compile_var_ref(cout, node, scope); break;
   default:
     printf("%s is not implemented yet\n", hast_type_name(ast_type(node)));
     exit(1);
   }
 }
-static void compile_if(cout_t* cout, ast_t* node)
+static void compile_if(cout_t* cout, ast_t* node, hashmap_t* scope)
 {
   int jmp_size = 0;
   ast_t* temp_node = node;
@@ -134,13 +138,13 @@ static void compile_if(cout_t* cout, ast_t* node)
   }
   seal_byte *end_addrs[jmp_size], **end_addr = end_addrs, *next_addr = NULL;
 
-  compile_node(cout, node->_if.cond);
+  compile_node(cout, node->_if.cond, scope);
 
   EMIT(cout, OP_JFALSE);
   next_addr = CUR_ADDR(cout);
   EMIT_DUMMY(cout, 2); /* push 2 dummy values that will be changed later */
 
-  compile_node(cout, node->_if.comp);
+  compile_node(cout, node->_if.comp, scope);
 
   if (jmp_size == 0) {
     PUSH_LABEL(cout, CUR_IDX(cout));
@@ -159,13 +163,13 @@ static void compile_if(cout_t* cout, ast_t* node)
     node = node->_if._else;
 
     if (node->type == AST_IF) {
-      compile_node(cout, node->_if.cond);
+      compile_node(cout, node->_if.cond, scope);
 
       EMIT(cout, OP_JFALSE);
       next_addr = CUR_ADDR(cout);
       EMIT_DUMMY(cout, 2);
 
-      compile_node(cout, node->_if.comp);
+      compile_node(cout, node->_if.comp, scope);
 
       if (end_addr - end_addrs != jmp_size) {
         if (node->_if.has_else) {
@@ -178,7 +182,7 @@ static void compile_if(cout_t* cout, ast_t* node)
       PUSH_LABEL(cout, CUR_IDX(cout));
       REPLACE_16BITS_INDEX(cout, next_addr, LABEL_IDX(cout));
     } else {
-      compile_node(cout, node->_else.comp);
+      compile_node(cout, node->_else.comp, scope);
     }
   } while (node->_if.has_else);
 
@@ -188,20 +192,20 @@ static void compile_if(cout_t* cout, ast_t* node)
     REPLACE_16BITS_INDEX(cout, end_addrs[i], LABEL_IDX(cout));
   }
 }
-static void compile_while(cout_t* cout, ast_t* node)
+static void compile_while(cout_t* cout, ast_t* node, hashmap_t* scope)
 {
   size_t skip_start_size = cout->skip_size;
   size_t stop_start_size = cout->stop_size;
 
   PUSH_LABEL(cout, CUR_IDX(cout));
   seal_word start = LABEL_IDX(cout);
-  compile_node(cout, node->_while.cond);
+  compile_node(cout, node->_while.cond, scope);
 
   EMIT(cout, OP_JFALSE);
   seal_byte* end_addr = CUR_ADDR(cout);
   EMIT_DUMMY(cout, 2);
 
-  compile_node(cout, node->_while.comp);
+  compile_node(cout, node->_while.comp, scope);
 
   EMIT(cout, OP_JUMP);
   SET_16BITS_INDEX(cout, start);
@@ -221,13 +225,13 @@ static void compile_while(cout_t* cout, ast_t* node)
   }
   cout->stop_size = stop_start_size;
 }
-static void compile_dowhile(cout_t* cout, ast_t* node)
+static void compile_dowhile(cout_t* cout, ast_t* node, hashmap_t* scope)
 {
   PUSH_LABEL(cout, CUR_IDX(cout));
   seal_word start = LABEL_IDX(cout);
 
-  compile_node(cout, node->_while.comp);
-  compile_node(cout, node->_while.cond);
+  compile_node(cout, node->_while.comp, scope);
+  compile_node(cout, node->_while.cond, scope);
 
   EMIT(cout, OP_JTRUE);
   SET_16BITS_INDEX(cout, start);
@@ -248,9 +252,9 @@ static inline void compile_stop(cout_t* cout)
   cout->stop_addr_stack[cout->stop_size++] = CUR_ADDR(cout);
   EMIT_DUMMY(cout, 2);
 }
-static void compile_unary(cout_t* cout, ast_t* node)
+static void compile_unary(cout_t* cout, ast_t* node, hashmap_t* scope)
 {
-  compile_node(cout, node->unary.expr);
+  compile_node(cout, node->unary.expr, scope);
 
   seal_byte opcode;
   switch (node->unary.op_type) {
@@ -263,10 +267,10 @@ static void compile_unary(cout_t* cout, ast_t* node)
 
   EMIT(cout, opcode);
 }
-static void compile_binary(cout_t* cout, ast_t* node)
+static void compile_binary(cout_t* cout, ast_t* node, hashmap_t* scope)
 {
-  compile_node(cout, node->binary.left);
-  compile_node(cout, node->binary.right);
+  compile_node(cout, node->binary.left, scope);
+  compile_node(cout, node->binary.right, scope);
   
   seal_byte opcode;
   switch (node->binary.op_type) {
@@ -290,9 +294,9 @@ static void compile_binary(cout_t* cout, ast_t* node)
 
   EMIT(cout, opcode);
 }
-static void compile_logical_binary(cout_t* cout, ast_t* node)
+static void compile_logical_binary(cout_t* cout, ast_t* node, hashmap_t* scope)
 {
-  compile_node(cout, node->binary.left);
+  compile_node(cout, node->binary.left, scope);
 
   EMIT(cout, OP_DUP); /* duplicate to compare for jumping */
 
@@ -305,12 +309,12 @@ static void compile_logical_binary(cout_t* cout, ast_t* node)
   EMIT_DUMMY(cout, 2); /* push zero bytes */
   EMIT(cout, OP_POP); /* pop first value if no jump */
 
-  compile_node(cout, node->binary.right); /* compile right side */
+  compile_node(cout, node->binary.right, scope); /* compile right side */
 
   PUSH_LABEL(cout, CUR_IDX(cout)); /* push end label */
   REPLACE_16BITS_INDEX(cout, end_addr, LABEL_IDX(cout)); /* replace zero bytes with end label index */
 }
-static void compile_val(cout_t* cout, ast_t* node)
+static void compile_val(cout_t* cout, ast_t* node, hashmap_t* scope)
 {
   svalue_t val;
   switch (node->type) {
@@ -339,52 +343,66 @@ static void compile_val(cout_t* cout, ast_t* node)
   PUSH_CONST(cout, val); /* push constant into pool */
   SET_16BITS_INDEX(cout, CONST_IDX(cout));
 }
-static void compile_func_call(cout_t* cout, ast_t* node)
+static void compile_func_call(cout_t* cout, ast_t* node, hashmap_t* scope)
 {
-  EMIT(cout, OP_GET_GLOBAL);
-  //PUSH_CONST(cout, sval(SEAL_STRING, string, node->func_call.name));
-  SET_16BITS_INDEX(cout, CONST_IDX(cout));
+  compile_node(cout, node->func_call.main, scope);
 
   for (int i = 0; i < node->func_call.arg_size; i++)
-    compile_node(cout, node->func_call.args[i]);
+    compile_node(cout, node->func_call.args[i], scope);
 
   EMIT(cout, OP_CALL);
   EMIT(cout, node->func_call.arg_size);
 }
-static void compile_assign(cout_t* cout, ast_t* node)
+static void compile_assign(cout_t* cout, ast_t* node, hashmap_t* scope)
 {
   int lval_type = node->assign.var->type;
   svalue_t sym;
+  const char* name;
+  struct h_entry* e;
 
   if (node->assign.op_type == TOK_ASSIGN) {
-    compile_node(cout, node->assign.expr);
+    compile_node(cout, node->assign.expr, scope);
 
     switch (lval_type) {
     case AST_VAR_REF:
-      EMIT(cout, OP_SET_GLOBAL);
-      sym = sval(SEAL_STRING, string, node->assign.var->var_ref.name);
-      PUSH_CONST(cout, sym);
-      SET_16BITS_INDEX(cout, CONST_IDX(cout));
+      if (node->assign.var->var_ref.is_global) {
+        EMIT(cout, OP_SET_GLOBAL);
+        sym = SEAL_STRING_VALUE(node->assign.var->var_ref.name);
+        PUSH_CONST(cout, sym);
+        SET_16BITS_INDEX(cout, CONST_IDX(cout));
+      } else {
+        EMIT(cout, OP_SET_LOCAL);
+        name = node->assign.var->var_ref.name;
+        e = hashmap_search(scope, name);
+        if (e == NULL)
+          __compiler_error("maximum number of locals is %zu", scope->cap);
+
+        if (e->key == NULL)
+          hashmap_insert_e(scope, e, name, SEAL_INT_VALUE(scope->filled));
+
+        EMIT(cout, e->val.as._int); /* push slot index of local table */
+      }
       break;
     default:
       __compiler_error("assigning to %s is not implemented yet", hast_type_name(lval_type));
       break;
     }
-  }
-  else {
+  } else {
     seal_word sym_idx;
     int aug_type = node->assign.op_type;
     switch (lval_type) {
     case AST_VAR_REF:
-      EMIT(cout, OP_GET_GLOBAL);
-      sym = sval(SEAL_STRING, string, node->assign.var->var_ref.name);
-      PUSH_CONST(cout, sym);
-      sym_idx = CONST_IDX(cout);
-      SET_16BITS_INDEX(cout, sym_idx);
-      compile_node(cout, node->assign.expr);
-      EMIT(cout, AUG_ASSIGN_OP_TYPE(aug_type));
-      EMIT(cout, OP_SET_GLOBAL);
-      SET_16BITS_INDEX(cout, sym_idx);
+      if (node->assign.var->var_ref.is_global) {
+        EMIT(cout, OP_GET_GLOBAL);
+        sym = SEAL_STRING_VALUE(node->assign.var->var_ref.name);
+        PUSH_CONST(cout, sym);
+        sym_idx = CONST_IDX(cout);
+        SET_16BITS_INDEX(cout, sym_idx);
+        compile_node(cout, node->assign.expr, scope);
+        EMIT(cout, AUG_ASSIGN_OP_TYPE(aug_type));
+        EMIT(cout, OP_SET_GLOBAL);
+        SET_16BITS_INDEX(cout, sym_idx);
+      }
       break;
     default:
       __compiler_error("assigning to %s is not implemented yet", hast_type_name(lval_type));
@@ -392,9 +410,20 @@ static void compile_assign(cout_t* cout, ast_t* node)
     }
   }
 }
-static void compile_var_ref(cout_t* cout, ast_t* node)
+static void compile_var_ref(cout_t* cout, ast_t* node, hashmap_t* scope)
 {
-  EMIT(cout, OP_GET_GLOBAL);
-  PUSH_CONST(cout, sval(SEAL_STRING, string, node->var_ref.name));
-  SET_16BITS_INDEX(cout, CONST_IDX(cout));
+  if (!node->var_ref.is_global) {
+    struct h_entry* e = hashmap_search(scope, node->var_ref.name);
+    printf("%d HERE\n", e->val.as._int);
+    if (e == NULL || e->key == NULL)
+      goto global;
+
+    EMIT(cout, OP_GET_LOCAL);
+    EMIT(cout, e->val.as._int);
+  } else {
+global:
+    EMIT(cout, OP_GET_GLOBAL);
+    PUSH_CONST(cout, SEAL_STRING_VALUE(node->var_ref.name));
+    SET_16BITS_INDEX(cout, CONST_IDX(cout));
+  }
 }

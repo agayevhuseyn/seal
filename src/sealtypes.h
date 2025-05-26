@@ -57,6 +57,8 @@ struct svalue {
 #define SEAL_NULL_VALUE   (svalue_t) { .type = SEAL_NULL }
 #define SEAL_TRUE_VALUE   sval(SEAL_BOOL, _bool, true)
 #define SEAL_FALSE_VALUE  sval(SEAL_BOOL, _bool, false)
+#define SEAL_INT_VALUE(val)    sval(SEAL_INT, _int, val)
+#define SEAL_STRING_VALUE(val) sval(SEAL_STRING, string, val)
 
 static inline const char*
 seal_type_name(int type)

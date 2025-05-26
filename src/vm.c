@@ -1,7 +1,7 @@
 #include "vm.h"
 #include "builtins.h"
 
-#define FETCH(vm) (*vm->ip++)
+#define FETCH(vm) (*vm->lf[0].ip++)
 #define PUSH(vm, val) do { \
   if (vm->sp - vm->stack == STACK_SIZE) \
     ERROR("stack overflow"); \
@@ -12,7 +12,7 @@
   PUSH(vm, top); \
 } while (0)
 #define POP(vm) (*(--(vm->sp)))
-#define JUMP(vm, addr) (vm->ip = &vm->bytecodes[vm->label_ptr[addr]])
+#define JUMP(vm, addr) (vm->lf[0].ip = &vm->bytecodes[vm->label_ptr[addr]])
 #define GET_CONST(vm, i) (vm->const_pool_ptr[i])
 #define ERROR(...) (fprintf(stderr, __VA_ARGS__), fprintf(stderr, "\n"), exit(EXIT_FAILURE))
 #define ERROR_UNRY_OP(op, val) ERROR("\'%s\' unary operator is not supported for \'%s\'", #op, seal_type_name(val.type))
@@ -157,6 +157,10 @@
   } \
 } while (0)
 
+/* local variables */
+#define GET_LOCAL(vm, slot) (vm->lf[0].locals[slot])
+#define SET_LOCAL(vm, slot, val) (vm->lf[0].locals[slot] = val)
+
 /* initialization */
 #define REGISTER_BUILTIN_FUNC(map, _name, str, _argc, _is_vararg) do { \
   svalue_t func = { \
@@ -179,8 +183,10 @@ void init_vm(vm_t* vm, cout_t* cout)
   vm->const_pool_ptr = cout->const_pool;
   vm->label_ptr = cout->labels;
   vm->sp = vm->stack;
-  vm->ip = vm->bytecodes = cout->bytecodes;
-  hashmap_init(&vm->globals, 255);
+  vm->bytecodes = cout->bytecodes;
+  vm->lf = SEAL_CALLOC(FRAME_MAX, sizeof(struct local_frame));
+  vm->lf[0] = (struct local_frame) { .ip = vm->bytecodes, .caller = NULL };
+  hashmap_init(&vm->globals, 256);
   REGISTER_BUILTIN_FUNC(&vm->globals, __seal_print, "print", 0, true);
 }
 
@@ -334,7 +340,7 @@ void eval_vm(vm_t* vm)
         addr |= FETCH(vm);
         sym = AS_STRING(GET_CONST(vm, addr));
         entry = hashmap_search(&vm->globals, sym);
-        if (entry->key) {
+        if (entry && entry->key) {
           PUSH(vm, entry->val);
         } else {
           ERROR("vm: %s is not defined", sym);
@@ -345,6 +351,15 @@ void eval_vm(vm_t* vm)
         addr = FETCH(vm) << 8;
         addr |= FETCH(vm);
         hashmap_insert(&vm->globals, AS_STRING(GET_CONST(vm, addr)), POP(vm));
+        break;
+      case OP_GET_LOCAL:
+        addr = FETCH(vm);
+        PUSH(vm, GET_LOCAL(vm, addr));
+        break;
+      case OP_SET_LOCAL:
+        DUP(vm);
+        addr = FETCH(vm);
+        SET_LOCAL(vm, addr, POP(vm));
         break;
       case OP_CALL: {
         seal_byte argc = FETCH(vm);

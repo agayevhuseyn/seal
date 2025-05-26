@@ -42,13 +42,24 @@ static inline void hashmap_init(hashmap_t* hashmap, size_t size)
   }
 }
 
+static inline void hashmap_init_static(hashmap_t* hashmap, struct h_entry* entries, size_t size)
+{
+  hashmap->cap = size;
+  hashmap->entries = entries;
+  for (int i = 0; i < size; i++) {
+    hashmap->entries[i].key = NULL;
+    hashmap->entries[i].is_tombstone = false;
+  }
+}
+
 static inline struct h_entry* hashmap_search(hashmap_t* hashmap, const char* key)
 {
   unsigned int idx = hash_str(key) % hashmap->cap;
   struct h_entry* tombstone = NULL;
 
   struct h_entry* e;
-  while (true) {
+  unsigned int start_idx = idx;
+  do {
     e = &hashmap->entries[idx];
     if (e->key == NULL) {
       if (e->is_tombstone) {
@@ -61,7 +72,9 @@ static inline struct h_entry* hashmap_search(hashmap_t* hashmap, const char* key
       return e;
     }
     idx = (idx + 1) % hashmap->cap;
-  }
+  } while (idx != start_idx);
+
+  return NULL;
 }
 
 static inline bool hashmap_insert(hashmap_t* hashmap, const char* key, svalue_t val)
@@ -83,6 +96,24 @@ static inline bool hashmap_insert(hashmap_t* hashmap, const char* key, svalue_t 
     hashmap->filled++;
 
   *searched = e;
+
+  return is_new;
+}
+
+static inline bool hashmap_insert_e(hashmap_t* hashmap, struct h_entry* entry, const char* key, svalue_t val)
+{
+  struct h_entry e = {
+    hash_str(key),
+    key,
+    val,
+    true
+  };
+
+  bool is_new = entry->key == NULL;
+  if (is_new)
+    hashmap->filled++;
+
+  *entry = e;
 
   return is_new;
 }

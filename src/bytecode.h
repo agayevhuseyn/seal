@@ -125,8 +125,13 @@ static inline void print_op(seal_byte* bytes, size_t byte_size, seal_word* label
       seal_byte right = bytes[i++];
       seal_word idx  = (left << 8) | right;
       printf("%d", idx);
+      break;
     }
-    break;
+    case OP_GET_LOCAL: case OP_SET_LOCAL: {
+      seal_byte slot = bytes[i++];
+      printf("%d", slot);
+      break;
+    }
     case OP_CALL:
       printf("%d", bytes[i++]);   
       break;

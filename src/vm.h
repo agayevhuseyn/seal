@@ -8,18 +8,26 @@
 
 #define STACK_SIZE (0xFFFF + 1)
 #define GLOBAL_SIZE (0xFF + 1)
+#define FRAME_MAX (0xFF + 1)
 
 typedef struct vm vm_t;
+
+struct local_frame {
+  svalue_t locals[LOCAL_MAX];
+  seal_byte* ip;
+  struct local_frame *caller;
+};
 
 struct vm {
  svalue_t* const_pool_ptr; /* pointer to pool for constant values */
  uint16_t* label_ptr; /* pointer to array of labels */
  uint8_t*  bytecodes;  /* bytecode array (do not increment this) */ 
- uint8_t*  ip;    /* instruction pointer */
+ //uint8_t*  ip;    /* instruction pointer */
  svalue_t  stack[STACK_SIZE]; /* stack */
  svalue_t* sp;    /* stack pointer */
  svalue_t* bp;    /* base pointer */
  hashmap_t globals; /* hashmap for globals */
+ struct local_frame* lf; /* local frame for function calls */
 };
 
 void init_vm(vm_t* vm, cout_t* cout);

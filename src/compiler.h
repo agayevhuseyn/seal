@@ -5,6 +5,7 @@
 #include "ast.h"
 #include "sealtypes.h"
 #include "bytecode.h"
+#include "hashmap.h"
 
 typedef struct cout cout_t;
 
@@ -52,18 +53,18 @@ struct cout {
 };
 
 void compile(cout_t*, ast_t*); /* init cout and compile root node into bytecode */
-static void compile_node(cout_t*, ast_t*); /* compile any node into bytecode */
-static void compile_if(cout_t*, ast_t*);
-static void compile_while(cout_t*, ast_t*);
-static void compile_dowhile(cout_t*, ast_t*);
+static void compile_node(cout_t*, ast_t*, hashmap_t*); /* compile any node into bytecode */
+static void compile_if(cout_t*, ast_t*, hashmap_t*);
+static void compile_while(cout_t*, ast_t*, hashmap_t*);
+static void compile_dowhile(cout_t*, ast_t*, hashmap_t*);
 static inline void compile_skip(cout_t*);
 static inline void compile_stop(cout_t*);
-static void compile_unary(cout_t*, ast_t*);
-static void compile_binary(cout_t*, ast_t*);
-static void compile_logical_binary(cout_t*, ast_t*);
-static void compile_val(cout_t*, ast_t*);
-static void compile_func_call(cout_t*, ast_t*);
-static void compile_assign(cout_t*, ast_t*);
-static void compile_var_ref(cout_t*, ast_t*);
+static void compile_unary(cout_t*, ast_t*, hashmap_t*);
+static void compile_binary(cout_t*, ast_t*, hashmap_t*);
+static void compile_logical_binary(cout_t*, ast_t*, hashmap_t*);
+static void compile_val(cout_t*, ast_t*, hashmap_t*);
+static void compile_func_call(cout_t*, ast_t*, hashmap_t*);
+static void compile_assign(cout_t*, ast_t*, hashmap_t*);
+static void compile_var_ref(cout_t*, ast_t*, hashmap_t*);
 
 #endif /* SEAL_COMPILER_H */
