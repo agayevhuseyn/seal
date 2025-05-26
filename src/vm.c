@@ -1,7 +1,7 @@
 #include "vm.h"
 #include "builtins.h"
 
-#define FETCH(vm) (*vm->lf[0].ip++)
+#define FETCH(lf) (*lf->ip++)
 #define PUSH(vm, val) do { \
   if (vm->sp - vm->stack == STACK_SIZE) \
     ERROR("stack overflow"); \
@@ -12,7 +12,7 @@
   PUSH(vm, top); \
 } while (0)
 #define POP(vm) (*(--(vm->sp)))
-#define JUMP(vm, addr) (vm->lf[0].ip = &vm->bytecodes[vm->label_ptr[addr]])
+#define JUMP(vm, lf, addr) (lf->ip = &lf->bytecodes[vm->label_ptr[addr]])
 #define GET_CONST(vm, i) (vm->const_pool_ptr[i])
 #define ERROR(...) (fprintf(stderr, __VA_ARGS__), fprintf(stderr, "\n"), exit(EXIT_FAILURE))
 #define ERROR_UNRY_OP(op, val) ERROR("\'%s\' unary operator is not supported for \'%s\'", #op, seal_type_name(val.type))
@@ -158,8 +158,8 @@
 } while (0)
 
 /* local variables */
-#define GET_LOCAL(vm, slot) (vm->lf[0].locals[slot])
-#define SET_LOCAL(vm, slot, val) (vm->lf[0].locals[slot] = val)
+#define GET_LOCAL(lf, slot) (lf->locals[slot])
+#define SET_LOCAL(lf, slot, val) (lf->locals[slot] = val)
 
 /* initialization */
 #define REGISTER_BUILTIN_FUNC(map, _name, str, _argc, _is_vararg) do { \
@@ -183,17 +183,17 @@ void init_vm(vm_t* vm, cout_t* cout)
   vm->const_pool_ptr = cout->const_pool;
   vm->label_ptr = cout->labels;
   vm->sp = vm->stack;
-  vm->bytecodes = cout->bytecodes;
-  vm->lf = SEAL_CALLOC(FRAME_MAX, sizeof(struct local_frame));
-  vm->lf[0] = (struct local_frame) { .ip = vm->bytecodes, .caller = NULL };
+  vm->bytecodes = cout->bc.bytecodes;
+  // vm->lf = SEAL_CALLOC(FRAME_MAX, sizeof(struct local_frame));
+  // vm->lf[0] = (struct local_frame) { .ip = vm->bytecodes, .caller = NULL };
   hashmap_init(&vm->globals, 256);
   REGISTER_BUILTIN_FUNC(&vm->globals, __seal_print, "print", 0, true);
 }
 
-void eval_vm(vm_t* vm)
+void eval_vm(vm_t* vm, struct local_frame* lf)
 {
   while (true) {
-    seal_byte op = FETCH(vm);
+    seal_byte op = FETCH(lf);
 
     seal_word idx, addr;
     svalue_t  left, right;
@@ -205,13 +205,13 @@ void eval_vm(vm_t* vm)
         printf("Finish\n");
         return;
       case OP_PUSH_CONST:
-        idx = FETCH(vm) << 8;
-        idx |= FETCH(vm);
+        idx = FETCH(lf) << 8;
+        idx |= FETCH(lf);
         PUSH(vm, GET_CONST(vm, idx));
         break;
       case OP_PUSH_INT:
-        idx = FETCH(vm) << 8;
-        idx |= FETCH(vm);
+        idx = FETCH(lf) << 8;
+        idx |= FETCH(lf);
         PUSH_INT(vm, idx);
         break;
       case OP_PUSH_NULL:
@@ -317,27 +317,27 @@ void eval_vm(vm_t* vm)
         UNRY_OP(vm, left, op);
         break;
       case OP_JUMP:
-        addr = FETCH(vm) << 8;
-        addr |= FETCH(vm);
-        JUMP(vm, addr);
+        addr = FETCH(lf) << 8;
+        addr |= FETCH(lf);
+        JUMP(vm, lf, addr);
         break;
       case OP_JFALSE:
-        addr = FETCH(vm) << 8;
-        addr |= FETCH(vm);
+        addr = FETCH(lf) << 8;
+        addr |= FETCH(lf);
         left = POP(vm);
         if (!TO_BOOL(left))
-          JUMP(vm, addr);
+          JUMP(vm, lf, addr);
         break;
       case OP_JTRUE:
-        addr = FETCH(vm) << 8;
-        addr |= FETCH(vm);
+        addr = FETCH(lf) << 8;
+        addr |= FETCH(lf);
         left = POP(vm);
         if (TO_BOOL(left))
-          JUMP(vm, addr);
+          JUMP(vm, lf, addr);
         break;
       case OP_GET_GLOBAL:
-        addr = FETCH(vm) << 8;
-        addr |= FETCH(vm);
+        addr = FETCH(lf) << 8;
+        addr |= FETCH(lf);
         sym = AS_STRING(GET_CONST(vm, addr));
         entry = hashmap_search(&vm->globals, sym);
         if (entry && entry->key) {
@@ -348,48 +348,51 @@ void eval_vm(vm_t* vm)
         break;
       case OP_SET_GLOBAL:
         DUP(vm);
-        addr = FETCH(vm) << 8;
-        addr |= FETCH(vm);
+        addr = FETCH(lf) << 8;
+        addr |= FETCH(lf);
         hashmap_insert(&vm->globals, AS_STRING(GET_CONST(vm, addr)), POP(vm));
         break;
       case OP_GET_LOCAL:
-        addr = FETCH(vm);
-        PUSH(vm, GET_LOCAL(vm, addr));
+        addr = FETCH(lf);
+        PUSH(vm, GET_LOCAL(lf, addr));
         break;
       case OP_SET_LOCAL:
         DUP(vm);
-        addr = FETCH(vm);
-        SET_LOCAL(vm, addr, POP(vm));
+        addr = FETCH(lf);
+        SET_LOCAL(lf, addr, POP(vm));
         break;
       case OP_CALL: {
-        seal_byte argc = FETCH(vm);
+        seal_byte argc = FETCH(lf);
         svalue_t argv[argc];
         for (int i = argc - 1; i >= 0; i--)
           argv[i] = POP(vm);
 
-        svalue_t callee = POP(vm);
-        if (!IS_FUNC(callee))
-          ERROR("calling non-function: \'%s\'", seal_type_name(callee.type));
+        svalue_t func = POP(vm);
+        if (!IS_FUNC(func))
+          ERROR("calling non-function: \'%s\'", seal_type_name(func.type));
 
-        if (!IS_FUNC_VARARG(callee) && argc != FUNC_ARGC(callee) || IS_FUNC_VARARG(callee) && argc < FUNC_ARGC(callee))
+        if (!IS_FUNC_VARARG(func) && argc != FUNC_ARGC(func) || IS_FUNC_VARARG(func) && argc < FUNC_ARGC(func))
           ERROR("\'%s\' function expected%s %d argument%s, got %d",
-                FUNC_NAME(callee),
-                IS_FUNC_VARARG(callee) ? " at least" : "",
-                FUNC_ARGC(callee),
-                FUNC_ARGC(callee) != 1 ? "s" : "",
+                FUNC_NAME(func),
+                IS_FUNC_VARARG(func) ? " at least" : "",
+                FUNC_ARGC(func),
+                FUNC_ARGC(func) != 1 ? "s" : "",
                 argc);
 
-        svalue_t res;
-        if (IS_BUILTIN_FUNC(callee)) {
-          res = CALL_BUILTIN_FUNC(callee)(argc, argv);
+        if (IS_BUILTIN_FUNC(func)) {
+          PUSH(vm, CALL_BUILTIN_FUNC(func)(argc, argv)); /* push function result to stack */
         } else {
-          ERROR("user defined functions not defined yet");
+          struct local_frame func_lf = { .ip = AS_USERDEF_FUNC(func).bytecode, .bytecodes = AS_USERDEF_FUNC(func).bytecode };
+          for (int i = 0; i < argc; i++) {
+            SET_LOCAL((&func_lf), i, argv[i]);
+          }
+          eval_vm(vm, &func_lf);
         }
-
-        PUSH(vm, res);
       }
       break;
-      default: fprintf(stderr, "unrecognized op type: %s\n", op_name(op)); return;
+      default:
+        fprintf(stderr, "unrecognized op type: %s\n", op_name(op));
+        return;
     }
   }
 }

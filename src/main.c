@@ -59,17 +59,20 @@ int main(int argc, char** argv)
   cout_t cout;
   compile(&cout, root);
   if (PRINT_OP)
-    print_op(cout.bytecodes, cout.bytecode_size, cout.labels, cout.label_ptr - cout.labels);
+    print_op(cout.bc.bytecodes, cout.bc.size, cout.labels, cout.label_ptr - cout.labels);
   if (PRINT_BYTE)
-    PRINT_BYTE(cout.bytecodes, cout.bytecode_size)
+    PRINT_BYTE(cout.bc.bytecodes, cout.bc.size)
   if (PRINT_CONST_POOL)
     PRINT_CONST_POOL(cout);
 
   vm_t vm;
   init_vm(&vm, &cout);
-  eval_vm(&vm);
+  struct local_frame main_frame = { .bytecodes = vm.bytecodes, .ip = vm.bytecodes };
+  eval_vm(&vm, &main_frame);
   if (PRINT_STACK)
     print_stack(&vm);
+
+  //print_op(hashmap_search(&vm.globals, "func")->val.as.func.as.userdef.bytecode, 10, cout.labels, cout.label_ptr - cout.labels);
 
   /* FREE EVERYTHING AFTER BEING USED */
   

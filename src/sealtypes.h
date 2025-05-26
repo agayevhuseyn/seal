@@ -54,11 +54,11 @@ struct svalue {
 };
 
 #define sval(t, mem, val) (svalue_t) { .type = t, .as.mem = val}
-#define SEAL_NULL_VALUE   (svalue_t) { .type = SEAL_NULL }
-#define SEAL_TRUE_VALUE   sval(SEAL_BOOL, _bool, true)
-#define SEAL_FALSE_VALUE  sval(SEAL_BOOL, _bool, false)
-#define SEAL_INT_VALUE(val)    sval(SEAL_INT, _int, val)
-#define SEAL_STRING_VALUE(val) sval(SEAL_STRING, string, val)
+#define SEAL_VALUE_NULL   (svalue_t) { .type = SEAL_NULL }
+#define SEAL_VALUE_TRUE   sval(SEAL_BOOL, _bool, true)
+#define SEAL_VALUE_FALSE  sval(SEAL_BOOL, _bool, false)
+#define SEAL_VALUE_INT(val)    sval(SEAL_INT, _int, val)
+#define SEAL_VALUE_STRING(val) sval(SEAL_STRING, string, val)
 
 static inline const char*
 seal_type_name(int type)

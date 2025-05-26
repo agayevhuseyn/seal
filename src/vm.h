@@ -15,7 +15,7 @@ typedef struct vm vm_t;
 struct local_frame {
   svalue_t locals[LOCAL_MAX];
   seal_byte* ip;
-  struct local_frame *caller;
+  seal_byte* bytecodes;
 };
 
 struct vm {
@@ -27,11 +27,11 @@ struct vm {
  svalue_t* sp;    /* stack pointer */
  svalue_t* bp;    /* base pointer */
  hashmap_t globals; /* hashmap for globals */
- struct local_frame* lf; /* local frame for function calls */
+ //struct local_frame* lf; /* local frame for function calls */
 };
 
 void init_vm(vm_t* vm, cout_t* cout);
-void eval_vm(vm_t* vm);
+void eval_vm(vm_t* vm, struct local_frame* lf);
 
 static void print_stack(vm_t* vm)
 {

@@ -32,16 +32,23 @@ typedef struct cout cout_t;
       case SEAL_NULL: \
         printf("null\n"); \
         break; \
+      case SEAL_FUNC: \
+        printf("\'%s\' function\n", s.as.func.name); \
+        break; \
       default: \
         printf("UNRECOGNIZED DATA TYPE TO PRINT\n"); \
     } \
     if (i - 1 == cout.const_pool_ptr - cout.const_pool) printf("CONST POOL END-------\n"); \
   }
 
+struct bytechunk {
+  seal_byte* bytecodes; /* bytecode array */
+  size_t size; /* bytecode size */
+  size_t cap;  /* bytecode capacity */
+};
+
 struct cout {
-  uint8_t* bytecodes;     /* bytecode array */
-  size_t   bytecode_size; /* bytecode size */
-  size_t   bytecode_cap;  /* bytecode capacity */
+  struct bytechunk bc;     
   svalue_t  const_pool[CONST_POOL_SIZE]; /* pool for constant values */
   svalue_t* const_pool_ptr; /* pointer for tracking constant pool values */
   uint16_t labels[LABEL_SIZE]; /* array of labels to store */
@@ -53,18 +60,19 @@ struct cout {
 };
 
 void compile(cout_t*, ast_t*); /* init cout and compile root node into bytecode */
-static void compile_node(cout_t*, ast_t*, hashmap_t*); /* compile any node into bytecode */
-static void compile_if(cout_t*, ast_t*, hashmap_t*);
-static void compile_while(cout_t*, ast_t*, hashmap_t*);
-static void compile_dowhile(cout_t*, ast_t*, hashmap_t*);
-static inline void compile_skip(cout_t*);
-static inline void compile_stop(cout_t*);
-static void compile_unary(cout_t*, ast_t*, hashmap_t*);
-static void compile_binary(cout_t*, ast_t*, hashmap_t*);
-static void compile_logical_binary(cout_t*, ast_t*, hashmap_t*);
-static void compile_val(cout_t*, ast_t*, hashmap_t*);
-static void compile_func_call(cout_t*, ast_t*, hashmap_t*);
-static void compile_assign(cout_t*, ast_t*, hashmap_t*);
-static void compile_var_ref(cout_t*, ast_t*, hashmap_t*);
+static void compile_node(cout_t*, ast_t*, hashmap_t*, struct bytechunk*); /* compile any node into bytecode */
+static void compile_if(cout_t*, ast_t*, hashmap_t*, struct bytechunk*);
+static void compile_while(cout_t*, ast_t*, hashmap_t*, struct bytechunk*);
+static void compile_dowhile(cout_t*, ast_t*, hashmap_t*, struct bytechunk*);
+static inline void compile_skip(cout_t*, struct bytechunk*);
+static inline void compile_stop(cout_t*, struct bytechunk*);
+static void compile_unary(cout_t*, ast_t*, hashmap_t*, struct bytechunk*);
+static void compile_binary(cout_t*, ast_t*, hashmap_t*, struct bytechunk*);
+static void compile_logical_binary(cout_t*, ast_t*, hashmap_t*, struct bytechunk*);
+static void compile_val(cout_t*, ast_t*, hashmap_t*, struct bytechunk*);
+static void compile_func_call(cout_t*, ast_t*, hashmap_t*, struct bytechunk*);
+static void compile_assign(cout_t*, ast_t*, hashmap_t*, struct bytechunk*);
+static void compile_var_ref(cout_t*, ast_t*, hashmap_t*, struct bytechunk*);
+static void compile_func_def(cout_t*, ast_t*, hashmap_t*);
 
 #endif /* SEAL_COMPILER_H */

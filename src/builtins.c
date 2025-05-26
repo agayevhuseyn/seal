@@ -30,5 +30,5 @@ svalue_t __seal_print(seal_byte argc, svalue_t* argv)
   }
   printf("\n");
 
-  return SEAL_NULL_VALUE;
+  return SEAL_VALUE_NULL;
 }
