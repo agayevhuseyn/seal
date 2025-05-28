@@ -3,13 +3,13 @@
 #include "hashmap.h"
 #include "sealtypes.h"
 
-#define START_BYTECODE_CAP 1024
+#define START_BYTECODE_CAP 16
 
 #define EMIT(bc, byte) do { \
-    if (bc->size >= bc->cap) { \
-      bc->bytecodes = SEAL_REALLOC(bc->bytecodes, sizeof(seal_byte) * (bc->cap *= 2)); \
+    if ((bc)->size + 1 >= (bc)->cap) { \
+      (bc)->bytecodes = SEAL_REALLOC((bc)->bytecodes, sizeof(seal_byte) * ((bc)->cap *= 2)); \
     } \
-    bc->bytecodes[bc->size++] = (seal_byte)(byte); \
+    (bc)->bytecodes[(bc)->size++] = (seal_byte)(byte); \
   } while (0)
 
 #define EMIT_DUMMY(bc, times) for (int i = 0; i < (times); i++) { \
@@ -26,8 +26,8 @@
     EMIT(bc, (seal_word)(idx)); \
   } while (0)
 
-#define CUR_IDX(bc) (bc->size) /* returns index of current empty byte */
-#define CUR_ADDR(bc) (&(bc->bytecodes[CUR_IDX(bc)])) /* returns address of current empty byte */
+#define CUR_IDX(bc) ((bc)->size) /* returns index of current empty byte */
+#define CUR_ADDR(bc) (&((bc)->bytecodes[CUR_IDX(bc)])) /* returns address of current empty byte */
 
 #define PUSH_CONST(cout, val) ( \
     /* check bounds */ \
@@ -43,6 +43,7 @@
 
 #define __compiler_error(...) do { \
     fprintf(stderr, __VA_ARGS__); \
+    fprintf(stderr, "\n"); \
     exit(1); \
   } while (0)
 
@@ -62,9 +63,11 @@
 
 void compile(cout_t* cout, ast_t* node)
 {
-  cout->const_pool_ptr = cout->const_pool;
-  cout->label_ptr = cout->labels;
+  cout->const_pool_ptr = cout->const_pool = SEAL_CALLOC(CONST_POOL_SIZE, sizeof(svalue_t));
+  cout->label_ptr = cout->labels = SEAL_CALLOC(LABEL_SIZE, sizeof(seal_word));;
   cout->bc.bytecodes = SEAL_CALLOC(START_BYTECODE_CAP, sizeof(seal_byte));
+  cout->skip_addr_stack = SEAL_CALLOC(UNCOND_JMP_MAX_SIZE, sizeof(seal_byte*));
+  cout->stop_addr_stack = SEAL_CALLOC(UNCOND_JMP_MAX_SIZE, sizeof(seal_byte*));
   cout->bc.size = 0;
   cout->bc.cap  = START_BYTECODE_CAP;
 
@@ -124,6 +127,7 @@ static void compile_node(cout_t* cout, ast_t* node, hashmap_t* scope, struct byt
   case AST_ASSIGN: compile_assign(cout, node, scope, bc); break;
   case AST_VAR_REF: compile_var_ref(cout, node, scope, bc); break;
   case AST_FUNC_DEF: compile_func_def(cout, node, scope); break;
+  case AST_RETURN: compile_return(cout, node, scope, bc); break;
   default:
     printf("%s is not implemented yet\n", hast_type_name(ast_type(node)));
     exit(1);
@@ -430,9 +434,16 @@ global:
 static void compile_func_def(cout_t* cout, ast_t* node, hashmap_t* scope)
 {
   struct bytechunk bc;
-  bc.cap = 8;
+  bc.cap = START_BYTECODE_CAP;
   bc.size = 0;
-  bc.bytecodes = SEAL_CALLOC(bc.cap, sizeof(seal_byte));
+  bc.bytecodes = SEAL_CALLOC(START_BYTECODE_CAP, sizeof(seal_byte));
+
+  hashmap_t loc_scope;
+  struct h_entry entries[LOCAL_MAX];
+  hashmap_init_static(&loc_scope, entries, LOCAL_MAX);
+  for (int i = 0; i < node->func_def.param_size; i++) {
+    hashmap_insert(&loc_scope, node->func_def.param_names[i], SEAL_VALUE_INT(i));
+  }
 
   svalue_t func_obj = {
     .type = SEAL_FUNC,
@@ -442,19 +453,17 @@ static void compile_func_def(cout_t* cout, ast_t* node, hashmap_t* scope)
       .name = node->func_def.name,
       .as.userdef = {
         .argc = node->func_def.param_size,
-        .bytecode = bc.bytecodes
+        //.bytecode = bc.bytecodes
       }
     }
   };
 
-  hashmap_t loc_scope;
-  struct h_entry entries[LOCAL_MAX];
-  hashmap_init_static(&loc_scope, entries, LOCAL_MAX);
-  for (int i = 0; i < node->func_def.param_size; i++) {
-    hashmap_insert(&loc_scope, node->func_def.param_names[i], SEAL_VALUE_INT(i));
-  }
-
   compile_node(cout, node->func_def.comp, &loc_scope, &bc);
+  func_obj.as.func.as.userdef.bytecode = bc.bytecodes;
+  //printf("SIZE %d\n", bc.size);
+
+  func_obj.as.func.as.userdef.local_size = loc_scope.filled; /* assign size of locals */
+  //printf("SCOPE SIZE: %d\n", loc_scope.filled);
   
   EMIT((&bc), OP_PUSH_NULL);
   EMIT((&bc), OP_HALT);
@@ -466,4 +475,10 @@ static void compile_func_def(cout_t* cout, ast_t* node, hashmap_t* scope)
   EMIT((&cout->bc), OP_SET_GLOBAL); /* set function object to global */
   PUSH_CONST(cout, SEAL_VALUE_STRING(node->func_def.name));
   SET_16BITS_INDEX((&cout->bc), CONST_IDX(cout));
+  EMIT((&cout->bc), OP_POP);
+}
+static void compile_return(cout_t* cout, ast_t* node, hashmap_t* scope, struct bytechunk* bc)
+{
+  compile_node(cout, node->_return.expr, scope, bc);
+  EMIT(bc, OP_HALT);
 }
