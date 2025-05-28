@@ -20,8 +20,8 @@ struct local_frame {
 
 struct vm {
  svalue_t* const_pool_ptr; /* pointer to pool for constant values */
- uint16_t* label_ptr; /* pointer to array of labels */
- uint8_t*  bytecodes;  /* bytecode array (do not increment this) */ 
+ seal_word* label_ptr; /* pointer to array of labels */
+ seal_byte*  bytecodes;  /* bytecode array (do not increment this) */ 
  //uint8_t*  ip;    /* instruction pointer */
  svalue_t* stack; /* stack */
  svalue_t* sp;    /* stack pointer */

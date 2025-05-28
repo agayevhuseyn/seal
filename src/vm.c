@@ -24,19 +24,6 @@
 #define PUSH_STRING(vm, val) PUSH(vm, sval(SEAL_STRING, string, val))
 #define PUSH_BOOL(vm, val)   PUSH(vm, sval(SEAL_BOOL, _bool, val))
 
-#define AS_INT(val)    (val.as._int)
-#define AS_FLOAT(val)  (val.as._float)
-#define AS_STRING(val) (val.as.string)
-#define AS_BOOL(val)   (val.as._bool)
-#define AS_FUNC(val)   (val.as.func)
-
-#define IS_NULL(val)   (val.type == SEAL_NULL)
-#define IS_INT(val)    (val.type == SEAL_INT)
-#define IS_FLOAT(val)  (val.type == SEAL_FLOAT)
-#define IS_STRING(val) (val.type == SEAL_STRING)
-#define IS_BOOL(val)   (val.type == SEAL_BOOL)
-#define IS_FUNC(val)   (val.type == SEAL_FUNC)
-
 #define TO_INT(val)
 #define TO_FLOAT(val)
 #define TO_STRING(val)
@@ -189,6 +176,10 @@ void init_vm(vm_t* vm, cout_t* cout)
   // vm->lf[0] = (struct local_frame) { .ip = vm->bytecodes, .caller = NULL };
   hashmap_init(&vm->globals, 256);
   REGISTER_BUILTIN_FUNC(&vm->globals, __seal_print, "print", 0, true);
+  REGISTER_BUILTIN_FUNC(&vm->globals, __seal_scan, "scan", 0, false);
+  REGISTER_BUILTIN_FUNC(&vm->globals, __seal_exit, "exit", 1, false);
+  REGISTER_BUILTIN_FUNC(&vm->globals, __seal_len, "len", 1, false);
+  REGISTER_BUILTIN_FUNC(&vm->globals, __seal_int, "int", 1, false);
 }
 
 void eval_vm(vm_t* vm, struct local_frame* lf)
@@ -203,7 +194,6 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
 
     switch (op) {
       case OP_HALT:
-        printf("Finish\n");
         return;
       case OP_PUSH_CONST:
         idx = FETCH(lf) << 8;
