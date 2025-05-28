@@ -76,7 +76,7 @@ void compile(cout_t* cout, ast_t* node)
   hashmap_init_static(&main_scope, entries, LOCAL_MAX);
   compile_node(cout, node, &main_scope, &cout->bc);
 
-  EMIT((&cout->bc), OP_HALT); /* push halt opcode for termination */
+  EMIT(&cout->bc, OP_HALT); /* push halt opcode for termination */
 }
 static void compile_node(cout_t* cout, ast_t* node, hashmap_t* scope, struct bytechunk* bc)
 {
@@ -465,17 +465,17 @@ static void compile_func_def(cout_t* cout, ast_t* node, hashmap_t* scope)
   func_obj.as.func.as.userdef.local_size = loc_scope.filled; /* assign size of locals */
   //printf("SCOPE SIZE: %d\n", loc_scope.filled);
   
-  EMIT((&bc), OP_PUSH_NULL);
-  EMIT((&bc), OP_HALT);
+  EMIT(&bc, OP_PUSH_NULL);
+  EMIT(&bc, OP_HALT);
 
-  EMIT((&cout->bc), OP_PUSH_CONST); /* push function object to constant pool */
+  EMIT(&cout->bc, OP_PUSH_CONST); /* push function object to constant pool */
   PUSH_CONST(cout, func_obj);
-  SET_16BITS_INDEX((&cout->bc), CONST_IDX(cout));
+  SET_16BITS_INDEX(&cout->bc, CONST_IDX(cout));
 
-  EMIT((&cout->bc), OP_SET_GLOBAL); /* set function object to global */
+  EMIT(&cout->bc, OP_SET_GLOBAL); /* set function object to global */
   PUSH_CONST(cout, SEAL_VALUE_STRING(node->func_def.name));
   SET_16BITS_INDEX((&cout->bc), CONST_IDX(cout));
-  EMIT((&cout->bc), OP_POP);
+  EMIT(&cout->bc, OP_POP);
 }
 static void compile_return(cout_t* cout, ast_t* node, hashmap_t* scope, struct bytechunk* bc)
 {
