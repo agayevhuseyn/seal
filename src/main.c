@@ -42,6 +42,7 @@ int main(int argc, char** argv)
   }
   const char* file_path = argv[1];
   /* lexing */
+  ast_t* root;
   lexer_t lexer;
   init_lexer(&lexer, file_path);
   lexer_get_tokens(&lexer);
@@ -52,7 +53,7 @@ int main(int argc, char** argv)
   create_const_asts(); /* allocate constant ASTs */
   parser_t parser;
   init_parser(&parser, &lexer);
-  ast_t* root = parser_parse(&parser);
+  root = parser_parse(&parser);
   if (PRINT_AST)
     print_ast(root);
 
@@ -67,12 +68,13 @@ int main(int argc, char** argv)
 
   vm_t vm;
   init_vm(&vm, &cout);
-  struct local_frame main_frame = { .bytecodes = vm.bytecodes, .ip = vm.bytecodes };
+  svalue_t locals[LOCAL_MAX];
+  struct local_frame main_frame = { .locals = locals, .bytecodes = vm.bytecodes, .ip = vm.bytecodes };
   eval_vm(&vm, &main_frame);
   if (PRINT_STACK)
     print_stack(&vm);
 
-  //print_op(hashmap_search(&vm.globals, "func")->val.as.func.as.userdef.bytecode, 10, cout.labels, cout.label_ptr - cout.labels);
+  //print_op(hashmap_search(&vm.globals, "f")->val.as.func.as.userdef.bytecode, 33, cout.labels, cout.label_ptr - cout.labels);
 
   /* FREE EVERYTHING AFTER BEING USED */
   
