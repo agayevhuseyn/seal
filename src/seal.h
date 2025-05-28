@@ -13,7 +13,7 @@
 #define SEAL_FREE(ptr)          free(ptr)
 
 #define ERR_LEN 256
-#define LOCAL_MAX 256
+#define LOCAL_MAX 255
 
 typedef long long seal_int;
 typedef double    seal_float;
