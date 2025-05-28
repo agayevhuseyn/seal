@@ -28,6 +28,7 @@ struct seal_func {
     struct {
       seal_byte* bytecode;
       seal_byte  argc;
+      seal_byte  local_size;
     } userdef;
     struct {
       svalue_t (*cfunc)(seal_byte argc, svalue_t* argv);
