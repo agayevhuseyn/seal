@@ -22,7 +22,7 @@ svalue_t __seal_print(seal_byte argc, svalue_t* argv)
       printf("null ");
       break;
     case SEAL_FUNC:
-      printf("function: %llx ", s.as.func.type == FUNC_BUILTIN ? (seal_int)&s.as.func.as.builtin.cfunc : (seal_int)&s.as.func.as.userdef.bytecode);
+      printf("function: %p ", s.as.func.type == FUNC_BUILTIN ? (void*)&s.as.func.as.builtin.cfunc : (void*)&s.as.func.as.userdef.bytecode);
       break;
     default:
       printf("UNRECOGNIZED DATA TYPE TO PRINT\n");

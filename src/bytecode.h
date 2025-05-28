@@ -4,7 +4,7 @@
 #include "seal.h"
 
 /* essential */
-#define OP_HALT       0x01
+#define OP_HALT       0x00
 #define OP_PUSH_INT   0x02
 #define OP_PUSH_NULL  0x03
 #define OP_PUSH_TRUE  0x04
