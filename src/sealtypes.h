@@ -16,6 +16,20 @@
 #define SEAL_ANY         (SEAL_NULL | SEAL_INT | SEAL_FLOAT | SEAL_STRING | \
                           SEAL_BOOL | SEAL_LIST | SEAL_MAP)  /* 11111111 */
 
+#define AS_INT(val)    (val.as._int)
+#define AS_FLOAT(val)  (val.as._float)
+#define AS_STRING(val) (val.as.string)
+#define AS_BOOL(val)   (val.as._bool)
+#define AS_FUNC(val)   (val.as.func)
+
+#define VAL_TYPE(val)  (val.type)
+#define IS_NULL(val)   (VAL_TYPE(val) == SEAL_NULL)
+#define IS_INT(val)    (VAL_TYPE(val) == SEAL_INT)
+#define IS_FLOAT(val)  (VAL_TYPE(val) == SEAL_FLOAT)
+#define IS_STRING(val) (VAL_TYPE(val) == SEAL_STRING)
+#define IS_BOOL(val)   (VAL_TYPE(val) == SEAL_BOOL)
+#define IS_FUNC(val)   (VAL_TYPE(val) == SEAL_FUNC)
+
 typedef int seal_type;
 typedef struct svalue svalue_t;
 
