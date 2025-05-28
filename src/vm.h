@@ -13,7 +13,7 @@
 typedef struct vm vm_t;
 
 struct local_frame {
-  svalue_t locals[LOCAL_MAX];
+  svalue_t* locals;
   seal_byte* ip;
   seal_byte* bytecodes;
 };
@@ -23,7 +23,7 @@ struct vm {
  uint16_t* label_ptr; /* pointer to array of labels */
  uint8_t*  bytecodes;  /* bytecode array (do not increment this) */ 
  //uint8_t*  ip;    /* instruction pointer */
- svalue_t  stack[STACK_SIZE]; /* stack */
+ svalue_t* stack; /* stack */
  svalue_t* sp;    /* stack pointer */
  svalue_t* bp;    /* base pointer */
  hashmap_t globals; /* hashmap for globals */
@@ -53,6 +53,9 @@ static void print_stack(vm_t* vm)
         break;
       case SEAL_BOOL:
         printf("%s\n", val.as._bool ? "true" : "false");
+        break;
+      case SEAL_FUNC:
+        printf("function: %p\n", val.as.func.type == FUNC_BUILTIN ? (void*)&val.as.func.as.builtin.cfunc : (void*)&val.as.func.as.userdef.bytecode);
         break;
       default:
         printf("STACK TYPE UNRECOGNIZED: %d\n", val.type);

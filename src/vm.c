@@ -182,6 +182,7 @@ void init_vm(vm_t* vm, cout_t* cout)
 {
   vm->const_pool_ptr = cout->const_pool;
   vm->label_ptr = cout->labels;
+  vm->stack = SEAL_CALLOC(STACK_SIZE, sizeof(svalue_t));
   vm->sp = vm->stack;
   vm->bytecodes = cout->bc.bytecodes;
   // vm->lf = SEAL_CALLOC(FRAME_MAX, sizeof(struct local_frame));
@@ -382,7 +383,8 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
         if (IS_BUILTIN_FUNC(func)) {
           PUSH(vm, CALL_BUILTIN_FUNC(func)(argc, argv)); /* push function result to stack */
         } else {
-          struct local_frame func_lf = { .ip = AS_USERDEF_FUNC(func).bytecode, .bytecodes = AS_USERDEF_FUNC(func).bytecode };
+          svalue_t locals[func.as.func.as.userdef.local_size];
+          struct local_frame func_lf = { .locals = locals, .ip = AS_USERDEF_FUNC(func).bytecode, .bytecodes = AS_USERDEF_FUNC(func).bytecode };
           for (int i = 0; i < argc; i++) {
             SET_LOCAL((&func_lf), i, argv[i]);
           }
@@ -391,7 +393,7 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
       }
       break;
       default:
-        fprintf(stderr, "unrecognized op type: %s\n", op_name(op));
+        fprintf(stderr, "unrecognized op type: %d\n", op);
         return;
     }
   }
