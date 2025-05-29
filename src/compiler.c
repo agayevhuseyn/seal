@@ -3,7 +3,7 @@
 #include "hashmap.h"
 #include "sealtypes.h"
 
-#define START_BYTECODE_CAP 16
+#define START_BYTECODE_CAP 1
 
 #define EMIT(bc, byte) do { \
     if ((bc)->size + 1 >= (bc)->cap) { \
@@ -17,8 +17,8 @@
   }
 
 #define REPLACE_16BITS_INDEX(addr, idx) do { \
-    *(addr)++ = (seal_byte)((idx) >> 8); \
-    *(addr)   = (seal_byte)(idx); \
+    *(addr) = (seal_byte)((idx) >> 8); \
+    *(addr + 1)   = (seal_byte)(idx); \
   } while (0)
 
 #define SET_16BITS_INDEX(bc, idx) do { \
@@ -28,6 +28,7 @@
 
 #define CUR_IDX(bc) ((bc)->size) /* returns index of current empty byte */
 #define CUR_ADDR(bc) (&((bc)->bytecodes[CUR_IDX(bc)])) /* returns address of current empty byte */
+#define CUR_ADDR_OFFSET(bc) (&((bc)->bytecodes[CUR_IDX(bc)]) - (bc)->bytecodes) /* returns address of current empty byte */
 
 #define PUSH_CONST(cout, val) ( \
     /* check bounds */ \
@@ -68,6 +69,8 @@ void compile(cout_t* cout, ast_t* node)
   cout->bc.bytecodes = SEAL_CALLOC(START_BYTECODE_CAP, sizeof(seal_byte));
   cout->skip_addr_stack = SEAL_CALLOC(UNCOND_JMP_MAX_SIZE, sizeof(seal_byte*));
   cout->stop_addr_stack = SEAL_CALLOC(UNCOND_JMP_MAX_SIZE, sizeof(seal_byte*));
+  cout->skip_size = 0;
+  cout->stop_size = 0;
   cout->bc.size = 0;
   cout->bc.cap  = START_BYTECODE_CAP;
 
@@ -141,28 +144,28 @@ static void compile_if(cout_t* cout, ast_t* node, hashmap_t* scope, struct bytec
     temp_node = temp_node->_if._else;
     jmp_size++;
   }
-  seal_byte *end_addrs[jmp_size], **end_addr = end_addrs, *next_addr = NULL;
+  size_t end_addr_offsets[jmp_size], *end_addr_offset = end_addr_offsets, next_addr_offset;
 
   compile_node(cout, node->_if.cond, scope, bc);
 
   EMIT(bc, OP_JFALSE);
-  next_addr = CUR_ADDR(bc);
+  next_addr_offset = CUR_ADDR_OFFSET(bc);
   EMIT_DUMMY(bc, 2); /* push 2 dummy values that will be changed later */
 
   compile_node(cout, node->_if.comp, scope, bc);
 
   if (jmp_size == 0) {
     PUSH_LABEL(cout, CUR_IDX(bc));
-    REPLACE_16BITS_INDEX(next_addr, LABEL_IDX(cout));
+    REPLACE_16BITS_INDEX(bc->bytecodes + next_addr_offset, LABEL_IDX(cout));
     return;
   }
   
   EMIT(bc, OP_JUMP);
-  *end_addr++ = CUR_ADDR(bc);
+  *end_addr_offset++ = CUR_ADDR_OFFSET(bc);
   EMIT_DUMMY(bc, 2);
 
   PUSH_LABEL(cout, CUR_IDX(bc));
-  REPLACE_16BITS_INDEX(next_addr, LABEL_IDX(cout));
+  REPLACE_16BITS_INDEX(bc->bytecodes + next_addr_offset, LABEL_IDX(cout));
 
   do {
     node = node->_if._else;
@@ -171,21 +174,21 @@ static void compile_if(cout_t* cout, ast_t* node, hashmap_t* scope, struct bytec
       compile_node(cout, node->_if.cond, scope, bc);
 
       EMIT(bc, OP_JFALSE);
-      next_addr = CUR_ADDR(bc);
+      next_addr_offset = CUR_ADDR_OFFSET(bc);
       EMIT_DUMMY(bc, 2);
 
       compile_node(cout, node->_if.comp, scope, bc);
 
-      if (end_addr - end_addrs != jmp_size) {
+      if (end_addr_offset - end_addr_offsets != jmp_size) {
         if (node->_if.has_else) {
           EMIT(bc, OP_JUMP);
-          *end_addr++ = CUR_ADDR(bc);
+          *end_addr_offset++ = CUR_ADDR_OFFSET(bc);
           EMIT_DUMMY(bc, 2);
         }
       }
 
       PUSH_LABEL(cout, CUR_IDX(bc));
-      REPLACE_16BITS_INDEX(next_addr, LABEL_IDX(cout));
+      REPLACE_16BITS_INDEX(bc->bytecodes + next_addr_offset, LABEL_IDX(cout));
     } else {
       compile_node(cout, node->_else.comp, scope, bc);
     }
@@ -194,7 +197,7 @@ static void compile_if(cout_t* cout, ast_t* node, hashmap_t* scope, struct bytec
   PUSH_LABEL(cout, CUR_IDX(bc));
 
   for (int i = 0; i < jmp_size; i++) {
-    REPLACE_16BITS_INDEX(end_addrs[i], LABEL_IDX(cout));
+    REPLACE_16BITS_INDEX(bc->bytecodes + end_addr_offsets[i], LABEL_IDX(cout));
   }
 }
 static void compile_while(cout_t* cout, ast_t* node, hashmap_t* scope, struct bytechunk* bc)
@@ -207,7 +210,7 @@ static void compile_while(cout_t* cout, ast_t* node, hashmap_t* scope, struct by
   compile_node(cout, node->_while.cond, scope, bc);
 
   EMIT(bc, OP_JFALSE);
-  seal_byte* end_addr = CUR_ADDR(bc);
+  size_t end_addr_offs = CUR_ADDR_OFFSET(bc);
   EMIT_DUMMY(bc, 2);
 
   compile_node(cout, node->_while.comp, scope, bc);
@@ -215,7 +218,7 @@ static void compile_while(cout_t* cout, ast_t* node, hashmap_t* scope, struct by
   EMIT(bc, OP_JUMP);
   SET_16BITS_INDEX(bc, start);
   PUSH_LABEL(cout, CUR_IDX(bc));
-  REPLACE_16BITS_INDEX(end_addr, LABEL_IDX(cout));
+  REPLACE_16BITS_INDEX(bc->bytecodes + end_addr_offs, LABEL_IDX(cout));
 
   if (skip_start_size < cout->skip_size) {
     for (int i = skip_start_size; i < cout->skip_size; i++) {
@@ -229,6 +232,7 @@ static void compile_while(cout_t* cout, ast_t* node, hashmap_t* scope, struct by
     }
   }
   cout->stop_size = stop_start_size;
+  //printf("END ADDR: %d\n", (*(end_addr - 1) << 8) | *(end_addr));
 }
 static void compile_dowhile(cout_t* cout, ast_t* node, hashmap_t* scope, struct bytechunk* bc)
 {
