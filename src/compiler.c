@@ -6,7 +6,7 @@
 #define START_BYTECODE_CAP 1
 
 #define EMIT(bc, byte) do { \
-    if ((bc)->size + 1 >= (bc)->cap) { \
+    if ((bc)->size >= (bc)->cap) { \
       (bc)->bytecodes = SEAL_REALLOC((bc)->bytecodes, sizeof(seal_byte) * ((bc)->cap *= 2)); \
     } \
     (bc)->bytecodes[(bc)->size++] = (seal_byte)(byte); \
@@ -67,8 +67,8 @@ void compile(cout_t* cout, ast_t* node)
   cout->const_pool_ptr = cout->const_pool = SEAL_CALLOC(CONST_POOL_SIZE, sizeof(svalue_t));
   cout->label_ptr = cout->labels = SEAL_CALLOC(LABEL_SIZE, sizeof(seal_word));;
   cout->bc.bytecodes = SEAL_CALLOC(START_BYTECODE_CAP, sizeof(seal_byte));
-  cout->skip_addr_stack = SEAL_CALLOC(UNCOND_JMP_MAX_SIZE, sizeof(seal_byte*));
-  cout->stop_addr_stack = SEAL_CALLOC(UNCOND_JMP_MAX_SIZE, sizeof(seal_byte*));
+  cout->skip_addr_offset_stack = SEAL_CALLOC(UNCOND_JMP_MAX_SIZE, sizeof(size_t));
+  cout->stop_addr_offset_stack = SEAL_CALLOC(UNCOND_JMP_MAX_SIZE, sizeof(size_t));
   cout->skip_size = 0;
   cout->stop_size = 0;
   cout->bc.size = 0;
@@ -78,6 +78,8 @@ void compile(cout_t* cout, ast_t* node)
   struct h_entry entries[LOCAL_MAX];
   hashmap_init_static(&main_scope, entries, LOCAL_MAX);
   compile_node(cout, node, &main_scope, &cout->bc);
+
+  cout->main_scope_local_size = main_scope.filled;
 
   EMIT(&cout->bc, OP_HALT); /* push halt opcode for termination */
 }
@@ -222,13 +224,13 @@ static void compile_while(cout_t* cout, ast_t* node, hashmap_t* scope, struct by
 
   if (skip_start_size < cout->skip_size) {
     for (int i = skip_start_size; i < cout->skip_size; i++) {
-      REPLACE_16BITS_INDEX(cout->skip_addr_stack[i], start);
+      REPLACE_16BITS_INDEX(bc->bytecodes + cout->skip_addr_offset_stack[i], start);
     }
   }
   cout->skip_size = skip_start_size;
   if (stop_start_size < cout->stop_size) {
     for (int i = stop_start_size; i < cout->stop_size; i++) {
-      REPLACE_16BITS_INDEX(cout->stop_addr_stack[i], LABEL_IDX(cout));
+      REPLACE_16BITS_INDEX(bc->bytecodes + cout->stop_addr_offset_stack[i], LABEL_IDX(cout));
     }
   }
   cout->stop_size = stop_start_size;
@@ -250,7 +252,7 @@ static inline void compile_skip(cout_t* cout, struct bytechunk* bc)
   if (cout->skip_size >= UNCOND_JMP_MAX_SIZE)
     __compiler_error("maximum number of skip has exceeded");
   EMIT(bc, OP_JUMP);
-  cout->skip_addr_stack[cout->skip_size++] = CUR_ADDR(bc);
+  cout->skip_addr_offset_stack[cout->skip_size++] = CUR_ADDR_OFFSET(bc);
   EMIT_DUMMY(bc, 2);
 }
 static inline void compile_stop(cout_t* cout, struct bytechunk* bc)
@@ -258,7 +260,7 @@ static inline void compile_stop(cout_t* cout, struct bytechunk* bc)
   if (cout->stop_size >= UNCOND_JMP_MAX_SIZE)
     __compiler_error("maximum number of stop has exceeded");
   EMIT(bc, OP_JUMP);
-  cout->stop_addr_stack[cout->stop_size++] = CUR_ADDR(bc);
+  cout->stop_addr_offset_stack[cout->stop_size++] = CUR_ADDR_OFFSET(bc);
   EMIT_DUMMY(bc, 2);
 }
 static void compile_unary(cout_t* cout, ast_t* node, hashmap_t* scope, struct bytechunk* bc)
@@ -269,9 +271,9 @@ static void compile_unary(cout_t* cout, ast_t* node, hashmap_t* scope, struct by
   switch (node->unary.op_type) {
   case TOK_NOT   : opcode = OP_NOT; break;
   case TOK_MINUS : opcode = OP_NEG; break;
-  case TOK_PLUS  : return;
   case TOK_TYPEOF: opcode = OP_TYPOF; break;
   case TOK_BNOT  : opcode = OP_BNOT; break;
+  case TOK_PLUS  : return;
   }
 
   EMIT(bc, opcode);
@@ -314,14 +316,14 @@ static void compile_logical_binary(cout_t* cout, ast_t* node, hashmap_t* scope, 
   } else {
     EMIT(bc, OP_JTRUE);
   }
-  seal_byte* end_addr = CUR_ADDR(bc); /* store end address */
+  size_t end_addr_offset = CUR_ADDR_OFFSET(bc); /* store end address offset */
   EMIT_DUMMY(bc, 2); /* push zero bytes */
   EMIT(bc, OP_POP); /* pop first value if no jump */
 
   compile_node(cout, node->binary.right, scope, bc); /* compile right side */
 
   PUSH_LABEL(cout, CUR_IDX(bc)); /* push end label */
-  REPLACE_16BITS_INDEX(end_addr, LABEL_IDX(cout)); /* replace zero bytes with end label index */
+  REPLACE_16BITS_INDEX(bc->bytecodes + end_addr_offset, LABEL_IDX(cout)); /* replace zero bytes with end label index */
 }
 static void compile_val(cout_t* cout, ast_t* node, hashmap_t* scope, struct bytechunk* bc)
 {

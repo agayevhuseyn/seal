@@ -53,10 +53,11 @@ struct cout {
   svalue_t* const_pool_ptr; /* pointer for tracking constant pool values */
   seal_word* labels; /* array of labels to store */
   seal_word* label_ptr; /* pointer for tracking labels */
-  seal_byte** skip_addr_stack; /* stack for skip statements */
-  seal_byte** stop_addr_stack; /* stack for stop statements */
+  size_t* skip_addr_offset_stack; /* stack for skip statements */
+  size_t* stop_addr_offset_stack; /* stack for stop statements */
   size_t skip_size; /* skip statements size */
   size_t stop_size; /* stop statements size */
+  seal_byte main_scope_local_size;
 };
 
 void compile(cout_t*, ast_t*); /* init cout and compile root node into bytecode */

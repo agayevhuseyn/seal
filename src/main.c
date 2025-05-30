@@ -68,7 +68,7 @@ int main(int argc, char** argv)
 
   vm_t vm;
   init_vm(&vm, &cout);
-  svalue_t locals[LOCAL_MAX];
+  svalue_t locals[cout.main_scope_local_size];
   struct local_frame main_frame = { .locals = locals, .bytecodes = vm.bytecodes, .ip = vm.bytecodes };
   eval_vm(&vm, &main_frame);
   if (PRINT_STACK)
