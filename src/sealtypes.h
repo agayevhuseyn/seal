@@ -14,7 +14,7 @@
 #define SEAL_NUMBER      (SEAL_INT | SEAL_FLOAT)    /* 00000110 */
 #define SEAL_ITERABLE    (SEAL_STRING | SEAL_LIST)  /* 00000110 */
 #define SEAL_ANY         (SEAL_NULL | SEAL_INT | SEAL_FLOAT | SEAL_STRING | \
-                          SEAL_BOOL | SEAL_LIST | SEAL_MAP)  /* 11111111 */
+                          SEAL_BOOL | SEAL_LIST | SEAL_MAP | SEAL_FUNC)  /* 11111111 */
 
 #define AS_INT(val)    (val.as._int)
 #define AS_FLOAT(val)  (val.as._float)
