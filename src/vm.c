@@ -45,6 +45,17 @@
 #define FUNC_NAME(val)         (AS_FUNC(val).name)
 #define CALL_BUILTIN_FUNC(val) (AS_BUILTIN_FUNC(val).cfunc)
 
+/* string manipulation */
+char* str_concat(const char* l, const char* r)
+{
+  int len = strlen(l) + strlen(r) + 1;
+  char* res = SEAL_CALLOC(len, sizeof(char));
+  strcpy(res, l);
+  strcat(res, r);
+  res[len - 1] = '\0';
+  return res;
+}
+
 /* arithmetic */
 #define BIN_OP_INT(vm, left, right, op)   PUSH_INT(vm, AS_INT(left) op AS_INT(right))
 #define BIN_OP_FLOAT(vm, left, right, op) PUSH_FLOAT(vm, AS_FLOAT(left) op AS_FLOAT(right))
@@ -58,6 +69,8 @@
     BIN_OP_FLOAT(vm, left, right, op); \
   else if (IS_INT(left) && IS_FLOAT(right) || IS_FLOAT(left) && IS_INT(right)) \
     BIN_OP_INT_AND_FLOAT(vm, left, right, op); \
+  else if (IS_STRING(left) && IS_STRING(right)) \
+    PUSH_STRING(vm, str_concat(AS_STRING(left), AS_STRING(right))); \
   else \
     ERROR_BIN_OP(op, left, right); \
 } while (0)
