@@ -6,7 +6,7 @@
 #define START_BYTECODE_CAP 1
 
 #define EMIT(bc, byte) do { \
-    if ((bc)->size >= (bc)->cap) { \
+    if ((bc)->size + 1 >= (bc)->cap) { \
       (bc)->bytecodes = SEAL_REALLOC((bc)->bytecodes, sizeof(seal_byte) * ((bc)->cap *= 2)); \
     } \
     (bc)->bytecodes[(bc)->size++] = (seal_byte)(byte); \
@@ -347,9 +347,10 @@ static void compile_val(cout_t* cout, ast_t* node, hashmap_t* scope, struct byte
     val = sval(SEAL_FLOAT, _float, node->floating.val);
     break;
   case AST_STRING:
-    val = sval(SEAL_STRING, string, node->string.val);
+    val = SEAL_VALUE_STRING_STATIC(node->string.val);
     break;
   }
+
   EMIT(bc, OP_PUSH_CONST); /* push opcode */
   PUSH_CONST(cout, val); /* push constant into pool */
   SET_16BITS_INDEX(bc, CONST_IDX(cout));
