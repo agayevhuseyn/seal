@@ -191,8 +191,7 @@ void init_vm(vm_t* vm, cout_t* cout)
   vm->const_pool_ptr = cout->const_pool;
   vm->label_ptr = cout->labels;
 
-  static svalue_t stack[STACK_SIZE];
-  memset(stack, 0, sizeof(stack));
+  svalue_t *stack = SEAL_CALLOC(STACK_SIZE, sizeof(svalue_t));
   vm->stack = stack;
 
   vm->sp = vm->stack;
@@ -205,6 +204,8 @@ void init_vm(vm_t* vm, cout_t* cout)
   REGISTER_BUILTIN_FUNC(&vm->globals, __seal_exit, "exit", 1, false);
   REGISTER_BUILTIN_FUNC(&vm->globals, __seal_len, "len", 1, false);
   REGISTER_BUILTIN_FUNC(&vm->globals, __seal_int, "int", 1, false);
+  REGISTER_BUILTIN_FUNC(&vm->globals, __seal_push, "push", 2, false);
+  REGISTER_BUILTIN_FUNC(&vm->globals, __seal_pop, "pop", 1, false);
 }
 
 void eval_vm(vm_t* vm, struct local_frame* lf)
@@ -218,214 +219,227 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
     const char* sym;
 
     switch (op) {
-      case OP_HALT:
-        return;
-      case OP_PUSH_CONST:
-        idx = FETCH(lf) << 8;
-        idx |= FETCH(lf);
-        PUSH(vm, GET_CONST(vm, idx));
-        left = GET_CONST(vm, idx);
-        break;
-      case OP_PUSH_INT:
-        idx = FETCH(lf) << 8;
-        idx |= FETCH(lf);
-        PUSH_INT(vm, idx);
-        break;
-      case OP_PUSH_NULL:
-        PUSH_NULL(vm);
-        break;
-      case OP_PUSH_TRUE:
-        PUSH_BOOL(vm, true);
-        break;
-      case OP_PUSH_FALSE:
-        PUSH_BOOL(vm, false);
-        break;
-      case OP_POP:
-        left = POP(vm);
-        gc_decref(left);
-        break;
-      case OP_DUP:
-        DUP(vm);
-        break;
-      case OP_ADD:
-        right = POP(vm);
-        left  = POP(vm);
-        BIN_OP(vm, left, right, +);
-        gc_decref(left);
-        gc_decref(right);
-        break;
-      case OP_SUB:
-        right = POP(vm);
-        left  = POP(vm);
-        BIN_OP(vm, left, right, -);
-        break;
-      case OP_MUL:
-        right = POP(vm);
-        left  = POP(vm);
-        BIN_OP(vm, left, right, *);
-        break;
-      case OP_DIV:
-        right = POP(vm);
-        left  = POP(vm);
-        BIN_OP(vm, left, right, /);
-        break;
-      case OP_MOD:
-        right = POP(vm);
-        left  = POP(vm);
-        MOD_OP(vm, left, right);
-        break;
-      case OP_AND:
-        right = POP(vm);
-        left  = POP(vm);
-        BITWISE_OP(vm, left, right, &);
-        break;
-      case OP_OR:
-        right = POP(vm);
-        left  = POP(vm);
-        BITWISE_OP(vm, left, right, |);
-        break;
-      case OP_XOR:
-        right = POP(vm);
-        left  = POP(vm);
-        BITWISE_OP(vm, left, right, ^);
-        break;
-      case OP_SHL:
-        right = POP(vm);
-        left  = POP(vm);
-        BITWISE_OP(vm, left, right, <<);
-        break;
-      case OP_SHR:
-        right = POP(vm);
-        left  = POP(vm);
-        BITWISE_OP(vm, left, right, >>);
-        break;
-      case OP_EQ:
-        right = POP(vm);
-        left  = POP(vm);
-        EQUAL_OP(vm, left, right, ==);
-        break;
-      case OP_NE:
-        right = POP(vm);
-        left  = POP(vm);
-        EQUAL_OP(vm, left, right, !=);
-        break;
-      case OP_GT:
-        right = POP(vm);
-        left  = POP(vm);
-        CMP_OP(vm, left, right, >);
-        break;
-      case OP_GE:
-        right = POP(vm);
-        left  = POP(vm);
-        CMP_OP(vm, left, right, >=);
-        break;
-      case OP_LT:
-        right = POP(vm);
-        left  = POP(vm);
-        CMP_OP(vm, left, right, <);
-        break;
-      case OP_LE:
-        right = POP(vm);
-        left  = POP(vm);
-        CMP_OP(vm, left, right, <=);
-        break;
-      case OP_NOT:
-      case OP_NEG:
-      case OP_TYPOF:
-      case OP_BNOT:
-        left = POP(vm);
-        UNRY_OP(vm, left, op);
-        break;
-      case OP_JUMP:
-        addr = FETCH(lf) << 8;
-        addr |= FETCH(lf);
+    case OP_HALT:
+      return;
+    case OP_PUSH_CONST:
+      idx = FETCH(lf) << 8;
+      idx |= FETCH(lf);
+      PUSH(vm, GET_CONST(vm, idx));
+      left = GET_CONST(vm, idx);
+      break;
+    case OP_PUSH_INT:
+      idx = FETCH(lf) << 8;
+      idx |= FETCH(lf);
+      PUSH_INT(vm, idx);
+      break;
+    case OP_PUSH_NULL:
+      PUSH_NULL(vm);
+      break;
+    case OP_PUSH_TRUE:
+      PUSH_BOOL(vm, true);
+      break;
+    case OP_PUSH_FALSE:
+      PUSH_BOOL(vm, false);
+      break;
+    case OP_POP:
+      left = POP(vm);
+      gc_decref(left);
+      break;
+    case OP_DUP:
+      DUP(vm);
+      break;
+    case OP_ADD:
+      right = POP(vm);
+      left  = POP(vm);
+      BIN_OP(vm, left, right, +);
+      gc_decref(left);
+      gc_decref(right);
+      break;
+    case OP_SUB:
+      right = POP(vm);
+      left  = POP(vm);
+      BIN_OP(vm, left, right, -);
+      break;
+    case OP_MUL:
+      right = POP(vm);
+      left  = POP(vm);
+      BIN_OP(vm, left, right, *);
+      break;
+    case OP_DIV:
+      right = POP(vm);
+      left  = POP(vm);
+      BIN_OP(vm, left, right, /);
+      break;
+    case OP_MOD:
+      right = POP(vm);
+      left  = POP(vm);
+      MOD_OP(vm, left, right);
+      break;
+    case OP_AND:
+      right = POP(vm);
+      left  = POP(vm);
+      BITWISE_OP(vm, left, right, &);
+      break;
+    case OP_OR:
+      right = POP(vm);
+      left  = POP(vm);
+      BITWISE_OP(vm, left, right, |);
+      break;
+    case OP_XOR:
+      right = POP(vm);
+      left  = POP(vm);
+      BITWISE_OP(vm, left, right, ^);
+      break;
+    case OP_SHL:
+      right = POP(vm);
+      left  = POP(vm);
+      BITWISE_OP(vm, left, right, <<);
+      break;
+    case OP_SHR:
+      right = POP(vm);
+      left  = POP(vm);
+      BITWISE_OP(vm, left, right, >>);
+      break;
+    case OP_EQ:
+      right = POP(vm);
+      left  = POP(vm);
+      EQUAL_OP(vm, left, right, ==);
+      break;
+    case OP_NE:
+      right = POP(vm);
+      left  = POP(vm);
+      EQUAL_OP(vm, left, right, !=);
+      break;
+    case OP_GT:
+      right = POP(vm);
+      left  = POP(vm);
+      CMP_OP(vm, left, right, >);
+      break;
+    case OP_GE:
+      right = POP(vm);
+      left  = POP(vm);
+      CMP_OP(vm, left, right, >=);
+      break;
+    case OP_LT:
+      right = POP(vm);
+      left  = POP(vm);
+      CMP_OP(vm, left, right, <);
+      break;
+    case OP_LE:
+      right = POP(vm);
+      left  = POP(vm);
+      CMP_OP(vm, left, right, <=);
+      break;
+    case OP_NOT:
+    case OP_NEG:
+    case OP_TYPOF:
+    case OP_BNOT:
+      left = POP(vm);
+      UNRY_OP(vm, left, op);
+      break;
+    case OP_JUMP:
+      addr = FETCH(lf) << 8;
+      addr |= FETCH(lf);
+      JUMP(vm, lf, addr);
+      break;
+    case OP_JFALSE:
+      addr = FETCH(lf) << 8;
+      addr |= FETCH(lf);
+      left = POP(vm);
+      if (!TO_BOOL(left))
         JUMP(vm, lf, addr);
-        break;
-      case OP_JFALSE:
-        addr = FETCH(lf) << 8;
-        addr |= FETCH(lf);
-        left = POP(vm);
-        if (!TO_BOOL(left))
-          JUMP(vm, lf, addr);
-        break;
-      case OP_JTRUE:
-        addr = FETCH(lf) << 8;
-        addr |= FETCH(lf);
-        left = POP(vm);
-        if (TO_BOOL(left))
-          JUMP(vm, lf, addr);
-        break;
-      case OP_GET_GLOBAL:
-        addr = FETCH(lf) << 8;
-        addr |= FETCH(lf);
-        sym = AS_STRING(GET_CONST(vm, addr));
-        entry = hashmap_search(&vm->globals, sym);
-        if (entry && entry->key) {
-          PUSH(vm, entry->val);
-        } else {
-          ERROR("vm: %s is not defined", sym);
+      break;
+    case OP_JTRUE:
+      addr = FETCH(lf) << 8;
+      addr |= FETCH(lf);
+      left = POP(vm);
+      if (TO_BOOL(left))
+        JUMP(vm, lf, addr);
+      break;
+    case OP_GET_GLOBAL:
+      addr = FETCH(lf) << 8;
+      addr |= FETCH(lf);
+      sym = AS_STRING(GET_CONST(vm, addr));
+      entry = hashmap_search(&vm->globals, sym);
+      if (entry && entry->key) {
+        PUSH(vm, entry->val);
+      } else {
+        ERROR("vm: %s is not defined", sym);
+      }
+      break;
+    case OP_SET_GLOBAL:
+      DUP(vm);
+      addr = FETCH(lf) << 8;
+      addr |= FETCH(lf);
+      hashmap_insert(&vm->globals, AS_STRING(GET_CONST(vm, addr)), POP(vm));
+      break;
+    case OP_GET_LOCAL:
+      addr = FETCH(lf);
+      PUSH(vm, GET_LOCAL(lf, addr));
+      break;
+    case OP_SET_LOCAL:
+      DUP(vm);
+      addr = FETCH(lf);
+      left = POP(vm);
+      //if (IS_STRING(GET_LOCAL(lf, addr)) && GET_LOCAL(lf, addr).as.string)
+      //  printf("REF COUNT: %d\n", GET_LOCAL(lf, addr).as.string->ref_count);
+      gc_decref(GET_LOCAL(lf, addr));
+      SET_LOCAL(lf, addr, left);
+      break;
+    case OP_CALL: {
+      seal_byte argc = FETCH(lf);
+      svalue_t argv[argc];
+      for (int i = argc - 1; i >= 0; i--) {
+        argv[i] = POP(vm);
+      }
+
+      svalue_t func = POP(vm);
+      if (!IS_FUNC(func))
+        ERROR("calling non-function: \'%s\'", seal_type_name(func.type));
+
+      if (!IS_FUNC_VARARG(func) && argc != FUNC_ARGC(func) || IS_FUNC_VARARG(func) && argc < FUNC_ARGC(func))
+        ERROR("\'%s\' function expected%s %d argument%s, got %d",
+              FUNC_NAME(func),
+              IS_FUNC_VARARG(func) ? " at least" : "",
+              FUNC_ARGC(func),
+              FUNC_ARGC(func) != 1 ? "s" : "",
+              argc);
+
+      if (IS_BUILTIN_FUNC(func)) {
+        PUSH(vm, CALL_BUILTIN_FUNC(func)(argc, argv)); /* push function result to stack */
+        for (int i = 0; i < argc; i++) {
+          gc_decref(argv[i]);
         }
-        break;
-      case OP_SET_GLOBAL:
-        DUP(vm);
-        addr = FETCH(lf) << 8;
-        addr |= FETCH(lf);
-        hashmap_insert(&vm->globals, AS_STRING(GET_CONST(vm, addr)), POP(vm));
-        break;
-      case OP_GET_LOCAL:
-        addr = FETCH(lf);
-        PUSH(vm, GET_LOCAL(lf, addr));
-        break;
-      case OP_SET_LOCAL:
-        DUP(vm);
-        addr = FETCH(lf);
-        left = POP(vm);
-        //if (IS_STRING(GET_LOCAL(lf, addr)) && GET_LOCAL(lf, addr).as.string)
-        //  printf("REF COUNT: %d\n", GET_LOCAL(lf, addr).as.string->ref_count);
-        gc_decref(GET_LOCAL(lf, addr));
-        SET_LOCAL(lf, addr, left);
-        break;
-      case OP_CALL: {
-        seal_byte argc = FETCH(lf);
-        svalue_t argv[argc];
-        for (int i = argc - 1; i >= 0; i--) {
-          argv[i] = POP(vm);
+      } else {
+        svalue_t locals[func.as.func.as.userdef.local_size];
+        memset(locals, 0, sizeof(locals));
+        struct local_frame func_lf = { .locals = locals, .ip = AS_USERDEF_FUNC(func).bytecode, .bytecodes = AS_USERDEF_FUNC(func).bytecode };
+        for (int i = 0; i < argc; i++) {
+          SET_LOCAL((&func_lf), i, argv[i]);
         }
-
-        svalue_t func = POP(vm);
-        if (!IS_FUNC(func))
-          ERROR("calling non-function: \'%s\'", seal_type_name(func.type));
-
-        if (!IS_FUNC_VARARG(func) && argc != FUNC_ARGC(func) || IS_FUNC_VARARG(func) && argc < FUNC_ARGC(func))
-          ERROR("\'%s\' function expected%s %d argument%s, got %d",
-                FUNC_NAME(func),
-                IS_FUNC_VARARG(func) ? " at least" : "",
-                FUNC_ARGC(func),
-                FUNC_ARGC(func) != 1 ? "s" : "",
-                argc);
-
-        if (IS_BUILTIN_FUNC(func)) {
-          PUSH(vm, CALL_BUILTIN_FUNC(func)(argc, argv)); /* push function result to stack */
-          for (int i = 0; i < argc; i++) {
-            gc_decref(argv[i]);
-          }
-        } else {
-          svalue_t locals[func.as.func.as.userdef.local_size];
-          memset(locals, 0, sizeof(locals));
-          struct local_frame func_lf = { .locals = locals, .ip = AS_USERDEF_FUNC(func).bytecode, .bytecodes = AS_USERDEF_FUNC(func).bytecode };
-          for (int i = 0; i < argc; i++) {
-            SET_LOCAL((&func_lf), i, argv[i]);
-          }
-          eval_vm(vm, &func_lf);
-          for (int i = 0; i < func.as.func.as.userdef.local_size; i++) {
-            gc_decref(locals[i]);
-          }
+        eval_vm(vm, &func_lf);
+        for (int i = 0; i < func.as.func.as.userdef.local_size; i++) {
+          gc_decref(locals[i]);
         }
       }
       break;
-      default:
-        fprintf(stderr, "unrecognized op type: %d\n", op);
-        return;
+    }
+    case OP_GEN_LIST: {
+      seal_byte size = FETCH(lf);
+      left = SEAL_VALUE_LIST();
+      svalue_t sorted[size];
+      for (int i = 0; i < size; i++) {
+        sorted[i] = POP(vm);
+      }
+      for (int i = size - 1; i >= 0; i--) {
+        LIST_PUSH(left, sorted[i]);
+      }
+      PUSH(vm, left);
+      break;
+    }
+    default:
+      fprintf(stderr, "unrecognized op type: %d\n", op);
+      return;
     }
   }
 }
