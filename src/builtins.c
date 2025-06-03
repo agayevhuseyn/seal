@@ -113,6 +113,9 @@ svalue_t __seal_pop(seal_byte argc, svalue_t* argv)
   if (!IS_LIST(argv[0]))
     BUILTIN_FUNC_ARG_ERR("pop", 0, VAL_TYPE(argv[0]), SEAL_LIST);
 
+  if (AS_LIST(argv[0])->size == 0)
+    BUILTIN_ERROR("cannot pop empty list");
+
   svalue_t popped = AS_LIST(argv[0])->mems[--AS_LIST(argv[0])->size];
   gc_decref_nofree(popped);
   return popped;
