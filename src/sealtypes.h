@@ -47,6 +47,22 @@ struct seal_string {
   bool is_static;
 };
 
+struct seal_list {
+  svalue_t *mems;
+  size_t size;
+  size_t cap;
+  int ref_count;
+};
+
+#define LIST_PUSH(s, e) do { \
+  struct seal_list *l = AS_LIST(s); \
+  if (l->size >= l->cap) { \
+    l->mems = SEAL_REALLOC(l->mems, sizeof(svalue_t) * (l->cap *= 2)); \
+  } \
+  l->mems[l->size++] = e; \
+} while (0)
+
+
 struct svalue {
   seal_type type;
   union {
@@ -55,12 +71,30 @@ struct svalue {
     struct seal_string *string;
     bool        _bool;
     struct seal_func func;
-    /*  TODO
-    as_list;
+    struct seal_list *list;
+    /*
     as_map;
     */
   } as;
 };
+
+
+#define AS_INT(val)    ((val).as._int)
+#define AS_FLOAT(val)  ((val).as._float)
+#define AS_STRING(_val) ((_val).as.string->val)
+#define AS_BOOL(val)   ((val).as._bool)
+#define AS_FUNC(val)   ((val).as.func)
+#define AS_LIST(val)   ((val).as.list)
+
+#define VAL_TYPE(val)  ((val).type)
+#define IS_NULL(val)   (VAL_TYPE(val) == SEAL_NULL)
+#define IS_INT(val)    (VAL_TYPE(val) == SEAL_INT)
+#define IS_FLOAT(val)  (VAL_TYPE(val) == SEAL_FLOAT)
+#define IS_STRING(val) (VAL_TYPE(val) == SEAL_STRING)
+#define IS_BOOL(val)   (VAL_TYPE(val) == SEAL_BOOL)
+#define IS_FUNC(val)   (VAL_TYPE(val) == SEAL_FUNC)
+#define IS_LIST(val)   (VAL_TYPE(val) == SEAL_LIST)
+
 
 #define sval(t, mem, val) (svalue_t) { .type = t, .as.mem = val }
 #define SEAL_VALUE_NULL   (svalue_t) { .type = SEAL_NULL }
@@ -68,6 +102,7 @@ struct svalue {
 #define SEAL_VALUE_FALSE  sval(SEAL_BOOL, _bool, false)
 #define SEAL_VALUE_INT(val)    sval(SEAL_INT, _int, val)
 #define SEAL_VALUE_FLOAT(val)  sval(SEAL_FLOAT, _float, val)
+
 
 static inline svalue_t SEAL_VALUE_STRING(const char* val)
 {
@@ -89,19 +124,18 @@ static inline svalue_t SEAL_VALUE_STRING_STATIC(const char* val)
   return res;
 }
 
-#define AS_INT(val)    ((val).as._int)
-#define AS_FLOAT(val)  ((val).as._float)
-#define AS_STRING(_val) ((_val).as.string->val)
-#define AS_BOOL(val)   ((val).as._bool)
-#define AS_FUNC(val)   ((val).as.func)
-
-#define VAL_TYPE(val)  ((val).type)
-#define IS_NULL(val)   (VAL_TYPE(val) == SEAL_NULL)
-#define IS_INT(val)    (VAL_TYPE(val) == SEAL_INT)
-#define IS_FLOAT(val)  (VAL_TYPE(val) == SEAL_FLOAT)
-#define IS_STRING(val) (VAL_TYPE(val) == SEAL_STRING)
-#define IS_BOOL(val)   (VAL_TYPE(val) == SEAL_BOOL)
-#define IS_FUNC(val)   (VAL_TYPE(val) == SEAL_FUNC)
+static inline svalue_t SEAL_VALUE_LIST()
+{
+  svalue_t res = {
+    .type = SEAL_LIST,
+    .as.list = SEAL_CALLOC(1, sizeof(struct seal_list))
+  };
+  AS_LIST(res)->ref_count = 0;
+  AS_LIST(res)->cap = 2;
+  AS_LIST(res)->size = 0;
+  AS_LIST(res)->mems = SEAL_CALLOC(AS_LIST(res)->cap, sizeof(svalue_t));
+  return res;
+}
 
 static inline const char*
 seal_type_name(int type)
