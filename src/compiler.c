@@ -3,7 +3,7 @@
 #include "hashmap.h"
 #include "sealtypes.h"
 
-#define START_BYTECODE_CAP 1
+#define START_BYTECODE_CAP 8
 
 #define EMIT(bc, byte) do { \
     if ((bc)->size + 1 >= (bc)->cap) { \
@@ -150,6 +150,7 @@ static void compile_node(cout_t* cout, ast_t* node, hashmap_t* scope, struct byt
   case AST_VAR_REF: compile_var_ref(cout, node, scope, bc); break;
   case AST_FUNC_DEF: compile_func_def(cout, node, scope); break;
   case AST_RETURN: compile_return(cout, node, scope, bc); break;
+  case AST_LIST: compile_list(cout, node, scope, bc); break;
   default:
     printf("%s is not implemented yet\n", hast_type_name(ast_type(node)));
     exit(1);
@@ -395,7 +396,7 @@ static void compile_assign(cout_t* cout, ast_t* node, hashmap_t* scope, struct b
     case AST_VAR_REF:
       if (node->assign.var->var_ref.is_global) {
         EMIT(bc, OP_SET_GLOBAL);
-        sym = SEAL_VALUE_STRING(node->assign.var->var_ref.name);
+        sym = SEAL_VALUE_STRING_STATIC(node->assign.var->var_ref.name);
         PUSH_CONST(cout, sym);
         SET_16BITS_INDEX(bc, CONST_IDX(cout));
       } else {
@@ -422,7 +423,7 @@ static void compile_assign(cout_t* cout, ast_t* node, hashmap_t* scope, struct b
     case AST_VAR_REF:
       if (node->assign.var->var_ref.is_global) {
         EMIT(bc, OP_GET_GLOBAL);
-        sym = SEAL_VALUE_STRING(node->assign.var->var_ref.name);
+        sym = SEAL_VALUE_STRING_STATIC(node->assign.var->var_ref.name);
         PUSH_CONST(cout, sym);
         sym_idx = CONST_IDX(cout);
         SET_16BITS_INDEX(bc, sym_idx);
@@ -430,6 +431,18 @@ static void compile_assign(cout_t* cout, ast_t* node, hashmap_t* scope, struct b
         EMIT(bc, AUG_ASSIGN_OP_TYPE(aug_type));
         EMIT(bc, OP_SET_GLOBAL);
         SET_16BITS_INDEX(bc, sym_idx);
+      } else {
+        EMIT(bc, OP_GET_LOCAL);
+        name = node->assign.var->var_ref.name;
+        e = hashmap_search(scope, name);
+        if (e == NULL || e->key == NULL)
+          __compiler_error("\'%s\' is not defined", name);
+
+        EMIT(bc, e->val.as._int); /* push slot index of local table */
+        compile_node(cout, node->assign.expr, scope, bc);
+        EMIT(bc, AUG_ASSIGN_OP_TYPE(aug_type));
+        EMIT(bc, OP_SET_LOCAL);
+        EMIT(bc, e->val.as._int);
       }
       break;
     default:
@@ -450,7 +463,7 @@ static void compile_var_ref(cout_t* cout, ast_t* node, hashmap_t* scope, struct 
   } else {
 global:
     EMIT(bc, OP_GET_GLOBAL);
-    PUSH_CONST(cout, SEAL_VALUE_STRING(node->var_ref.name));
+    PUSH_CONST(cout, SEAL_VALUE_STRING_STATIC(node->var_ref.name));
     SET_16BITS_INDEX(bc, CONST_IDX(cout));
   }
 }
@@ -494,7 +507,7 @@ static void compile_func_def(cout_t* cout, ast_t* node, hashmap_t* scope)
   SET_16BITS_INDEX(&cout->bc, CONST_IDX(cout));
 
   EMIT(&cout->bc, OP_SET_GLOBAL); /* set function object to global */
-  PUSH_CONST(cout, SEAL_VALUE_STRING(node->func_def.name));
+  PUSH_CONST(cout, SEAL_VALUE_STRING_STATIC(node->func_def.name));
   SET_16BITS_INDEX((&cout->bc), CONST_IDX(cout));
   EMIT(&cout->bc, OP_POP);
 }
@@ -502,4 +515,14 @@ static void compile_return(cout_t* cout, ast_t* node, hashmap_t* scope, struct b
 {
   compile_node(cout, node->_return.expr, scope, bc);
   EMIT(bc, OP_HALT);
+}
+static void compile_list(cout_t* cout, ast_t* node, hashmap_t* scope, struct bytechunk* bc)
+{
+  if (node->list.mem_size > 255)
+    __compiler_error("maximum number of elements in a list initializer is 255");
+  for (int i = 0; i < node->list.mem_size; i++)
+    compile_node(cout, node->list.mems[i], scope, bc);
+
+  EMIT(bc, OP_GEN_LIST);
+  EMIT(bc, node->list.mem_size);
 }
