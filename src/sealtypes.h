@@ -40,12 +40,19 @@ struct seal_func {
   bool is_vararg;
 };
 
+struct seal_string {
+  const char* val;
+  int size;
+  int ref_count;
+  bool is_static;
+};
+
 struct svalue {
   seal_type type;
   union {
     seal_int    _int;
     seal_float  _float;
-    const char* string;
+    struct seal_string *string;
     bool        _bool;
     struct seal_func func;
     /*  TODO
@@ -60,11 +67,31 @@ struct svalue {
 #define SEAL_VALUE_TRUE   sval(SEAL_BOOL, _bool, true)
 #define SEAL_VALUE_FALSE  sval(SEAL_BOOL, _bool, false)
 #define SEAL_VALUE_INT(val)    sval(SEAL_INT, _int, val)
-#define SEAL_VALUE_STRING(val) sval(SEAL_STRING, string, val)
+#define SEAL_VALUE_FLOAT(val)  sval(SEAL_FLOAT, _float, val)
+
+static inline svalue_t SEAL_VALUE_STRING(const char* val)
+{
+  svalue_t res = {
+    .type = SEAL_STRING,
+    .as.string = SEAL_CALLOC(1, sizeof(struct seal_string))
+  };
+  res.as.string->val = val;
+  res.as.string->size = strlen(val);
+  res.as.string->is_static = false;
+  res.as.string->ref_count = 0;
+  return res;
+}
+
+static inline svalue_t SEAL_VALUE_STRING_STATIC(const char* val)
+{
+  svalue_t res = SEAL_VALUE_STRING(val);
+  res.as.string->is_static = true;
+  return res;
+}
 
 #define AS_INT(val)    ((val).as._int)
 #define AS_FLOAT(val)  ((val).as._float)
-#define AS_STRING(val) ((val).as.string)
+#define AS_STRING(_val) ((_val).as.string->val)
 #define AS_BOOL(val)   ((val).as._bool)
 #define AS_FUNC(val)   ((val).as.func)
 
