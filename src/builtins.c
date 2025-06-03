@@ -18,22 +18,22 @@ svalue_t __seal_print(seal_byte argc, svalue_t* argv)
 
     switch (s.type) {
     case SEAL_INT:
-      printf("%lld ", s.as._int);
+      printf("%lld ", AS_INT(s));
       break;
     case SEAL_FLOAT:
-      printf("%f ", s.as._float);
+      printf("%f ", AS_FLOAT(s));
       break;
     case SEAL_STRING:
-      printf("%s ", s.as.string);
+      printf("%s ", AS_STRING(s));
       break;
     case SEAL_BOOL:
-      printf("%s ", s.as._bool ? "true" : "false");
+      printf("%s ", AS_BOOL(s) ? "true" : "false");
       break;
     case SEAL_NULL:
       printf("null ");
       break;
     case SEAL_FUNC:
-      printf("function: %p ", s.as.func.type == FUNC_BUILTIN ? (void*)&s.as.func.as.builtin.cfunc : (void*)&s.as.func.as.userdef.bytecode);
+      printf("function: %p ", AS_FUNC(s).type == FUNC_BUILTIN ? (void*)&AS_FUNC(s).as.builtin.cfunc : (void*)&AS_FUNC(s).as.userdef.bytecode);
       break;
     default:
       printf("UNRECOGNIZED DATA TYPE TO PRINT\n");
