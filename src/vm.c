@@ -1,11 +1,14 @@
 #include "vm.h"
 #include "builtins.h"
+#include "gc.h"
 
 #define FETCH(lf) (*lf->ip++)
 #define PUSH(vm, val) do { \
   if (vm->sp - vm->stack == STACK_SIZE) \
     ERROR("stack overflow"); \
-  (*vm->sp++ = val); \
+  svalue_t loc_val = val; \
+  *vm->sp++ = loc_val; \
+  gc_incref(loc_val); \
 } while (0)
 #define DUP(vm) do { \
   svalue_t top = *(vm->sp - 1); \
@@ -46,14 +49,19 @@
 #define CALL_BUILTIN_FUNC(val) (AS_BUILTIN_FUNC(val).cfunc)
 
 /* string manipulation */
-char* str_concat(const char* l, const char* r)
+struct seal_string* str_concat(const char* l, const char* r)
 {
   int len = strlen(l) + strlen(r) + 1;
   char* res = SEAL_CALLOC(len, sizeof(char));
   strcpy(res, l);
   strcat(res, r);
   res[len - 1] = '\0';
-  return res;
+  struct seal_string *str = SEAL_CALLOC(1, sizeof(struct seal_string));
+  str->size = len - 1;
+  str->is_static = false;
+  str->ref_count = 0;
+  str->val = res;
+  return str;
 }
 
 /* arithmetic */
@@ -146,7 +154,7 @@ char* str_concat(const char* l, const char* r)
       ERROR_UNRY_OP(~, val); \
     break; \
   case OP_TYPOF: \
-    PUSH_STRING(vm, seal_type_name((val).type)); \
+    PUSH(vm, SEAL_VALUE_STRING(seal_type_name((val).type))); \
     break; \
   case OP_NOT: \
     if (IS_BOOL(val)) \
@@ -182,7 +190,11 @@ void init_vm(vm_t* vm, cout_t* cout)
 {
   vm->const_pool_ptr = cout->const_pool;
   vm->label_ptr = cout->labels;
-  vm->stack = SEAL_CALLOC(STACK_SIZE, sizeof(svalue_t));
+
+  static svalue_t stack[STACK_SIZE];
+  memset(stack, 0, sizeof(stack));
+  vm->stack = stack;
+
   vm->sp = vm->stack;
   vm->bytecodes = cout->bc.bytecodes;
   // vm->lf = SEAL_CALLOC(FRAME_MAX, sizeof(struct local_frame));
@@ -212,6 +224,7 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
         idx = FETCH(lf) << 8;
         idx |= FETCH(lf);
         PUSH(vm, GET_CONST(vm, idx));
+        left = GET_CONST(vm, idx);
         break;
       case OP_PUSH_INT:
         idx = FETCH(lf) << 8;
@@ -228,7 +241,8 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
         PUSH_BOOL(vm, false);
         break;
       case OP_POP:
-        POP(vm);
+        left = POP(vm);
+        gc_decref(left);
         break;
       case OP_DUP:
         DUP(vm);
@@ -237,6 +251,8 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
         right = POP(vm);
         left  = POP(vm);
         BIN_OP(vm, left, right, +);
+        gc_decref(left);
+        gc_decref(right);
         break;
       case OP_SUB:
         right = POP(vm);
@@ -363,13 +379,18 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
       case OP_SET_LOCAL:
         DUP(vm);
         addr = FETCH(lf);
-        SET_LOCAL(lf, addr, POP(vm));
+        left = POP(vm);
+        //if (IS_STRING(GET_LOCAL(lf, addr)) && GET_LOCAL(lf, addr).as.string)
+        //  printf("REF COUNT: %d\n", GET_LOCAL(lf, addr).as.string->ref_count);
+        gc_decref(GET_LOCAL(lf, addr));
+        SET_LOCAL(lf, addr, left);
         break;
       case OP_CALL: {
         seal_byte argc = FETCH(lf);
         svalue_t argv[argc];
-        for (int i = argc - 1; i >= 0; i--)
+        for (int i = argc - 1; i >= 0; i--) {
           argv[i] = POP(vm);
+        }
 
         svalue_t func = POP(vm);
         if (!IS_FUNC(func))
@@ -385,13 +406,20 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
 
         if (IS_BUILTIN_FUNC(func)) {
           PUSH(vm, CALL_BUILTIN_FUNC(func)(argc, argv)); /* push function result to stack */
+          for (int i = 0; i < argc; i++) {
+            gc_decref(argv[i]);
+          }
         } else {
           svalue_t locals[func.as.func.as.userdef.local_size];
+          memset(locals, 0, sizeof(locals));
           struct local_frame func_lf = { .locals = locals, .ip = AS_USERDEF_FUNC(func).bytecode, .bytecodes = AS_USERDEF_FUNC(func).bytecode };
           for (int i = 0; i < argc; i++) {
             SET_LOCAL((&func_lf), i, argv[i]);
           }
           eval_vm(vm, &func_lf);
+          for (int i = 0; i < func.as.func.as.userdef.local_size; i++) {
+            gc_decref(locals[i]);
+          }
         }
       }
       break;
