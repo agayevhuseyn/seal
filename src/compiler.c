@@ -64,11 +64,28 @@
 
 void compile(cout_t* cout, ast_t* node)
 {
-  cout->const_pool_ptr = cout->const_pool = SEAL_CALLOC(CONST_POOL_SIZE, sizeof(svalue_t));
-  cout->label_ptr = cout->labels = SEAL_CALLOC(LABEL_SIZE, sizeof(seal_word));;
+  /* constant values' pool */
+  static svalue_t const_pool[CONST_POOL_SIZE];
+  memset(const_pool, 0, sizeof(const_pool));
+  cout->const_pool_ptr = cout->const_pool = const_pool;
+
+  /* label array */
+  static seal_word labels[LABEL_SIZE];
+  memset(labels, 0, sizeof(labels));
+  cout->label_ptr = cout->labels = labels;
+
   cout->bc.bytecodes = SEAL_CALLOC(START_BYTECODE_CAP, sizeof(seal_byte));
-  cout->skip_addr_offset_stack = SEAL_CALLOC(UNCOND_JMP_MAX_SIZE, sizeof(size_t));
-  cout->stop_addr_offset_stack = SEAL_CALLOC(UNCOND_JMP_MAX_SIZE, sizeof(size_t));
+
+  /* skip address offset stack */
+  static size_t skip_addr_offset_stack[UNCOND_JMP_MAX_SIZE];
+  memset(skip_addr_offset_stack, 0, sizeof(skip_addr_offset_stack));
+  cout->skip_addr_offset_stack = skip_addr_offset_stack;
+
+  /* stop address offset stack */
+  static size_t stop_addr_offset_stack[UNCOND_JMP_MAX_SIZE];
+  memset(stop_addr_offset_stack, 0, sizeof(stop_addr_offset_stack));
+  cout->stop_addr_offset_stack = stop_addr_offset_stack;
+
   cout->skip_size = 0;
   cout->stop_size = 0;
   cout->bc.size = 0;
@@ -234,7 +251,6 @@ static void compile_while(cout_t* cout, ast_t* node, hashmap_t* scope, struct by
     }
   }
   cout->stop_size = stop_start_size;
-  //printf("END ADDR: %d\n", (*(end_addr - 1) << 8) | *(end_addr));
 }
 static void compile_dowhile(cout_t* cout, ast_t* node, hashmap_t* scope, struct bytechunk* bc)
 {
@@ -467,10 +483,8 @@ static void compile_func_def(cout_t* cout, ast_t* node, hashmap_t* scope)
 
   compile_node(cout, node->func_def.comp, &loc_scope, &bc);
   func_obj.as.func.as.userdef.bytecode = bc.bytecodes;
-  //printf("SIZE %d\n", bc.size);
 
   func_obj.as.func.as.userdef.local_size = loc_scope.filled; /* assign size of locals */
-  //printf("SCOPE SIZE: %d\n", loc_scope.filled);
   
   EMIT(&bc, OP_PUSH_NULL);
   EMIT(&bc, OP_HALT);
