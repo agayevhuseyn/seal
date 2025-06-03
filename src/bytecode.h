@@ -46,6 +46,8 @@
 #define OP_NEG        0x22
 #define OP_TYPOF      0x23
 #define OP_BNOT       0x24
+/* list */
+#define OP_GEN_LIST   0x25
 
 
 #define PRINT_BYTE(bytecodes, size) for(int i = 0; i < size; i++) { \
@@ -98,6 +100,7 @@ static inline const char* op_name(int op)
   case OP_NOT       :  return "OP_NOT";
   /* typeof */
   case OP_TYPOF     :  return "OP_TYPOF";
+  case OP_GEN_LIST  :  return "OP_GEN_LIST";
   default           :  return "OP NOT RECOGNIZED";
   }
 }
@@ -127,7 +130,7 @@ static inline void print_op(seal_byte* bytes, size_t byte_size, seal_word* label
       printf("%d", idx);
       break;
     }
-    case OP_GET_LOCAL: case OP_SET_LOCAL: {
+    case OP_GET_LOCAL: case OP_SET_LOCAL: case OP_GEN_LIST: {
       seal_byte slot = bytes[i++];
       printf("%d", slot);
       break;
