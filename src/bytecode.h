@@ -48,7 +48,8 @@
 #define OP_BNOT       0x24
 /* list */
 #define OP_GEN_LIST   0x25
-
+/* iterable */
+#define OP_GET_FIELD  0x26
 
 #define PRINT_BYTE(bytecodes, size) for(int i = 0; i < size; i++) { \
     printf("%d ", bytecodes[i]); \
@@ -101,6 +102,7 @@ static inline const char* op_name(int op)
   /* typeof */
   case OP_TYPOF     :  return "OP_TYPOF";
   case OP_GEN_LIST  :  return "OP_GEN_LIST";
+  case OP_GET_FIELD :  return "OP_GET_FIELD";
   default           :  return "OP NOT RECOGNIZED";
   }
 }
