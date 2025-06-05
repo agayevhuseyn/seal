@@ -36,6 +36,7 @@
   IS_FLOAT(val) ? AS_FLOAT(val) != 0.0 : \
   IS_STRING(val) ? true : \
   IS_BOOL(val) ? AS_BOOL(val) : \
+  IS_LIST(val) ? AS_LIST(val)->size > 0 : \
   (ERROR("cannot convert to bool type"), -1))
 
 /* macros for seal functions */
