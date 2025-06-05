@@ -406,6 +406,11 @@ static void compile_assign(cout_t* cout, ast_t* node, hashmap_t* scope, struct b
         EMIT(bc, e->val.as._int); /* push slot index of local table */
       }
       break;
+    case AST_SUBSCRIPT:
+      compile_node(cout, node->assign.var->subscript.main, scope, bc);
+      compile_node(cout, node->assign.var->subscript.index, scope, bc);
+      EMIT(bc, OP_SET_FIELD);
+      break;
     default:
       __compiler_error("assigning to %s is not implemented yet", hast_type_name(lval_type));
       break;
