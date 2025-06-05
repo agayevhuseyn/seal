@@ -389,10 +389,8 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
       break;
     case OP_CALL: {
       seal_byte argc = FETCH(lf);
-      svalue_t argv[argc];
-      for (int i = argc - 1; i >= 0; i--) {
-        argv[i] = POP(vm);
-      }
+      svalue_t *argv = vm->sp - argc;
+      vm->sp -= argc;
 
       svalue_t func = POP(vm);
       if (!IS_FUNC(func))
