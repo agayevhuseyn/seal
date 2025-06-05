@@ -36,13 +36,17 @@ static void __print_single(svalue_t s)
   case SEAL_LIST:
     printf("[");
     for (int i = 0; i < AS_LIST(s)->size; i++) {
-      if (IS_STRING(AS_LIST(s)->mems[i])) {
+      if (IS_STRING(AS_LIST(s)->mems[i]))
         printf("\'");
-      }
-      __print_single(AS_LIST(s)->mems[i]);
-      if (IS_STRING(AS_LIST(s)->mems[i])) {
+
+      if (IS_LIST(AS_LIST(s)->mems[i]) && AS_LIST(s) == AS_LIST(AS_LIST(s)->mems[i]))
+        printf("[...]");
+      else
+        __print_single(AS_LIST(s)->mems[i]);
+
+      if (IS_STRING(AS_LIST(s)->mems[i]))
         printf("\'");
-      }
+
       if (i < AS_LIST(s)->size - 1)
         printf(", ");
     }
