@@ -459,6 +459,20 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
         PUSH(vm, AS_LIST(left)->mems[AS_INT(right)]);
       }
       break;
+    case OP_SET_FIELD:
+      right = POP(vm);
+      left  = POP(vm);
+      if (!IS_LIST(left))
+        ERROR("subscript assign requires only list as base");
+      if (!IS_INT(right))
+        ERROR("subscript requires int as field");
+      if (AS_INT(right) < 0)
+        ERROR("cannot index negative");
+      if (AS_INT(right) >= AS_LIST(left)->size)
+        ERROR("index exceed size");
+      gc_decref(AS_LIST(left)->mems[AS_INT(right)]);
+      PUSH(vm, AS_LIST(left)->mems[AS_INT(right)] = POP(vm));
+      break;
     default:
       fprintf(stderr, "unrecognized op type: %d\n", op);
       return;
