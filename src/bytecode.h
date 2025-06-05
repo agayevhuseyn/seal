@@ -50,6 +50,7 @@
 #define OP_GEN_LIST   0x25
 /* iterable */
 #define OP_GET_FIELD  0x26
+#define OP_SET_FIELD  0x27
 
 #define PRINT_BYTE(bytecodes, size) for(int i = 0; i < size; i++) { \
     printf("%d ", bytecodes[i]); \
