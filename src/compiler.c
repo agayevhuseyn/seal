@@ -65,26 +65,17 @@
 void compile(cout_t* cout, ast_t* node)
 {
   /* constant values' pool */
-  static svalue_t const_pool[CONST_POOL_SIZE];
-  memset(const_pool, 0, sizeof(const_pool));
-  cout->const_pool_ptr = cout->const_pool = const_pool;
+  cout->const_pool_ptr = cout->const_pool = SEAL_CALLOC(CONST_POOL_SIZE, sizeof(svalue_t));
 
   /* label array */
-  static seal_word labels[LABEL_SIZE];
-  memset(labels, 0, sizeof(labels));
-  cout->label_ptr = cout->labels = labels;
+  cout->label_ptr = cout->labels = SEAL_CALLOC(LABEL_SIZE, sizeof(seal_word));
 
   cout->bc.bytecodes = SEAL_CALLOC(START_BYTECODE_CAP, sizeof(seal_byte));
 
   /* skip address offset stack */
-  static size_t skip_addr_offset_stack[UNCOND_JMP_MAX_SIZE];
-  memset(skip_addr_offset_stack, 0, sizeof(skip_addr_offset_stack));
-  cout->skip_addr_offset_stack = skip_addr_offset_stack;
+  cout->skip_addr_offset_stack = SEAL_CALLOC(UNCOND_JMP_MAX_SIZE, sizeof(size_t));
 
-  /* stop address offset stack */
-  static size_t stop_addr_offset_stack[UNCOND_JMP_MAX_SIZE];
-  memset(stop_addr_offset_stack, 0, sizeof(stop_addr_offset_stack));
-  cout->stop_addr_offset_stack = stop_addr_offset_stack;
+  cout->stop_addr_offset_stack = SEAL_CALLOC(UNCOND_JMP_MAX_SIZE, sizeof(size_t));
 
   cout->skip_size = 0;
   cout->stop_size = 0;
@@ -123,6 +114,8 @@ static void compile_node(cout_t* cout, ast_t* node, hashmap_t* scope, struct byt
         case AST_ASSIGN:
         case AST_VAR_REF:
         case AST_FUNC_CALL:
+        case AST_LIST:
+        case AST_SUBSCRIPT:
           compile_node(cout, node->comp.stmts[i], scope, bc);
           EMIT(bc, OP_POP);
           break;
@@ -151,6 +144,7 @@ static void compile_node(cout_t* cout, ast_t* node, hashmap_t* scope, struct byt
   case AST_FUNC_DEF: compile_func_def(cout, node, scope); break;
   case AST_RETURN: compile_return(cout, node, scope, bc); break;
   case AST_LIST: compile_list(cout, node, scope, bc); break;
+  case AST_SUBSCRIPT: compile_subscript(cout, node, scope, bc); break;
   default:
     printf("%s is not implemented yet\n", hast_type_name(ast_type(node)));
     exit(1);
@@ -525,4 +519,10 @@ static void compile_list(cout_t* cout, ast_t* node, hashmap_t* scope, struct byt
 
   EMIT(bc, OP_GEN_LIST);
   EMIT(bc, node->list.mem_size);
+}
+static void compile_subscript(cout_t* cout, ast_t* node, hashmap_t* scope, struct bytechunk* bc)
+{
+  compile_node(cout, node->subscript.main, scope, bc);
+  compile_node(cout, node->subscript.index, scope, bc);
+  EMIT(bc, OP_GET_FIELD);
 }

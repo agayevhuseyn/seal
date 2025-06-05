@@ -437,6 +437,28 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
       PUSH(vm, left);
       break;
     }
+    case OP_GET_FIELD:
+      right = POP(vm);
+      left  = POP(vm);
+      if (!IS_LIST(left) && !IS_STRING(left))
+        ERROR("subscript requires either list or string as base");
+      if (!IS_INT(right))
+        ERROR("subscript requires int as field");
+      if (AS_INT(right) < 0)
+        ERROR("cannot index negative");
+      if (IS_STRING(left)) {
+        if (AS_INT(right) >= left.as.string->size)
+          ERROR("index exceed size");
+        char *c = SEAL_CALLOC(2, sizeof(char));
+        c[0] = AS_STRING(left)[AS_INT(right)];
+        c[1] = '\0';
+        PUSH(vm, SEAL_VALUE_STRING(c));
+      } else {
+        if (AS_INT(right) >= AS_LIST(left)->size)
+          ERROR("index exceed size");
+        PUSH(vm, AS_LIST(left)->mems[AS_INT(right)]);
+      }
+      break;
     default:
       fprintf(stderr, "unrecognized op type: %d\n", op);
       return;
