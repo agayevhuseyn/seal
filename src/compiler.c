@@ -107,6 +107,11 @@ static void compile_node(cout_t* cout, ast_t* node, hashmap_t* scope, struct byt
         case AST_STRING:
         case AST_BOOL:
           break;
+        case AST_FUNC_DEF:
+          compile_node(cout, node->comp.stmts[i], scope, bc);
+          if (node->comp.stmts[i]->func_def.name == NULL)
+            EMIT(bc, OP_POP);
+          break;
         case AST_UNARY:
         case AST_BINARY:
         case AST_BINARY_BOOL:
@@ -503,10 +508,14 @@ static void compile_func_def(cout_t* cout, ast_t* node, hashmap_t* scope, struct
   PUSH_CONST(cout, func_obj);
   SET_16BITS_INDEX(bc, CONST_IDX(cout));
 
-  EMIT(bc, OP_SET_GLOBAL); /* set function object to global */
-  PUSH_CONST(cout, SEAL_VALUE_STRING_STATIC(node->func_def.name));
-  SET_16BITS_INDEX(bc, CONST_IDX(cout));
-  EMIT(bc, OP_POP);
+  bool is_anonym = node->func_def.name == NULL;
+
+  if (!is_anonym) {
+    EMIT(bc, OP_SET_GLOBAL); /* set function object to global */
+    PUSH_CONST(cout, SEAL_VALUE_STRING_STATIC(node->func_def.name));
+    SET_16BITS_INDEX(bc, CONST_IDX(cout));
+    EMIT(bc, OP_POP);
+  }
 }
 static void compile_return(cout_t* cout, ast_t* node, hashmap_t* scope, struct bytechunk* bc)
 {
