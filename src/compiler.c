@@ -6,7 +6,7 @@
 #define START_BYTECODE_CAP 8
 
 #define EMIT(bc, byte) do { \
-    if ((bc)->size + 1 >= (bc)->cap) { \
+    if ((bc)->size >= (bc)->cap) { \
       (bc)->bytecodes = SEAL_REALLOC((bc)->bytecodes, sizeof(seal_byte) * ((bc)->cap *= 2)); \
     } \
     (bc)->bytecodes[(bc)->size++] = (seal_byte)(byte); \
@@ -141,7 +141,7 @@ static void compile_node(cout_t* cout, ast_t* node, hashmap_t* scope, struct byt
   case AST_FUNC_CALL: compile_func_call(cout, node, scope, bc); break;
   case AST_ASSIGN: compile_assign(cout, node, scope, bc); break;
   case AST_VAR_REF: compile_var_ref(cout, node, scope, bc); break;
-  case AST_FUNC_DEF: compile_func_def(cout, node, scope); break;
+  case AST_FUNC_DEF: compile_func_def(cout, node, scope, bc); break;
   case AST_RETURN: compile_return(cout, node, scope, bc); break;
   case AST_LIST: compile_list(cout, node, scope, bc); break;
   case AST_SUBSCRIPT: compile_subscript(cout, node, scope, bc); break;
@@ -466,12 +466,12 @@ global:
     SET_16BITS_INDEX(bc, CONST_IDX(cout));
   }
 }
-static void compile_func_def(cout_t* cout, ast_t* node, hashmap_t* scope)
+static void compile_func_def(cout_t* cout, ast_t* node, hashmap_t* scope, struct bytechunk* bc)
 {
-  struct bytechunk bc;
-  bc.cap = START_BYTECODE_CAP;
-  bc.size = 0;
-  bc.bytecodes = SEAL_CALLOC(START_BYTECODE_CAP, sizeof(seal_byte));
+  struct bytechunk func_bc;
+  func_bc.cap = START_BYTECODE_CAP;
+  func_bc.size = 0;
+  func_bc.bytecodes = SEAL_CALLOC(START_BYTECODE_CAP, sizeof(seal_byte));
 
   hashmap_t loc_scope;
   struct h_entry entries[LOCAL_MAX];
@@ -488,27 +488,25 @@ static void compile_func_def(cout_t* cout, ast_t* node, hashmap_t* scope)
       .name = node->func_def.name,
       .as.userdef = {
         .argc = node->func_def.param_size,
-        //.bytecode = bc.bytecodes
       }
     }
   };
 
-  compile_node(cout, node->func_def.comp, &loc_scope, &bc);
-  func_obj.as.func.as.userdef.bytecode = bc.bytecodes;
-
+  compile_node(cout, node->func_def.comp, &loc_scope, &func_bc);
+  EMIT(&func_bc, OP_PUSH_NULL);
+  EMIT(&func_bc, OP_HALT);
+  func_obj.as.func.as.userdef.bytecode = func_bc.bytecodes;
+  func_obj.as.func.as.userdef.bytecode_size = func_bc.size;
   func_obj.as.func.as.userdef.local_size = loc_scope.filled; /* assign size of locals */
-  
-  EMIT(&bc, OP_PUSH_NULL);
-  EMIT(&bc, OP_HALT);
 
-  EMIT(&cout->bc, OP_PUSH_CONST); /* push function object to constant pool */
+  EMIT(bc, OP_PUSH_CONST); /* push function object to constant pool */
   PUSH_CONST(cout, func_obj);
-  SET_16BITS_INDEX(&cout->bc, CONST_IDX(cout));
+  SET_16BITS_INDEX(bc, CONST_IDX(cout));
 
-  EMIT(&cout->bc, OP_SET_GLOBAL); /* set function object to global */
+  EMIT(bc, OP_SET_GLOBAL); /* set function object to global */
   PUSH_CONST(cout, SEAL_VALUE_STRING_STATIC(node->func_def.name));
-  SET_16BITS_INDEX((&cout->bc), CONST_IDX(cout));
-  EMIT(&cout->bc, OP_POP);
+  SET_16BITS_INDEX(bc, CONST_IDX(cout));
+  EMIT(bc, OP_POP);
 }
 static void compile_return(cout_t* cout, ast_t* node, hashmap_t* scope, struct bytechunk* bc)
 {

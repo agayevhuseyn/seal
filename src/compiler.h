@@ -74,7 +74,7 @@ static void compile_val(cout_t*, ast_t*, hashmap_t*, struct bytechunk*);
 static void compile_func_call(cout_t*, ast_t*, hashmap_t*, struct bytechunk*);
 static void compile_assign(cout_t*, ast_t*, hashmap_t*, struct bytechunk*);
 static void compile_var_ref(cout_t*, ast_t*, hashmap_t*, struct bytechunk*);
-static void compile_func_def(cout_t*, ast_t*, hashmap_t*);
+static void compile_func_def(cout_t*, ast_t*, hashmap_t*, struct bytechunk*);
 static void compile_return(cout_t*, ast_t*, hashmap_t*, struct bytechunk*);
 static void compile_list(cout_t*, ast_t*, hashmap_t*, struct bytechunk*);
 static void compile_subscript(cout_t*, ast_t*, hashmap_t*, struct bytechunk*);
