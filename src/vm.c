@@ -457,6 +457,8 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
           ERROR("index exceed size");
         PUSH(vm, AS_LIST(left)->mems[AS_INT(right)]);
       }
+      gc_decref(left);
+      gc_decref(right);
       break;
     case OP_SET_FIELD:
       right = POP(vm);
