@@ -28,6 +28,7 @@ struct seal_func {
   union {
     struct {
       seal_byte* bytecode;
+      size_t bytecode_size;
       seal_byte  argc;
       seal_byte  local_size;
     } userdef;
