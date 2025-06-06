@@ -151,8 +151,7 @@ static ast_t* parser_parse_statement(parser_t* parser,
       if (is_inline) goto error;
       return parser_parse_for(parser, is_func);
     case TOK_DEFINE:
-      if (!is_global_scope) goto error;
-      return parser_parse_func_def(parser);
+      return parser_parse_func_def(parser, true /* can be global */);
     case TOK_SKIP:
       if (!is_loop) goto error;
       return parser_parse_skip(parser);
@@ -442,6 +441,7 @@ static ast_t* parser_parse_for(parser_t* parser, bool is_func)
   ast->_for.end   = NULL;
   ast->_for.step  = NULL;
 
+  ast->_for.it_name = parser_eat(parser, TOK_ID)->val;
   parser_eat(parser, TOK_IN);
 
   if (is_numerical) {
@@ -472,18 +472,25 @@ static ast_t* parser_parse_for(parser_t* parser, bool is_func)
 
   return ast;
 }
-static ast_t* parser_parse_func_def(parser_t* parser)
+static ast_t* parser_parse_func_def(parser_t* parser, bool can_be_global)
 {
   parser_eat(parser, TOK_DEFINE);
 
   ast_t* ast = static_create_ast(AST_FUNC_DEF, parser_line(parser));
   ast->func_def.param_size = 0;
 
+  bool is_anonym = true;
+  if (can_be_global && parser_match(parser, TOK_ID))
+    is_anonym = false;
+
+  ast->func_def.name = is_anonym ? NULL : parser_eat(parser, TOK_ID)->val;
+
   parser_eat(parser, TOK_LPAREN);
 
   if (!parser_match(parser, TOK_RPAREN)) {
     ast->func_def.param_size = 1;
     ast->func_def.param_names = SEAL_CALLOC(1, sizeof(char*));
+    ast->func_def.param_names[0] = parser_eat(parser, TOK_ID)->val;
   }
 
   while (!parser_match(parser, TOK_RPAREN)) {
@@ -499,12 +506,18 @@ static ast_t* parser_parse_func_def(parser_t* parser)
 
   parser_eat(parser, TOK_RPAREN);
 
-  parser_eat(parser, TOK_NEWL);
-  parser_eat(parser, TOK_INDENT);
+  if (parser_match(parser, TOK_NEWL)) {
+    parser_eat(parser, TOK_NEWL);
+    parser_eat(parser, TOK_INDENT);
 
-  ast->func_def.comp = parser_parse_statements(parser, true, false, false, false);
+    ast->func_def.comp = parser_parse_statements(parser, true, false, false, false);
 
-  parser_eat(parser, TOK_DEDENT);
+    parser_eat(parser, TOK_DEDENT);
+  } else {
+    ast_t* ret_stmt = static_create_ast(AST_RETURN, parser_line(parser));
+    ret_stmt->_return.expr = parser_parse_expr(parser);
+    ast->func_def.comp = ret_stmt;
+  }
 
   return ast;
 }
@@ -531,7 +544,10 @@ static inline ast_t* parser_parse_return(parser_t* parser)
 /* parse operations & expressions */
 static inline ast_t* parser_parse_expr(parser_t* parser)
 {
-  return parser_match(parser, TOK_IF) ? parser_parse_ternary(parser) : parser_parse_or(parser);
+  return parser_match(parser, TOK_DEFINE) ?
+           parser_parse_func_def(parser, false) :
+         parser_match(parser, TOK_IF) ?
+           parser_parse_ternary(parser) : parser_parse_or(parser);
 }
 static ast_t* parser_parse_ternary(parser_t* parser)
 {
@@ -860,10 +876,12 @@ static ast_t* parser_parse_include(parser_t* parser)
   parser_advance(parser); // 'include'
   ast_t* ast = static_create_ast(AST_INCLUDE, parser_line(parser));
   if (parser_match(parser, TOK_ID)) {
+    ast->include.name = parser_eat(parser, TOK_ID)->val;
 
     if (parser_match(parser, TOK_AS)) {
       ast->include.has_alias = true;
       parser_advance(parser);
+      ast->include.alias = parser_eat(parser, TOK_ID)->val;
     }
     ast->include.type = SEAL_INCLUDE_LIB;
   } else {

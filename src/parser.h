@@ -44,7 +44,7 @@ static ast_t* parser_parse_else(parser_t*, bool is_func, bool is_loop);
 static ast_t* parser_parse_dowhile(parser_t*, bool is_func);
 static ast_t* parser_parse_while(parser_t*, bool is_func);
 static ast_t* parser_parse_for(parser_t*, bool is_func);
-static ast_t* parser_parse_func_def(parser_t*);
+static ast_t* parser_parse_func_def(parser_t*, bool can_be_global);
 static ast_t* parser_parse_struct_def(parser_t*);
 /* parse block control */
 static inline ast_t* parser_parse_skip(parser_t*);
