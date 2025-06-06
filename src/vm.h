@@ -55,7 +55,7 @@ static void print_stack(vm_t* vm)
         printf("%s\n", val.as._bool ? "true" : "false");
         break;
       case SEAL_FUNC:
-        printf("function: %p\n", val.as.func.type == FUNC_BUILTIN ? (void*)&val.as.func.as.builtin.cfunc : (void*)&val.as.func.as.userdef.bytecode);
+        printf("function: %p\n", val.as.func.type == FUNC_BUILTIN ? (void*)val.as.func.as.builtin.cfunc : (void*)val.as.func.as.userdef.bytecode);
         break;
       default:
         printf("STACK TYPE UNRECOGNIZED: %d\n", val.type);

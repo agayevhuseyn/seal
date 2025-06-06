@@ -31,7 +31,7 @@ static void __print_single(svalue_t s)
     printf("null");
     break;
   case SEAL_FUNC:
-    printf("function: %p", AS_FUNC(s).type == FUNC_BUILTIN ? (void*)&AS_FUNC(s).as.builtin.cfunc : (void*)&AS_FUNC(s).as.userdef.bytecode);
+    printf("function: %p", AS_FUNC(s).type == FUNC_BUILTIN ? (void*)AS_FUNC(s).as.builtin.cfunc : (void*)AS_FUNC(s).as.userdef.bytecode);
     break;
   case SEAL_LIST:
     printf("[");
