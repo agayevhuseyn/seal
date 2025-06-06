@@ -501,7 +501,7 @@ static void compile_func_def(cout_t* cout, ast_t* node, hashmap_t* scope, struct
   EMIT(&func_bc, OP_PUSH_NULL);
   EMIT(&func_bc, OP_HALT);
   func_obj.as.func.as.userdef.bytecode = func_bc.bytecodes;
-  func_obj.as.func.as.userdef.bytecode_size = func_bc.size;
+  //func_obj.as.func.as.userdef.bytecode_size = func_bc.size;
   func_obj.as.func.as.userdef.local_size = loc_scope.filled; /* assign size of locals */
 
   EMIT(bc, OP_PUSH_CONST); /* push function object to constant pool */
