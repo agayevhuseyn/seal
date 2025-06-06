@@ -36,23 +36,6 @@ static inline ast_t* parser_error(parser_t* parser, const char* err)
   return ast_nop();
 }
 
-static inline bool is_reserved_name(const char* name)
-{
-  for (int i = 0; i < RESERVED_NAMES_SIZE; i++) {
-    if (strcmp(name, RESERVED_NAMES[i]) == 0) return true;
-  }
-  return false;
-}
-
-static inline void kill_if_reserved_name(parser_t* parser, const char* name)
-{
-  if (is_reserved_name(name)) {
-    char err[ERR_LEN];
-    sprintf(err, "reserved name: \'%s\' used", name);
-    parser_error(parser, err);
-  }
-}
-
 static inline void kill_if_duplicated_name(parser_t* parser,
                                            const char* name,
                                            const char** names,
@@ -459,7 +442,6 @@ static ast_t* parser_parse_for(parser_t* parser, bool is_func)
   ast->_for.end   = NULL;
   ast->_for.step  = NULL;
 
-  kill_if_reserved_name(parser, (ast->_for.it_name = parser_eat(parser, TOK_ID)->val));
   parser_eat(parser, TOK_IN);
 
   if (is_numerical) {
@@ -497,21 +479,17 @@ static ast_t* parser_parse_func_def(parser_t* parser)
   ast_t* ast = static_create_ast(AST_FUNC_DEF, parser_line(parser));
   ast->func_def.param_size = 0;
 
-  kill_if_reserved_name(parser, ast->func_def.name = parser_eat(parser, TOK_ID)->val); // kill if reserved name
-
   parser_eat(parser, TOK_LPAREN);
 
   if (!parser_match(parser, TOK_RPAREN)) {
     ast->func_def.param_size = 1;
     ast->func_def.param_names = SEAL_CALLOC(1, sizeof(char*));
-    kill_if_reserved_name(parser, ast->func_def.param_names[0] = parser_eat(parser, TOK_ID)->val);
   }
 
   while (!parser_match(parser, TOK_RPAREN)) {
     parser_eat(parser, TOK_COMMA); // ',' separator
 
     const char* param = parser_eat(parser, TOK_ID)->val;
-    kill_if_reserved_name(parser, param);
     kill_if_duplicated_name(parser, param, ast->func_def.param_names, ast->func_def.param_size);
 
     ast->func_def.param_size++;
@@ -882,12 +860,10 @@ static ast_t* parser_parse_include(parser_t* parser)
   parser_advance(parser); // 'include'
   ast_t* ast = static_create_ast(AST_INCLUDE, parser_line(parser));
   if (parser_match(parser, TOK_ID)) {
-    kill_if_reserved_name(parser, ast->include.name = parser_eat(parser, TOK_ID)->val);
 
     if (parser_match(parser, TOK_AS)) {
       ast->include.has_alias = true;
       parser_advance(parser);
-      kill_if_reserved_name(parser, ast->include.alias = parser_eat(parser, TOK_ID)->val);
     }
     ast->include.type = SEAL_INCLUDE_LIB;
   } else {

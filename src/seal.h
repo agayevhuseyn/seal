@@ -20,24 +20,4 @@ typedef double    seal_float;
 typedef uint8_t   seal_byte;
 typedef uint16_t  seal_word;
 
-#define RESERVED_NAMES ( \
-    (char*[]) { "writeln",\
-                "readln",\
-                "format",\
-                "fopen",\
-                "fwrite",\
-                "fread",\
-                "fclose",\
-                "len",\
-                "push",\
-                "pop",\
-                "assert",\
-                "int",\
-                "float",\
-                "str",\
-                "bool",\
-                "exit"})
-
-#define RESERVED_NAMES_SIZE (sizeof(RESERVED_NAMES) / sizeof(RESERVED_NAMES[0]))
-
 #endif /* SEAL_H */
