@@ -317,6 +317,7 @@ static void compile_binary(cout_t* cout, ast_t* node, hashmap_t* scope, struct b
   case TOK_GE   : opcode = OP_GE;  break;
   case TOK_LT   : opcode = OP_LT;  break;
   case TOK_LE   : opcode = OP_LE;  break;
+  case TOK_IN   : opcode = OP_IN;  break;
   }
 
   EMIT(bc, opcode);
