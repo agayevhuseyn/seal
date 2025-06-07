@@ -473,6 +473,8 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
         ERROR("index exceed size");
       gc_decref(AS_LIST(left)->mems[AS_INT(right)]);
       PUSH(vm, AS_LIST(left)->mems[AS_INT(right)] = POP(vm));
+      gc_decref(left);
+      gc_decref(right);
       break;
     default:
       fprintf(stderr, "unrecognized op type: %d\n", op);
