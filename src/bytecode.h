@@ -51,6 +51,8 @@
 /* iterable */
 #define OP_GET_FIELD  0x26
 #define OP_SET_FIELD  0x27
+/* membership */
+#define OP_IN         0x28
 
 #define PRINT_BYTE(bytecodes, size) for(int i = 0; i < size; i++) { \
     printf("%d ", bytecodes[i]); \
