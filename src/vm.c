@@ -476,6 +476,18 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
       gc_decref(left);
       gc_decref(right);
       break;
+    case OP_IN:
+      right = POP(vm);
+      left  = POP(vm);
+      if (!IS_STRING(right))
+        ERROR("in operator requires string");
+      if (!IS_STRING(left))
+        ERROR("leftside must be string when rightside is string");
+
+      PUSH_BOOL(vm, strstr(AS_STRING(right), AS_STRING(left)) != NULL);
+      gc_decref(left);
+      gc_decref(right);
+      break;
     default:
       fprintf(stderr, "unrecognized op type: %d\n", op);
       return;
