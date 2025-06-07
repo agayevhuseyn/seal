@@ -55,6 +55,7 @@ static inline ast_t* parser_parse_expr(parser_t*);
 static ast_t* parser_parse_ternary(parser_t*);
 static ast_t* parser_parse_or(parser_t*);
 static ast_t* parser_parse_and(parser_t*);
+static ast_t* parser_parse_in(parser_t*);
 static ast_t* parser_parse_bor(parser_t*);
 static ast_t* parser_parse_xor(parser_t*);
 static ast_t* parser_parse_band(parser_t*);
