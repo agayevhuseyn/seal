@@ -53,6 +53,8 @@
 #define OP_SET_FIELD  0x27
 /* membership */
 #define OP_IN         0x28
+/* map */
+#define OP_GEN_MAP    0x29
 
 #define PRINT_BYTE(bytecodes, size) for(int i = 0; i < size; i++) { \
     printf("%d ", bytecodes[i]); \
@@ -106,6 +108,7 @@ static inline const char* op_name(int op)
   case OP_TYPOF     :  return "OP_TYPOF";
   case OP_GEN_LIST  :  return "OP_GEN_LIST";
   case OP_GET_FIELD :  return "OP_GET_FIELD";
+  case OP_GEN_MAP   :  return "OP_GEN_MAP";
   default           :  return "OP NOT RECOGNIZED";
   }
 }
@@ -135,7 +138,7 @@ static inline void print_op(seal_byte* bytes, size_t byte_size, seal_word* label
       printf("%d", idx);
       break;
     }
-    case OP_GET_LOCAL: case OP_SET_LOCAL: case OP_GEN_LIST: {
+    case OP_GET_LOCAL: case OP_SET_LOCAL: case OP_GEN_LIST: case OP_GEN_MAP: {
       seal_byte slot = bytes[i++];
       printf("%d", slot);
       break;
