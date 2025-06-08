@@ -78,5 +78,7 @@ static void compile_func_def(cout_t*, ast_t*, hashmap_t*, struct bytechunk*);
 static void compile_return(cout_t*, ast_t*, hashmap_t*, struct bytechunk*);
 static void compile_list(cout_t*, ast_t*, hashmap_t*, struct bytechunk*);
 static void compile_subscript(cout_t*, ast_t*, hashmap_t*, struct bytechunk*);
+static void compile_map(cout_t*, ast_t*, hashmap_t*, struct bytechunk*);
+static void compile_memacc(cout_t*, ast_t*, hashmap_t*, struct bytechunk*);
 
 #endif /* SEAL_COMPILER_H */

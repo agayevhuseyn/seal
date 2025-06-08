@@ -120,7 +120,9 @@ static void compile_node(cout_t* cout, ast_t* node, hashmap_t* scope, struct byt
         case AST_VAR_REF:
         case AST_FUNC_CALL:
         case AST_LIST:
+        case AST_MAP:
         case AST_SUBSCRIPT:
+        case AST_MEMACC:
           compile_node(cout, node->comp.stmts[i], scope, bc);
           EMIT(bc, OP_POP);
           break;
@@ -149,7 +151,9 @@ static void compile_node(cout_t* cout, ast_t* node, hashmap_t* scope, struct byt
   case AST_FUNC_DEF: compile_func_def(cout, node, scope, bc); break;
   case AST_RETURN: compile_return(cout, node, scope, bc); break;
   case AST_LIST: compile_list(cout, node, scope, bc); break;
+  case AST_MAP: compile_map(cout, node, scope, bc); break;
   case AST_SUBSCRIPT: compile_subscript(cout, node, scope, bc); break;
+  case AST_MEMACC: compile_memacc(cout, node, scope, bc); break;
   default:
     printf("%s is not implemented yet\n", hast_type_name(ast_type(node)));
     exit(1);
@@ -417,6 +421,13 @@ static void compile_assign(cout_t* cout, ast_t* node, hashmap_t* scope, struct b
       compile_node(cout, node->assign.var->subscript.index, scope, bc);
       EMIT(bc, OP_SET_FIELD);
       break;
+    case AST_MEMACC:
+      compile_node(cout, node->assign.var->memacc.main, scope, bc);
+      EMIT(bc, OP_PUSH_CONST); /* push opcode */
+      PUSH_CONST(cout, SEAL_VALUE_STRING_STATIC(node->assign.var->memacc.mem->var_ref.name)); /* push constant into pool */
+      SET_16BITS_INDEX(bc, CONST_IDX(cout));
+      EMIT(bc, OP_SET_FIELD);
+      break;
     default:
       __compiler_error("assigning to %s is not implemented yet", hast_type_name(lval_type));
       break;
@@ -537,5 +548,27 @@ static void compile_subscript(cout_t* cout, ast_t* node, hashmap_t* scope, struc
 {
   compile_node(cout, node->subscript.main, scope, bc);
   compile_node(cout, node->subscript.index, scope, bc);
+  EMIT(bc, OP_GET_FIELD);
+}
+static void compile_map(cout_t* cout, ast_t* node, hashmap_t* scope, struct bytechunk* bc)
+{
+  if (node->map.field_size > 255)
+    __compiler_error("maximum number of elements in a map initializer is 255");
+  for (int i = 0; i < node->map.field_size; i++) {
+    compile_node(cout, node->map.field_vals[i], scope, bc);
+    EMIT(bc, OP_PUSH_CONST); /* push opcode */
+    PUSH_CONST(cout, SEAL_VALUE_STRING_STATIC(node->map.field_names[i])); /* push constant into pool */
+    SET_16BITS_INDEX(bc, CONST_IDX(cout));
+  }
+
+  EMIT(bc, OP_GEN_MAP);
+  EMIT(bc, node->map.field_size);
+}
+static void compile_memacc(cout_t* cout, ast_t* node, hashmap_t* scope, struct bytechunk* bc)
+{
+  compile_node(cout, node->memacc.main, scope, bc);
+  EMIT(bc, OP_PUSH_CONST); /* push opcode */
+  PUSH_CONST(cout, SEAL_VALUE_STRING_STATIC(node->memacc.mem->var_ref.name)); /* push constant into pool */
+  SET_16BITS_INDEX(bc, CONST_IDX(cout));
   EMIT(bc, OP_GET_FIELD);
 }
