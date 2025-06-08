@@ -52,6 +52,32 @@ static void __print_single(svalue_t s)
     }
     printf("]");
     break;
+  case SEAL_MAP: {
+    int left = AS_MAP(s)->map->filled;
+    printf("{");
+    for (int i = 0; i < AS_MAP(s)->map->cap; i++) {
+      struct sh_entry e = AS_MAP(s)->map->entries[i];
+      if (e.key == NULL)
+        continue;
+      left--;
+      printf("%s: ", e.key);
+      if (IS_STRING(e.val))
+        printf("\'");
+
+      //if (IS_LIST(AS_LIST(s)->mems[i]) && AS_LIST(s) == AS_LIST(AS_LIST(s)->mems[i]))
+      //  printf("[...]");
+      //else
+      __print_single(e.val);
+
+      if (IS_STRING(e.val))
+        printf("\'");
+
+      if (left)
+        printf(", ");
+    }
+    printf("}");
+    break;
+  }
   default:
     printf("UNRECOGNIZED DATA TYPE TO PRINT ");
   }
