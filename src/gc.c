@@ -1,6 +1,6 @@
 #include "gc.h"
 
-#define IS_ALLOCATED(s) (IS_LIST(s) || (IS_STRING(s) && !s.as.string->is_static))
+#define IS_ALLOCATED(s) (IS_LIST(s) || IS_MAP(s) || (IS_STRING(s) && !s.as.string->is_static))
 
 inline void gc_decref(svalue_t s)
 {
@@ -25,6 +25,19 @@ inline void gc_decref(svalue_t s)
       free(s.as.list);
     }
     break;
+  case SEAL_MAP:
+    if (--s.as.map->ref_count <= 0) {
+
+      for (int i = 0; i < s.as.map->map->cap; i++) {
+        if (s.as.map->map->entries[i].key)
+          gc_decref(s.as.map->map->entries[i].val);
+      }
+
+      free(s.as.map->map->entries);
+      free(s.as.map->map);
+      free(s.as.map);
+    }
+    break;
   }
 }
 void gc_decref_nofree(svalue_t s)
@@ -38,6 +51,9 @@ void gc_decref_nofree(svalue_t s)
   case SEAL_LIST:
     --s.as.list->ref_count;
     break;
+  case SEAL_MAP:
+    --s.as.map->ref_count;
+    break;
   }
 }
 inline void gc_incref(svalue_t s)
@@ -50,6 +66,9 @@ inline void gc_incref(svalue_t s)
     break;
   case SEAL_LIST:
     s.as.list->ref_count++;
+    break;
+  case SEAL_MAP:
+    s.as.map->ref_count++;
     break;
   }
 }
