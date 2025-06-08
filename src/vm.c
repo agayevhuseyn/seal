@@ -382,8 +382,6 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
       DUP(vm);
       addr = FETCH(lf);
       left = POP(vm);
-      //if (IS_STRING(GET_LOCAL(lf, addr)) && GET_LOCAL(lf, addr).as.string)
-      //  printf("REF COUNT: %d\n", GET_LOCAL(lf, addr).as.string->ref_count);
       gc_decref(GET_LOCAL(lf, addr));
       SET_LOCAL(lf, addr, left);
       break;
@@ -439,8 +437,21 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
     case OP_GET_FIELD:
       right = POP(vm);
       left  = POP(vm);
+      if (IS_MAP(left)) {
+        if (IS_STRING(right)) {
+          struct sh_entry *e = shashmap_search(AS_MAP(left)->map, AS_STRING(right));
+          if (e == NULL || e->key == NULL)
+            ERROR("\'%s\' key is not found", AS_STRING(right));
+
+          PUSH(vm, e->val);
+          gc_decref(left);
+          gc_decref(right);
+          break;
+        }
+      }
+
       if (!IS_LIST(left) && !IS_STRING(left))
-        ERROR("subscript requires either list or string as base");
+        ERROR("subscript requires list or string as base");
       if (!IS_INT(right))
         ERROR("subscript requires int as field");
       if (AS_INT(right) < 0)
@@ -488,6 +499,16 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
       gc_decref(left);
       gc_decref(right);
       break;
+    case OP_GEN_MAP: {
+      seal_byte size = FETCH(lf);
+      left = SEAL_VALUE_MAP();
+      for (int i = 0; i < size; i++) {
+        const char *key = AS_STRING(POP(vm));
+        MAP_INSERT(left, key, POP(vm)); 
+      }
+      PUSH(vm, left);
+      break;
+    }
     default:
       fprintf(stderr, "unrecognized op type: %d\n", op);
       return;
