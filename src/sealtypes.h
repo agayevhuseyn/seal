@@ -63,6 +63,16 @@ struct seal_list {
   l->mems[l->size++] = e; \
 } while (0)
 
+typedef struct shashmap shashmap_t;
+
+struct seal_map {
+  shashmap_t *map;
+  int ref_count;
+};
+
+#define MAP_INSERT(s, k, v) do { \
+  shashmap_insert(AS_MAP(s)->map, k, v); \
+} while (0)
 
 struct svalue {
   seal_type type;
@@ -73,12 +83,92 @@ struct svalue {
     bool        _bool;
     struct seal_func func;
     struct seal_list *list;
-    /*
-    as_map;
-    */
+    struct seal_map *map;
   } as;
 };
 
+struct sh_entry {
+  unsigned int hash;
+  const char* key;
+  svalue_t val;
+  bool is_tombstone;
+};
+
+typedef struct shashmap {
+  struct sh_entry* entries;
+  size_t cap;
+  size_t filled;
+} shashmap_t;
+
+static inline unsigned int shash_str(const char* key) {
+  unsigned int hash = 0;
+  while (*key)
+    hash = *key++ + (hash << 6) + (hash << 16) - hash;
+
+  return hash;
+}
+
+static inline void shashmap_init(shashmap_t* hashmap, size_t size)
+{
+  hashmap->cap = size;
+  hashmap->filled = 0;
+  hashmap->entries = SEAL_CALLOC(size, sizeof(struct sh_entry));
+  for (int i = 0; i < size; i++) {
+    hashmap->entries[i].key = NULL;
+    hashmap->entries[i].is_tombstone = false;
+  }
+}
+
+static inline struct sh_entry* shashmap_search(shashmap_t* hashmap, const char* key)
+{
+  unsigned int idx = shash_str(key) % hashmap->cap;
+  struct sh_entry* tombstone = NULL;
+
+  struct sh_entry* e;
+  unsigned int start_idx = idx;
+  do {
+    e = &hashmap->entries[idx];
+    if (e->key == NULL) {
+      if (e->is_tombstone) {
+        if (tombstone == NULL)
+          tombstone = e;
+      } else {
+        return tombstone != NULL ? tombstone : e;
+      }
+    } else if (strcmp(e->key, key) == 0) {
+      return e;
+    }
+    idx = (idx + 1) % hashmap->cap;
+  } while (idx != start_idx);
+
+  return NULL;
+}
+
+static inline bool shashmap_insert(shashmap_t* hashmap, const char* key, svalue_t val)
+{
+  if (hashmap->filled >= hashmap->cap) {
+    printf("hashmap is full");
+    exit(1);
+    return false;
+  }
+
+  struct sh_entry* searched = shashmap_search(hashmap, key);
+  
+  struct sh_entry e = {
+    shash_str(key),
+    key,
+    val,
+    true
+  };
+
+  bool is_new = searched->key == NULL;
+  if (is_new)
+    hashmap->filled++;
+
+  *searched = e;
+
+  return is_new;
+}
 
 #define AS_INT(val)    ((val).as._int)
 #define AS_FLOAT(val)  ((val).as._float)
@@ -86,6 +176,7 @@ struct svalue {
 #define AS_BOOL(val)   ((val).as._bool)
 #define AS_FUNC(val)   ((val).as.func)
 #define AS_LIST(val)   ((val).as.list)
+#define AS_MAP(val)    ((val).as.map)
 
 #define VAL_TYPE(val)  ((val).type)
 #define IS_NULL(val)   (VAL_TYPE(val) == SEAL_NULL)
@@ -95,6 +186,7 @@ struct svalue {
 #define IS_BOOL(val)   (VAL_TYPE(val) == SEAL_BOOL)
 #define IS_FUNC(val)   (VAL_TYPE(val) == SEAL_FUNC)
 #define IS_LIST(val)   (VAL_TYPE(val) == SEAL_LIST)
+#define IS_MAP(val)    (VAL_TYPE(val) == SEAL_MAP)
 
 
 #define sval(t, mem, val) (svalue_t) { .type = t, .as.mem = val }
@@ -135,6 +227,19 @@ static inline svalue_t SEAL_VALUE_LIST()
   AS_LIST(res)->cap = 2;
   AS_LIST(res)->size = 0;
   AS_LIST(res)->mems = SEAL_CALLOC(AS_LIST(res)->cap, sizeof(svalue_t));
+  return res;
+}
+
+
+static inline svalue_t SEAL_VALUE_MAP()
+{
+  svalue_t res = {
+    .type = SEAL_MAP,
+    .as.map = SEAL_CALLOC(1, sizeof(struct seal_map)),
+  };
+  AS_MAP(res)->map = SEAL_CALLOC(1, sizeof(shashmap_t));
+  AS_MAP(res)->ref_count = 0;
+  shashmap_init(res.as.map->map, 256);
   return res;
 }
 
