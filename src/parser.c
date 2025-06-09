@@ -1,5 +1,6 @@
 #include "parser.h"
 #include "ast.h"
+#include <stdbool.h>
 
 #define parser_is_end(parser) ( \
   parser->i >= parser->tok_size)
@@ -139,7 +140,8 @@ static ast_t* parser_parse_statement(parser_t* parser,
   bool is_global_scope = !is_func && !is_ifelse && !is_loop;
   switch (parser_peek(parser)->type) {
     case TOK_IF:
-      if (is_inline) goto error;
+      if (is_inline)
+        return parser_parse_ternary(parser);
       return parser_parse_if(parser, true, is_func, is_loop);
     case TOK_DO:
       if (is_inline) goto error;
@@ -178,6 +180,15 @@ static ast_t* parser_parse_statement(parser_t* parser,
     sprintf(err, "unexpected \'%s\'", parser_peek(parser)->val);
     return parser_error(parser, err);
   }
+}
+static inline ast_t* parser_parse_inline_statement(parser_t* parser, bool is_func, bool is_ifelse, bool is_loop)
+{
+  ast_t* comp = static_create_ast(AST_COMP, parser_line(parser));
+  comp->comp.stmt_size = 1;
+  comp->comp.stmts = SEAL_CALLOC(1, sizeof(ast_t));
+  comp->comp.stmts[0] = parser_parse_statement(parser, is_func, is_ifelse, is_loop, true);
+
+  return comp;
 }
 
 /* parse datas */
@@ -328,7 +339,7 @@ static ast_t* parser_parse_if(parser_t* parser, bool can_be_ternary, bool is_fun
 
   if (parser_match(parser, TOK_THEN)) { // inline if
     parser_advance(parser); // 'then'
-    ast->_if.comp = parser_parse_statement(parser, is_func, true, is_loop, true);
+    ast->_if.comp = parser_parse_inline_statement(parser, is_func, true, is_loop);
   } else {
     parser_eat(parser, TOK_NEWL);
     parser_eat(parser, TOK_INDENT);
@@ -365,7 +376,7 @@ static ast_t* parser_parse_else(parser_t* parser, bool is_func, bool is_loop)
 
     parser_eat(parser, TOK_DEDENT);
   } else { // inline
-    ast->_else.comp = parser_parse_statement(parser, is_func, true, is_loop, true);
+    ast->_else.comp = parser_parse_inline_statement(parser, is_func, true, is_loop);
   }
 
   return ast;
@@ -386,7 +397,7 @@ static ast_t* parser_parse_dowhile(parser_t* parser, bool is_func)
     parser_eat(parser, TOK_WHILE);
     ast->_while.cond = parser_parse_expr(parser);
   } else {
-    ast->_while.comp = parser_parse_statement(parser, is_func, false, true, true);
+    ast->_while.comp = parser_parse_inline_statement(parser, is_func, false, true);
     parser_eat(parser, TOK_WHILE);
     ast->_while.cond = parser_parse_expr(parser);
   }
@@ -403,7 +414,7 @@ static ast_t* parser_parse_while(parser_t* parser, bool is_func)
 
   if (parser_match(parser, TOK_DO)) { // inline while
     parser_advance(parser); // 'do'
-    ast->_while.comp = parser_parse_statement(parser, is_func, false, true, true);
+    ast->_while.comp = parser_parse_inline_statement(parser, is_func, false, true);
   } else {
     parser_eat(parser, TOK_NEWL);
     parser_eat(parser, TOK_INDENT);
