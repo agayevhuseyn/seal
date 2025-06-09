@@ -249,6 +249,11 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
     case OP_DUP:
       DUP(vm);
       break;
+    case OP_SWAP:
+      left = *(vm->sp - 1);
+      *(vm->sp - 1) = *(vm->sp - 2);
+      *(vm->sp - 2) = left;
+      break;
     case OP_ADD:
       right = POP(vm);
       left  = POP(vm);
@@ -479,9 +484,10 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
           struct sh_entry *e = shashmap_search(AS_MAP(left)->map, AS_STRING(right));
           if (e == NULL)
             ERROR("cannot insert, hashmap is full");
-          if (e->key != NULL) {
+          if (e->key != NULL)
             gc_decref(e->val);
-          }
+          else
+            AS_MAP(left)->map->filled++;
 
           e->val = POP(vm);
           e->key = AS_STRING(right);
