@@ -474,6 +474,27 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
     case OP_SET_FIELD:
       right = POP(vm);
       left  = POP(vm);
+      if (IS_MAP(left)) {
+        if (IS_STRING(right)) {
+          struct sh_entry *e = shashmap_search(AS_MAP(left)->map, AS_STRING(right));
+          if (e == NULL)
+            ERROR("cannot insert, hashmap is full");
+          if (e->key != NULL) {
+            gc_decref(e->val);
+          }
+
+          e->val = POP(vm);
+          e->key = AS_STRING(right);
+          e->hash = shash_str(AS_STRING(right));
+          e->is_tombstone = true;
+
+          PUSH(vm, e->val);
+          gc_decref(left);
+          gc_decref(right);
+          break;
+        }
+      }
+
       if (!IS_LIST(left))
         ERROR("subscript assign requires only list as base");
       if (!IS_INT(right))
