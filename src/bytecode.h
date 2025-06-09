@@ -12,49 +12,50 @@
 #define OP_PUSH_CONST 0x06
 #define OP_POP        0x07
 #define OP_DUP        0x08
-#define OP_JUMP       0x09
-#define OP_JTRUE      0x0a
-#define OP_JFALSE     0x0b
-#define OP_CALL       0x0c
+#define OP_SWAP       0x09
+#define OP_JUMP       0x0a
+#define OP_JTRUE      0x0b
+#define OP_JFALSE     0x0c
+#define OP_CALL       0x0d
 /* variable */
-#define OP_GET_GLOBAL 0x0d
-#define OP_SET_GLOBAL 0x0e
-#define OP_GET_LOCAL  0x0f
-#define OP_SET_LOCAL  0x10
+#define OP_GET_GLOBAL 0x0e
+#define OP_SET_GLOBAL 0x0f
+#define OP_GET_LOCAL  0x10
+#define OP_SET_LOCAL  0x11
 /* arithmetic */
-#define OP_ADD        0x11
-#define OP_SUB        0x12
-#define OP_MUL        0x13
-#define OP_DIV        0x14
-#define OP_MOD        0x15
+#define OP_ADD        0x12
+#define OP_SUB        0x13
+#define OP_MUL        0x14
+#define OP_DIV        0x15
+#define OP_MOD        0x16
 /* bitwise binary */
-#define OP_AND        0x16
-#define OP_OR         0x17
-#define OP_XOR        0x18
-#define OP_SHL        0x19
-#define OP_SHR        0x1a
+#define OP_AND        0x17
+#define OP_OR         0x18
+#define OP_XOR        0x19
+#define OP_SHL        0x1a
+#define OP_SHR        0x1b
 /* comparison */
-#define OP_GT         0x1b
-#define OP_GE         0x1c
-#define OP_LT         0x1d
-#define OP_LE         0x1e
+#define OP_GT         0x1c
+#define OP_GE         0x1d
+#define OP_LT         0x1e
+#define OP_LE         0x1f
 /* equality */
-#define OP_EQ         0x1f
-#define OP_NE         0x20
+#define OP_EQ         0x20
+#define OP_NE         0x21
 /* unary */
-#define OP_NOT        0x21
-#define OP_NEG        0x22
-#define OP_TYPOF      0x23
-#define OP_BNOT       0x24
+#define OP_NOT        0x22
+#define OP_NEG        0x23
+#define OP_TYPOF      0x24
+#define OP_BNOT       0x25
 /* list */
-#define OP_GEN_LIST   0x25
+#define OP_GEN_LIST   0x26
 /* iterable */
-#define OP_GET_FIELD  0x26
-#define OP_SET_FIELD  0x27
+#define OP_GET_FIELD  0x27
+#define OP_SET_FIELD  0x28
 /* membership */
-#define OP_IN         0x28
+#define OP_IN         0x29
 /* map */
-#define OP_GEN_MAP    0x29
+#define OP_GEN_MAP    0x2a
 
 #define PRINT_BYTE(bytecodes, size) for(int i = 0; i < size; i++) { \
     printf("%d ", bytecodes[i]); \
@@ -73,6 +74,7 @@ static inline const char* op_name(int op)
   case OP_PUSH_FALSE:  return "OP_PUSH_FALSE";
   case OP_POP       :  return "OP_POP";
   case OP_DUP       :  return "OP_DUP";
+  case OP_SWAP      :  return "OP_SWAP";
   case OP_JUMP      :  return "OP_JUMP";
   case OP_JTRUE     :  return "OP_JTRUE";
   case OP_JFALSE    :  return "OP_JFALSE";
