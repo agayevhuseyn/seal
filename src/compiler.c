@@ -378,13 +378,35 @@ static void compile_val(cout_t* cout, ast_t* node, hashmap_t* scope, struct byte
 }
 static void compile_func_call(cout_t* cout, ast_t* node, hashmap_t* scope, struct bytechunk* bc)
 {
-  compile_node(cout, node->func_call.main, scope, bc);
+  if (!node->func_call.is_method) {
+    if (node->func_call.arg_size > 255)
+      __compiler_error("maximum number of arguments in a function call is 255");
+
+    compile_node(cout, node->func_call.main, scope, bc);
+
+    for (int i = 0; i < node->func_call.arg_size; i++)
+      compile_node(cout, node->func_call.args[i], scope, bc);
+
+    EMIT(bc, OP_CALL);
+    EMIT(bc, node->func_call.arg_size);
+    return;
+  }
+  if (node->func_call.arg_size > 254)
+    __compiler_error("maximum number of arguments in a method call is 254");
+
+  compile_node(cout, node->func_call.main->memacc.main, scope, bc);
+  EMIT(bc, OP_DUP);
+  EMIT(bc, OP_PUSH_CONST); /* push opcode */
+  PUSH_CONST(cout, SEAL_VALUE_STRING_STATIC(node->func_call.main->memacc.mem->var_ref.name)); /* push constant into pool */
+  SET_16BITS_INDEX(bc, CONST_IDX(cout));
+  EMIT(bc, OP_GET_FIELD);
+  EMIT(bc, OP_SWAP);
 
   for (int i = 0; i < node->func_call.arg_size; i++)
     compile_node(cout, node->func_call.args[i], scope, bc);
 
   EMIT(bc, OP_CALL);
-  EMIT(bc, node->func_call.arg_size);
+  EMIT(bc, node->func_call.arg_size + 1);
 }
 static void compile_assign(cout_t* cout, ast_t* node, hashmap_t* scope, struct bytechunk* bc)
 {
