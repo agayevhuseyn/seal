@@ -129,6 +129,21 @@ svalue_t __seal_int(seal_byte argc, svalue_t* argv)
 
   return SEAL_VALUE_INT(atoi(AS_STRING(argv[0])));
 }
+svalue_t __seal_float(seal_byte argc, svalue_t* argv)
+{
+  svalue_t s = argv[0];
+  
+  switch (s.type) {
+  case SEAL_INT:
+    return SEAL_VALUE_FLOAT(AS_INT(s));
+  case SEAL_FLOAT:
+    return s;
+  case SEAL_STRING:
+    return SEAL_VALUE_FLOAT(atof(AS_STRING(s)));
+  }
+
+  return SEAL_VALUE_NULL;
+}
 svalue_t __seal_push(seal_byte argc, svalue_t* argv)
 {
   if (!IS_LIST(argv[0]))
