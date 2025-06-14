@@ -60,7 +60,7 @@ int main(int argc, char** argv)
   cout_t cout;
   compile(&cout, root);
   if (PRINT_OP)
-    print_op(cout.bc.bytecodes, cout.bc.size, cout.labels, cout.label_ptr - cout.labels);
+    print_op(cout.bc.bytecodes, cout.bc.size, cout.labels, cout.label_pool_size);
   if (PRINT_BYTE)
     PRINT_BYTE(cout.bc.bytecodes, cout.bc.size)
   if (PRINT_CONST_POOL)
@@ -69,12 +69,19 @@ int main(int argc, char** argv)
   vm_t vm;
   init_vm(&vm, &cout);
   svalue_t locals[cout.main_scope_local_size];
-  struct local_frame main_frame = { .locals = locals, .bytecodes = vm.bytecodes, .ip = vm.bytecodes };
+  struct local_frame main_frame = {
+    .locals = locals,
+    .bytecodes = vm.bytecodes,
+    .ip = vm.bytecodes,
+    .label_pool = cout.labels,
+    .const_pool = cout.const_pool
+  };
   eval_vm(&vm, &main_frame);
   if (PRINT_STACK)
     print_stack(&vm);
 
-  //print_op(hashmap_search(&vm.globals, "f")->val.as.func.as.userdef.bytecode, 33, cout.labels, cout.label_ptr - cout.labels);
+  //svalue_t func = hashmap_search(&vm.globals, "add")->val;
+  //print_op(func.as.func.as.userdef.bytecode, 36, cout.labels, 0);
 
   /* FREE EVERYTHING AFTER BEING USED */
   
