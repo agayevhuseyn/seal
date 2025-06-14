@@ -15,8 +15,8 @@
   PUSH(vm, top); \
 } while (0)
 #define POP(vm) (*(--(vm->sp)))
-#define JUMP(vm, lf, addr) (lf->ip = &lf->bytecodes[vm->label_ptr[addr]])
-#define GET_CONST(vm, i) (vm->const_pool_ptr[i])
+#define JUMP(lf, addr) (lf->ip = &lf->bytecodes[lf->label_pool[addr]])
+#define GET_CONST(lf, i) (lf->const_pool[i])
 #define ERROR(...) (fprintf(stderr, __VA_ARGS__), fprintf(stderr, "\n"), exit(EXIT_FAILURE))
 #define ERROR_UNRY_OP(op, val) ERROR("\'%s\' unary operator is not supported for \'%s\'", #op, seal_type_name(val.type))
 #define ERROR_BIN_OP(op, left, right) ERROR("\'%s\' operator is not supported for \'%s\' and \'%s\'", #op, seal_type_name(left.type), seal_type_name(right.type))
@@ -205,6 +205,7 @@ void init_vm(vm_t* vm, cout_t* cout)
   REGISTER_BUILTIN_FUNC(&vm->globals, __seal_exit, "exit", 1, false);
   REGISTER_BUILTIN_FUNC(&vm->globals, __seal_len, "len", 1, false);
   REGISTER_BUILTIN_FUNC(&vm->globals, __seal_int, "int", 1, false);
+  REGISTER_BUILTIN_FUNC(&vm->globals, __seal_float, "float", 1, false);
   REGISTER_BUILTIN_FUNC(&vm->globals, __seal_push, "push", 2, false);
   REGISTER_BUILTIN_FUNC(&vm->globals, __seal_pop, "pop", 1, false);
 }
@@ -225,8 +226,8 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
     case OP_PUSH_CONST:
       idx = FETCH(lf) << 8;
       idx |= FETCH(lf);
-      PUSH(vm, GET_CONST(vm, idx));
-      left = GET_CONST(vm, idx);
+      PUSH(vm, GET_CONST(lf, idx));
+      left = GET_CONST(lf, idx);
       break;
     case OP_PUSH_INT:
       idx = FETCH(lf) << 8;
@@ -346,26 +347,26 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
     case OP_JUMP:
       addr = FETCH(lf) << 8;
       addr |= FETCH(lf);
-      JUMP(vm, lf, addr);
+      JUMP(lf, addr);
       break;
     case OP_JFALSE:
       addr = FETCH(lf) << 8;
       addr |= FETCH(lf);
       left = POP(vm);
       if (!TO_BOOL(left))
-        JUMP(vm, lf, addr);
+        JUMP(lf, addr);
       break;
     case OP_JTRUE:
       addr = FETCH(lf) << 8;
       addr |= FETCH(lf);
       left = POP(vm);
       if (TO_BOOL(left))
-        JUMP(vm, lf, addr);
+        JUMP(lf, addr);
       break;
     case OP_GET_GLOBAL:
       addr = FETCH(lf) << 8;
       addr |= FETCH(lf);
-      sym = AS_STRING(GET_CONST(vm, addr));
+      sym = AS_STRING(GET_CONST(lf, addr));
       entry = hashmap_search(&vm->globals, sym);
       if (entry && entry->key) {
         PUSH(vm, entry->val);
@@ -377,7 +378,7 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
       DUP(vm);
       addr = FETCH(lf) << 8;
       addr |= FETCH(lf);
-      hashmap_insert(&vm->globals, AS_STRING(GET_CONST(vm, addr)), POP(vm));
+      hashmap_insert(&vm->globals, AS_STRING(GET_CONST(lf, addr)), POP(vm));
       break;
     case OP_GET_LOCAL:
       addr = FETCH(lf);
@@ -415,7 +416,13 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
       } else {
         svalue_t locals[func.as.func.as.userdef.local_size];
         memset(locals, 0, sizeof(locals));
-        struct local_frame func_lf = { .locals = locals, .ip = AS_USERDEF_FUNC(func).bytecode, .bytecodes = AS_USERDEF_FUNC(func).bytecode };
+        struct local_frame func_lf = {
+          .locals = locals,
+          .ip = AS_USERDEF_FUNC(func).bytecode,
+          .bytecodes = AS_USERDEF_FUNC(func).bytecode,
+          .const_pool = AS_USERDEF_FUNC(func).const_pool,
+          .label_pool = AS_USERDEF_FUNC(func).label_pool
+        };
         for (int i = 0; i < argc; i++) {
           SET_LOCAL((&func_lf), i, argv[i]);
         }
