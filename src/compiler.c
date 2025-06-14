@@ -4,6 +4,7 @@
 #include "sealtypes.h"
 
 #define START_BYTECODE_CAP 8
+#define START_POOL_CAP     8
 
 #define EMIT(bc, byte) do { \
     if ((bc)->size >= (bc)->cap) { \
@@ -30,17 +31,25 @@
 #define CUR_ADDR(bc) (&((bc)->bytecodes[CUR_IDX(bc)])) /* returns address of current empty byte */
 #define CUR_ADDR_OFFSET(bc) (&((bc)->bytecodes[CUR_IDX(bc)]) - (bc)->bytecodes) /* returns address of current empty byte */
 
-#define PUSH_CONST(cout, val) ( \
+#define PUSH_CONST(pool, val) do { \
     /* check bounds */ \
-    *cout->const_pool_ptr++ = (val))
+    if ((pool)->size >= (pool)->cap) { \
+      (pool)->vals = SEAL_REALLOC((pool)->vals, sizeof(svalue_t) * ((pool)->cap *= 2)); \
+    } \
+    (pool)->vals[(pool)->size++] = (val); \
+} while (0)
 
-#define CONST_IDX(cout) ((seal_word)(cout->const_pool_ptr - cout->const_pool - 1)) /* WARNING!! only use this after pushing constant */
+#define CONST_IDX(pool) ((seal_word)((pool)->size - 1)) /* WARNING!! only use this after pushing constant */
 
-#define PUSH_LABEL(cout, addr) ( \
+#define PUSH_LABEL(pool, addr) do { \
     /* check bounds */ \
-    *cout->label_ptr++ = (addr))
+    if ((pool)->size >= (pool)->cap) { \
+      (pool)->addrs = SEAL_REALLOC((pool)->addrs, sizeof(seal_word) * ((pool)->cap *= 2)); \
+    } \
+    (pool)->addrs[(pool)->size++] = (addr); \
+} while (0)
 
-#define LABEL_IDX(cout) ((seal_word)(cout->label_ptr - cout->labels - 1)) /* WARNING!! only use this after pushing label */
+#define LABEL_IDX(pool) ((seal_word)((pool)->size - 1)) /* WARNING!! only use this after pushing label */
 
 #define __compiler_error(...) do { \
     fprintf(stderr, __VA_ARGS__); \
@@ -64,34 +73,56 @@
 
 void compile(cout_t* cout, ast_t* node)
 {
-  /* constant values' pool */
-  cout->const_pool_ptr = cout->const_pool = SEAL_CALLOC(CONST_POOL_SIZE, sizeof(svalue_t));
+  struct scope main_scope = {
+    .cp = {
+      .cap = START_POOL_CAP,
+      .size = 0,
+      .vals = SEAL_CALLOC(START_POOL_CAP, sizeof(svalue_t)),
+    },
+    .bc = {
+      .cap = START_BYTECODE_CAP,
+      .size = 0,
+      .bytecodes = SEAL_CALLOC(START_BYTECODE_CAP, sizeof(seal_byte))
+    },
+    .lp = {
+      .cap = START_POOL_CAP,
+      .size = 0,
+      .addrs = SEAL_CALLOC(START_POOL_CAP, sizeof(seal_word))
+    }
+  };
+  ///* constant values' pool */
+  //cout->const_pool_ptr = cout->const_pool = SEAL_CALLOC(CONST_POOL_SIZE, sizeof(svalue_t));
 
-  /* label array */
-  cout->label_ptr = cout->labels = SEAL_CALLOC(LABEL_SIZE, sizeof(seal_word));
+  ///* label array */
+  //cout->label_ptr = cout->labels = SEAL_CALLOC(LABEL_SIZE, sizeof(seal_word));
 
-  cout->bc.bytecodes = SEAL_CALLOC(START_BYTECODE_CAP, sizeof(seal_byte));
+  //cout->bc.bytecodes = SEAL_CALLOC(START_BYTECODE_CAP, sizeof(seal_byte));
 
-  /* skip address offset stack */
-  cout->skip_addr_offset_stack = SEAL_CALLOC(UNCOND_JMP_MAX_SIZE, sizeof(size_t));
+  ///* skip address offset stack */
+  //cout->skip_addr_offset_stack = SEAL_CALLOC(UNCOND_JMP_MAX_SIZE, sizeof(size_t));
 
-  cout->stop_addr_offset_stack = SEAL_CALLOC(UNCOND_JMP_MAX_SIZE, sizeof(size_t));
+  //cout->stop_addr_offset_stack = SEAL_CALLOC(UNCOND_JMP_MAX_SIZE, sizeof(size_t));
 
-  cout->skip_size = 0;
-  cout->stop_size = 0;
-  cout->bc.size = 0;
-  cout->bc.cap  = START_BYTECODE_CAP;
+  //cout->skip_size = 0;
+  //cout->stop_size = 0;
+  //cout->bc.size = 0;
+  //cout->bc.cap  = START_BYTECODE_CAP;
 
-  hashmap_t main_scope;
   struct h_entry entries[LOCAL_MAX];
-  hashmap_init_static(&main_scope, entries, LOCAL_MAX);
-  compile_node(cout, node, &main_scope, &cout->bc);
+  hashmap_init_static(&main_scope.loctable, entries, LOCAL_MAX);
 
-  cout->main_scope_local_size = main_scope.filled;
+  compile_node(cout, node, &main_scope);
 
-  EMIT(&cout->bc, OP_HALT); /* push halt opcode for termination */
+  cout->main_scope_local_size = main_scope.loctable.filled;
+  cout->labels = main_scope.lp.addrs;
+  cout->const_pool = main_scope.cp.vals;
+  cout->const_pool_size = main_scope.cp.size;
+  cout->label_pool_size = main_scope.lp.size;
+
+  EMIT(&main_scope.bc, OP_HALT); /* push halt opcode for termination */
+  cout->bc = main_scope.bc;
 }
-static void compile_node(cout_t* cout, ast_t* node, hashmap_t* scope, struct bytechunk* bc)
+static void compile_node(cout_t* cout, ast_t* node, struct scope *s)
 {
   switch (node->type) {
   case AST_COMP:
@@ -108,9 +139,9 @@ static void compile_node(cout_t* cout, ast_t* node, hashmap_t* scope, struct byt
         case AST_BOOL:
           break;
         case AST_FUNC_DEF:
-          compile_node(cout, node->comp.stmts[i], scope, bc);
+          compile_node(cout, node->comp.stmts[i], s);
           if (node->comp.stmts[i]->func_def.name == NULL)
-            EMIT(bc, OP_POP);
+            EMIT(&s->bc, OP_POP);
           break;
         case AST_UNARY:
         case AST_BINARY:
@@ -123,43 +154,43 @@ static void compile_node(cout_t* cout, ast_t* node, hashmap_t* scope, struct byt
         case AST_MAP:
         case AST_SUBSCRIPT:
         case AST_MEMACC:
-          compile_node(cout, node->comp.stmts[i], scope, bc);
-          EMIT(bc, OP_POP);
+          compile_node(cout, node->comp.stmts[i], s);
+          EMIT(&s->bc, OP_POP);
           break;
         default:
-          compile_node(cout, node->comp.stmts[i], scope, bc);
+          compile_node(cout, node->comp.stmts[i], s);
           break;
       }
     }
   break;
   case AST_NULL: case AST_INT: case AST_FLOAT: case AST_STRING: case AST_BOOL:
-    compile_val(cout, node, scope, bc);
+    compile_val(cout, node, s);
     break;
   case AST_NOP:
     break;
-  case AST_IF: compile_if(cout, node, scope, bc); break;
-  case AST_WHILE: compile_while(cout, node, scope, bc); break;
-  case AST_DOWHILE: compile_dowhile(cout, node, scope, bc); break;
-  case AST_SKIP: compile_skip(cout, bc); break;
-  case AST_STOP: compile_stop(cout, bc); break;
-  case AST_UNARY: compile_unary(cout, node, scope, bc); break;
-  case AST_BINARY: compile_binary(cout, node, scope, bc); break;
-  case AST_BINARY_BOOL: compile_logical_binary(cout, node, scope, bc); break;
-  case AST_FUNC_CALL: compile_func_call(cout, node, scope, bc); break;
-  case AST_ASSIGN: compile_assign(cout, node, scope, bc); break;
-  case AST_VAR_REF: compile_var_ref(cout, node, scope, bc); break;
-  case AST_FUNC_DEF: compile_func_def(cout, node, scope, bc); break;
-  case AST_RETURN: compile_return(cout, node, scope, bc); break;
-  case AST_LIST: compile_list(cout, node, scope, bc); break;
-  case AST_MAP: compile_map(cout, node, scope, bc); break;
-  case AST_SUBSCRIPT: compile_subscript(cout, node, scope, bc); break;
-  case AST_MEMACC: compile_memacc(cout, node, scope, bc); break;
+  case AST_IF: compile_if(cout, node, s); break;
+  case AST_WHILE: compile_while(cout, node, s); break;
+  case AST_DOWHILE: compile_dowhile(cout, node, s); break;
+  case AST_SKIP: compile_skip(cout, s); break;
+  case AST_STOP: compile_stop(cout, s); break;
+  case AST_UNARY: compile_unary(cout, node, s); break;
+  case AST_BINARY: compile_binary(cout, node, s); break;
+  case AST_BINARY_BOOL: compile_logical_binary(cout, node, s); break;
+  case AST_FUNC_CALL: compile_func_call(cout, node, s); break;
+  case AST_ASSIGN: compile_assign(cout, node, s); break;
+  case AST_VAR_REF: compile_var_ref(cout, node, s); break;
+  case AST_FUNC_DEF: compile_func_def(cout, node, s); break;
+  case AST_RETURN: compile_return(cout, node, s); break;
+  case AST_LIST: compile_list(cout, node, s); break;
+  case AST_MAP: compile_map(cout, node, s); break;
+  case AST_SUBSCRIPT: compile_subscript(cout, node, s); break;
+  case AST_MEMACC: compile_memacc(cout, node, s); break;
   default:
     printf("%s is not implemented yet\n", hast_type_name(ast_type(node)));
     exit(1);
   }
 }
-static void compile_if(cout_t* cout, ast_t* node, hashmap_t* scope, struct bytechunk* bc)
+static void compile_if(cout_t* cout, ast_t* node, struct scope *s)
 {
   int jmp_size = 0;
   ast_t* temp_node = node;
@@ -169,123 +200,123 @@ static void compile_if(cout_t* cout, ast_t* node, hashmap_t* scope, struct bytec
   }
   size_t end_addr_offsets[jmp_size], *end_addr_offset = end_addr_offsets, next_addr_offset;
 
-  compile_node(cout, node->_if.cond, scope, bc);
+  compile_node(cout, node->_if.cond, s);
 
-  EMIT(bc, OP_JFALSE);
-  next_addr_offset = CUR_ADDR_OFFSET(bc);
-  EMIT_DUMMY(bc, 2); /* push 2 dummy values that will be changed later */
+  EMIT(&s->bc, OP_JFALSE);
+  next_addr_offset = CUR_ADDR_OFFSET(&s->bc);
+  EMIT_DUMMY(&s->bc, 2); /* push 2 dummy values that will be changed later */
 
-  compile_node(cout, node->_if.comp, scope, bc);
+  compile_node(cout, node->_if.comp, s);
 
   if (jmp_size == 0) {
-    PUSH_LABEL(cout, CUR_IDX(bc));
-    REPLACE_16BITS_INDEX(bc->bytecodes + next_addr_offset, LABEL_IDX(cout));
+    PUSH_LABEL(&s->lp, CUR_IDX(&s->bc));
+    REPLACE_16BITS_INDEX(s->bc.bytecodes + next_addr_offset, LABEL_IDX(&s->lp));
     return;
   }
   
-  EMIT(bc, OP_JUMP);
-  *end_addr_offset++ = CUR_ADDR_OFFSET(bc);
-  EMIT_DUMMY(bc, 2);
+  EMIT(&s->bc, OP_JUMP);
+  *end_addr_offset++ = CUR_ADDR_OFFSET(&s->bc);
+  EMIT_DUMMY(&s->bc, 2);
 
-  PUSH_LABEL(cout, CUR_IDX(bc));
-  REPLACE_16BITS_INDEX(bc->bytecodes + next_addr_offset, LABEL_IDX(cout));
+  PUSH_LABEL(&s->lp, CUR_IDX(&s->bc));
+  REPLACE_16BITS_INDEX(s->bc.bytecodes + next_addr_offset, LABEL_IDX(&s->lp));
 
   do {
     node = node->_if._else;
 
     if (node->type == AST_IF) {
-      compile_node(cout, node->_if.cond, scope, bc);
+      compile_node(cout, node->_if.cond, s);
 
-      EMIT(bc, OP_JFALSE);
-      next_addr_offset = CUR_ADDR_OFFSET(bc);
-      EMIT_DUMMY(bc, 2);
+      EMIT(&s->bc, OP_JFALSE);
+      next_addr_offset = CUR_ADDR_OFFSET(&s->bc);
+      EMIT_DUMMY(&s->bc, 2);
 
-      compile_node(cout, node->_if.comp, scope, bc);
+      compile_node(cout, node->_if.comp, s);
 
       if (end_addr_offset - end_addr_offsets != jmp_size) {
         if (node->_if.has_else) {
-          EMIT(bc, OP_JUMP);
-          *end_addr_offset++ = CUR_ADDR_OFFSET(bc);
-          EMIT_DUMMY(bc, 2);
+          EMIT(&s->bc, OP_JUMP);
+          *end_addr_offset++ = CUR_ADDR_OFFSET(&s->bc);
+          EMIT_DUMMY(&s->bc, 2);
         }
       }
 
-      PUSH_LABEL(cout, CUR_IDX(bc));
-      REPLACE_16BITS_INDEX(bc->bytecodes + next_addr_offset, LABEL_IDX(cout));
+      PUSH_LABEL(&s->lp, CUR_IDX(&s->bc));
+      REPLACE_16BITS_INDEX(s->bc.bytecodes + next_addr_offset, LABEL_IDX(&s->lp));
     } else {
-      compile_node(cout, node->_else.comp, scope, bc);
+      compile_node(cout, node->_else.comp, s);
     }
   } while (node->_if.has_else);
 
-  PUSH_LABEL(cout, CUR_IDX(bc));
+  PUSH_LABEL(&s->lp, CUR_IDX(&s->bc));
 
   for (int i = 0; i < jmp_size; i++) {
-    REPLACE_16BITS_INDEX(bc->bytecodes + end_addr_offsets[i], LABEL_IDX(cout));
+    REPLACE_16BITS_INDEX(s->bc.bytecodes + end_addr_offsets[i], LABEL_IDX(&s->lp));
   }
 }
-static void compile_while(cout_t* cout, ast_t* node, hashmap_t* scope, struct bytechunk* bc)
+static void compile_while(cout_t* cout, ast_t* node, struct scope *s)
 {
   size_t skip_start_size = cout->skip_size;
   size_t stop_start_size = cout->stop_size;
 
-  PUSH_LABEL(cout, CUR_IDX(bc));
-  seal_word start = LABEL_IDX(cout);
-  compile_node(cout, node->_while.cond, scope, bc);
+  PUSH_LABEL(&s->lp, CUR_IDX(&s->bc));
+  seal_word start = LABEL_IDX(&s->lp);
+  compile_node(cout, node->_while.cond, s);
 
-  EMIT(bc, OP_JFALSE);
-  size_t end_addr_offs = CUR_ADDR_OFFSET(bc);
-  EMIT_DUMMY(bc, 2);
+  EMIT(&s->bc, OP_JFALSE);
+  size_t end_addr_offs = CUR_ADDR_OFFSET(&s->bc);
+  EMIT_DUMMY(&s->bc, 2);
 
-  compile_node(cout, node->_while.comp, scope, bc);
+  compile_node(cout, node->_while.comp, s);
 
-  EMIT(bc, OP_JUMP);
-  SET_16BITS_INDEX(bc, start);
-  PUSH_LABEL(cout, CUR_IDX(bc));
-  REPLACE_16BITS_INDEX(bc->bytecodes + end_addr_offs, LABEL_IDX(cout));
+  EMIT(&s->bc, OP_JUMP);
+  SET_16BITS_INDEX(&s->bc, start);
+  PUSH_LABEL(&s->lp, CUR_IDX(&s->bc));
+  REPLACE_16BITS_INDEX(s->bc.bytecodes + end_addr_offs, LABEL_IDX(&s->lp));
 
   if (skip_start_size < cout->skip_size) {
     for (int i = skip_start_size; i < cout->skip_size; i++) {
-      REPLACE_16BITS_INDEX(bc->bytecodes + cout->skip_addr_offset_stack[i], start);
+      REPLACE_16BITS_INDEX(s->bc.bytecodes + cout->skip_addr_offset_stack[i], start);
     }
   }
   cout->skip_size = skip_start_size;
   if (stop_start_size < cout->stop_size) {
     for (int i = stop_start_size; i < cout->stop_size; i++) {
-      REPLACE_16BITS_INDEX(bc->bytecodes + cout->stop_addr_offset_stack[i], LABEL_IDX(cout));
+      REPLACE_16BITS_INDEX(s->bc.bytecodes + cout->stop_addr_offset_stack[i], LABEL_IDX(&s->lp));
     }
   }
   cout->stop_size = stop_start_size;
 }
-static void compile_dowhile(cout_t* cout, ast_t* node, hashmap_t* scope, struct bytechunk* bc)
+static void compile_dowhile(cout_t* cout, ast_t* node, struct scope *s)
 {
-  PUSH_LABEL(cout, CUR_IDX(bc));
-  seal_word start = LABEL_IDX(cout);
+  PUSH_LABEL(&s->lp, CUR_IDX(&s->bc));
+  seal_word start = LABEL_IDX(&s->lp);
 
-  compile_node(cout, node->_while.comp, scope, bc);
-  compile_node(cout, node->_while.cond, scope, bc);
+  compile_node(cout, node->_while.comp, s);
+  compile_node(cout, node->_while.cond, s);
 
-  EMIT(bc, OP_JTRUE);
-  SET_16BITS_INDEX(bc, start);
+  EMIT(&s->bc, OP_JTRUE);
+  SET_16BITS_INDEX(&s->bc, start);
 }
-static inline void compile_skip(cout_t* cout, struct bytechunk* bc)
+static inline void compile_skip(cout_t* cout, struct scope *s)
 {
   if (cout->skip_size >= UNCOND_JMP_MAX_SIZE)
     __compiler_error("maximum number of skip has exceeded");
-  EMIT(bc, OP_JUMP);
-  cout->skip_addr_offset_stack[cout->skip_size++] = CUR_ADDR_OFFSET(bc);
-  EMIT_DUMMY(bc, 2);
+  EMIT(&s->bc, OP_JUMP);
+  cout->skip_addr_offset_stack[cout->skip_size++] = CUR_ADDR_OFFSET(&s->bc);
+  EMIT_DUMMY(&s->bc, 2);
 }
-static inline void compile_stop(cout_t* cout, struct bytechunk* bc)
+static inline void compile_stop(cout_t* cout, struct scope *s)
 {
   if (cout->stop_size >= UNCOND_JMP_MAX_SIZE)
     __compiler_error("maximum number of stop has exceeded");
-  EMIT(bc, OP_JUMP);
-  cout->stop_addr_offset_stack[cout->stop_size++] = CUR_ADDR_OFFSET(bc);
-  EMIT_DUMMY(bc, 2);
+  EMIT(&s->bc, OP_JUMP);
+  cout->stop_addr_offset_stack[cout->stop_size++] = CUR_ADDR_OFFSET(&s->bc);
+  EMIT_DUMMY(&s->bc, 2);
 }
-static void compile_unary(cout_t* cout, ast_t* node, hashmap_t* scope, struct bytechunk* bc)
+static void compile_unary(cout_t* cout, ast_t* node, struct scope *s)
 {
-  compile_node(cout, node->unary.expr, scope, bc);
+  compile_node(cout, node->unary.expr, s);
 
   seal_byte opcode;
   switch (node->unary.op_type) {
@@ -296,12 +327,12 @@ static void compile_unary(cout_t* cout, ast_t* node, hashmap_t* scope, struct by
   case TOK_PLUS  : return;
   }
 
-  EMIT(bc, opcode);
+  EMIT(&s->bc, opcode);
 }
-static void compile_binary(cout_t* cout, ast_t* node, hashmap_t* scope, struct bytechunk* bc)
+static void compile_binary(cout_t* cout, ast_t* node, struct scope *s)
 {
-  compile_node(cout, node->binary.left, scope, bc);
-  compile_node(cout, node->binary.right, scope, bc);
+  compile_node(cout, node->binary.left, s);
+  compile_node(cout, node->binary.right, s);
   
   seal_byte opcode;
   switch (node->binary.op_type) {
@@ -324,42 +355,42 @@ static void compile_binary(cout_t* cout, ast_t* node, hashmap_t* scope, struct b
   case TOK_IN   : opcode = OP_IN;  break;
   }
 
-  EMIT(bc, opcode);
+  EMIT(&s->bc, opcode);
 }
-static void compile_logical_binary(cout_t* cout, ast_t* node, hashmap_t* scope, struct bytechunk* bc)
+static void compile_logical_binary(cout_t* cout, ast_t* node, struct scope *s)
 {
-  compile_node(cout, node->binary.left, scope, bc);
+  compile_node(cout, node->binary.left, s);
 
-  EMIT(bc, OP_DUP); /* duplicate to compare for jumping */
+  EMIT(&s->bc, OP_DUP); /* duplicate to compare for jumping */
 
   if (node->binary.op_type == TOK_AND) {
-    EMIT(bc, OP_JFALSE);
+    EMIT(&s->bc, OP_JFALSE);
   } else {
-    EMIT(bc, OP_JTRUE);
+    EMIT(&s->bc, OP_JTRUE);
   }
-  size_t end_addr_offset = CUR_ADDR_OFFSET(bc); /* store end address offset */
-  EMIT_DUMMY(bc, 2); /* push zero bytes */
-  EMIT(bc, OP_POP); /* pop first value if no jump */
+  size_t end_addr_offset = CUR_ADDR_OFFSET(&s->bc); /* store end address offset */
+  EMIT_DUMMY(&s->bc, 2); /* push zero bytes */
+  EMIT(&s->bc, OP_POP); /* pop first value if no jump */
 
-  compile_node(cout, node->binary.right, scope, bc); /* compile right side */
+  compile_node(cout, node->binary.right, s); /* compile right side */
 
-  PUSH_LABEL(cout, CUR_IDX(bc)); /* push end label */
-  REPLACE_16BITS_INDEX(bc->bytecodes + end_addr_offset, LABEL_IDX(cout)); /* replace zero bytes with end label index */
+  PUSH_LABEL(&s->lp, CUR_IDX(&s->bc)); /* push end label */
+  REPLACE_16BITS_INDEX(s->bc.bytecodes + end_addr_offset, LABEL_IDX(&s->lp)); /* replace zero bytes with end label index */
 }
-static void compile_val(cout_t* cout, ast_t* node, hashmap_t* scope, struct bytechunk* bc)
+static void compile_val(cout_t* cout, ast_t* node, struct scope *s)
 {
   svalue_t val;
   switch (node->type) {
   case AST_BOOL:
-    EMIT(bc, node->boolean.val ? OP_PUSH_TRUE : OP_PUSH_FALSE);
+    EMIT(&s->bc, node->boolean.val ? OP_PUSH_TRUE : OP_PUSH_FALSE);
     return;
   case AST_NULL:
-    EMIT(bc, OP_PUSH_NULL);
+    EMIT(&s->bc, OP_PUSH_NULL);
     return;
   case AST_INT:
     if (node->integer.val <= 0xFFFF) {
-      EMIT(bc, OP_PUSH_INT);
-      SET_16BITS_INDEX(bc, node->integer.val);
+      EMIT(&s->bc, OP_PUSH_INT);
+      SET_16BITS_INDEX(&s->bc, node->integer.val);
       return;
     }
     val = sval(SEAL_INT, _int, node->integer.val);
@@ -372,43 +403,43 @@ static void compile_val(cout_t* cout, ast_t* node, hashmap_t* scope, struct byte
     break;
   }
 
-  EMIT(bc, OP_PUSH_CONST); /* push opcode */
-  PUSH_CONST(cout, val); /* push constant into pool */
-  SET_16BITS_INDEX(bc, CONST_IDX(cout));
+  EMIT(&s->bc, OP_PUSH_CONST); /* push opcode */
+  PUSH_CONST(&s->cp, val); /* push constant into pool */
+  SET_16BITS_INDEX(&s->bc, CONST_IDX(&s->cp));
 }
-static void compile_func_call(cout_t* cout, ast_t* node, hashmap_t* scope, struct bytechunk* bc)
+static void compile_func_call(cout_t* cout, ast_t* node, struct scope *s)
 {
   if (!node->func_call.is_method) {
     if (node->func_call.arg_size > 255)
       __compiler_error("maximum number of arguments in a function call is 255");
 
-    compile_node(cout, node->func_call.main, scope, bc);
+    compile_node(cout, node->func_call.main, s);
 
     for (int i = 0; i < node->func_call.arg_size; i++)
-      compile_node(cout, node->func_call.args[i], scope, bc);
+      compile_node(cout, node->func_call.args[i], s);
 
-    EMIT(bc, OP_CALL);
-    EMIT(bc, node->func_call.arg_size);
+    EMIT(&s->bc, OP_CALL);
+    EMIT(&s->bc, node->func_call.arg_size);
     return;
   }
   if (node->func_call.arg_size > 254)
     __compiler_error("maximum number of arguments in a method call is 254");
 
-  compile_node(cout, node->func_call.main->memacc.main, scope, bc);
-  EMIT(bc, OP_DUP);
-  EMIT(bc, OP_PUSH_CONST); /* push opcode */
-  PUSH_CONST(cout, SEAL_VALUE_STRING_STATIC(node->func_call.main->memacc.mem->var_ref.name)); /* push constant into pool */
-  SET_16BITS_INDEX(bc, CONST_IDX(cout));
-  EMIT(bc, OP_GET_FIELD);
-  EMIT(bc, OP_SWAP);
+  compile_node(cout, node->func_call.main->memacc.main, s);
+  EMIT(&s->bc, OP_DUP);
+  EMIT(&s->bc, OP_PUSH_CONST); /* push opcode */
+  PUSH_CONST(&s->cp, SEAL_VALUE_STRING_STATIC(node->func_call.main->memacc.mem->var_ref.name)); /* push constant into pool */
+  SET_16BITS_INDEX(&s->bc, CONST_IDX(&s->cp));
+  EMIT(&s->bc, OP_GET_FIELD);
+  EMIT(&s->bc, OP_SWAP);
 
   for (int i = 0; i < node->func_call.arg_size; i++)
-    compile_node(cout, node->func_call.args[i], scope, bc);
+    compile_node(cout, node->func_call.args[i], s);
 
-  EMIT(bc, OP_CALL);
-  EMIT(bc, node->func_call.arg_size + 1);
+  EMIT(&s->bc, OP_CALL);
+  EMIT(&s->bc, node->func_call.arg_size + 1);
 }
-static void compile_assign(cout_t* cout, ast_t* node, hashmap_t* scope, struct bytechunk* bc)
+static void compile_assign(cout_t* cout, ast_t* node, struct scope *s)
 {
   int lval_type = node->assign.var->type;
   svalue_t sym;
@@ -416,39 +447,39 @@ static void compile_assign(cout_t* cout, ast_t* node, hashmap_t* scope, struct b
   struct h_entry* e;
 
   if (node->assign.op_type == TOK_ASSIGN) {
-    compile_node(cout, node->assign.expr, scope, bc);
+    compile_node(cout, node->assign.expr, s);
 
     switch (lval_type) {
     case AST_VAR_REF:
       if (node->assign.var->var_ref.is_global) {
-        EMIT(bc, OP_SET_GLOBAL);
+        EMIT(&s->bc, OP_SET_GLOBAL);
         sym = SEAL_VALUE_STRING_STATIC(node->assign.var->var_ref.name);
-        PUSH_CONST(cout, sym);
-        SET_16BITS_INDEX(bc, CONST_IDX(cout));
+        PUSH_CONST(&s->cp, sym);
+        SET_16BITS_INDEX(&s->bc, CONST_IDX(&s->cp));
       } else {
-        EMIT(bc, OP_SET_LOCAL);
+        EMIT(&s->bc, OP_SET_LOCAL);
         name = node->assign.var->var_ref.name;
-        e = hashmap_search(scope, name);
+        e = hashmap_search(&s->loctable, name);
         if (e == NULL)
-          __compiler_error("maximum number of locals is %zu", scope->cap);
+          __compiler_error("maximum number of locals is %d", LOCAL_MAX);
 
         if (e->key == NULL)
-          hashmap_insert_e(scope, e, name, SEAL_VALUE_INT(scope->filled));
+          hashmap_insert_e(&s->loctable, e, name, SEAL_VALUE_INT((&s->loctable)->filled));
 
-        EMIT(bc, e->val.as._int); /* push slot index of local table */
+        EMIT(&s->bc, e->val.as._int); /* push slot index of local table */
       }
       break;
     case AST_SUBSCRIPT:
-      compile_node(cout, node->assign.var->subscript.main, scope, bc);
-      compile_node(cout, node->assign.var->subscript.index, scope, bc);
-      EMIT(bc, OP_SET_FIELD);
+      compile_node(cout, node->assign.var->subscript.main, s);
+      compile_node(cout, node->assign.var->subscript.index, s);
+      EMIT(&s->bc, OP_SET_FIELD);
       break;
     case AST_MEMACC:
-      compile_node(cout, node->assign.var->memacc.main, scope, bc);
-      EMIT(bc, OP_PUSH_CONST); /* push opcode */
-      PUSH_CONST(cout, SEAL_VALUE_STRING_STATIC(node->assign.var->memacc.mem->var_ref.name)); /* push constant into pool */
-      SET_16BITS_INDEX(bc, CONST_IDX(cout));
-      EMIT(bc, OP_SET_FIELD);
+      compile_node(cout, node->assign.var->memacc.main, s);
+      EMIT(&s->bc, OP_PUSH_CONST); /* push opcode */
+      PUSH_CONST(&s->cp, SEAL_VALUE_STRING_STATIC(node->assign.var->memacc.mem->var_ref.name)); /* push constant into pool */
+      SET_16BITS_INDEX(&s->bc, CONST_IDX(&s->cp));
+      EMIT(&s->bc, OP_SET_FIELD);
       break;
     default:
       __compiler_error("assigning to %s is not implemented yet", hast_type_name(lval_type));
@@ -460,27 +491,27 @@ static void compile_assign(cout_t* cout, ast_t* node, hashmap_t* scope, struct b
     switch (lval_type) {
     case AST_VAR_REF:
       if (node->assign.var->var_ref.is_global) {
-        EMIT(bc, OP_GET_GLOBAL);
+        EMIT(&s->bc, OP_GET_GLOBAL);
         sym = SEAL_VALUE_STRING_STATIC(node->assign.var->var_ref.name);
-        PUSH_CONST(cout, sym);
-        sym_idx = CONST_IDX(cout);
-        SET_16BITS_INDEX(bc, sym_idx);
-        compile_node(cout, node->assign.expr, scope, bc);
-        EMIT(bc, AUG_ASSIGN_OP_TYPE(aug_type));
-        EMIT(bc, OP_SET_GLOBAL);
-        SET_16BITS_INDEX(bc, sym_idx);
+        PUSH_CONST(&s->cp, sym);
+        sym_idx = CONST_IDX(&s->cp);
+        SET_16BITS_INDEX(&s->bc, sym_idx);
+        compile_node(cout, node->assign.expr, s);
+        EMIT(&s->bc, AUG_ASSIGN_OP_TYPE(aug_type));
+        EMIT(&s->bc, OP_SET_GLOBAL);
+        SET_16BITS_INDEX(&s->bc, sym_idx);
       } else {
-        EMIT(bc, OP_GET_LOCAL);
+        EMIT(&s->bc, OP_GET_LOCAL);
         name = node->assign.var->var_ref.name;
-        e = hashmap_search(scope, name);
+        e = hashmap_search(&s->loctable, name);
         if (e == NULL || e->key == NULL)
           __compiler_error("\'%s\' is not defined", name);
 
-        EMIT(bc, e->val.as._int); /* push slot index of local table */
-        compile_node(cout, node->assign.expr, scope, bc);
-        EMIT(bc, AUG_ASSIGN_OP_TYPE(aug_type));
-        EMIT(bc, OP_SET_LOCAL);
-        EMIT(bc, e->val.as._int);
+        EMIT(&s->bc, e->val.as._int); /* push slot index of local table */
+        compile_node(cout, node->assign.expr, s);
+        EMIT(&s->bc, AUG_ASSIGN_OP_TYPE(aug_type));
+        EMIT(&s->bc, OP_SET_LOCAL);
+        EMIT(&s->bc, e->val.as._int);
       }
       break;
     default:
@@ -489,34 +520,45 @@ static void compile_assign(cout_t* cout, ast_t* node, hashmap_t* scope, struct b
     }
   }
 }
-static void compile_var_ref(cout_t* cout, ast_t* node, hashmap_t* scope, struct bytechunk* bc)
+static void compile_var_ref(cout_t* cout, ast_t* node, struct scope *s)
 {
   if (!node->var_ref.is_global) {
-    struct h_entry* e = hashmap_search(scope, node->var_ref.name);
+    struct h_entry* e = hashmap_search(&s->loctable, node->var_ref.name);
     if (e == NULL || e->key == NULL)
       goto global;
 
-    EMIT(bc, OP_GET_LOCAL);
-    EMIT(bc, e->val.as._int);
+    EMIT(&s->bc, OP_GET_LOCAL);
+    EMIT(&s->bc, e->val.as._int);
   } else {
 global:
-    EMIT(bc, OP_GET_GLOBAL);
-    PUSH_CONST(cout, SEAL_VALUE_STRING_STATIC(node->var_ref.name));
-    SET_16BITS_INDEX(bc, CONST_IDX(cout));
+    EMIT(&s->bc, OP_GET_GLOBAL);
+    PUSH_CONST(&s->cp, SEAL_VALUE_STRING_STATIC(node->var_ref.name));
+    SET_16BITS_INDEX(&s->bc, CONST_IDX(&s->cp));
   }
 }
-static void compile_func_def(cout_t* cout, ast_t* node, hashmap_t* scope, struct bytechunk* bc)
+static void compile_func_def(cout_t* cout, ast_t* node, struct scope *s)
 {
-  struct bytechunk func_bc;
-  func_bc.cap = START_BYTECODE_CAP;
-  func_bc.size = 0;
-  func_bc.bytecodes = SEAL_CALLOC(START_BYTECODE_CAP, sizeof(seal_byte));
-
-  hashmap_t loc_scope;
+  struct scope loc_scope = {
+    .cp = {
+      .cap = START_POOL_CAP,
+      .size = 0,
+      .vals = SEAL_CALLOC(START_POOL_CAP, sizeof(svalue_t)),
+    },
+    .bc = {
+      .cap = START_BYTECODE_CAP,
+      .size = 0,
+      .bytecodes = SEAL_CALLOC(START_BYTECODE_CAP, sizeof(seal_byte))
+    },
+    .lp = {
+      .cap = START_POOL_CAP,
+      .size = 0,
+      .addrs = SEAL_CALLOC(START_POOL_CAP, sizeof(seal_word))
+    }
+  };
   struct h_entry entries[LOCAL_MAX];
-  hashmap_init_static(&loc_scope, entries, LOCAL_MAX);
+  hashmap_init_static(&loc_scope.loctable, entries, LOCAL_MAX);
   for (int i = 0; i < node->func_def.param_size; i++) {
-    hashmap_insert(&loc_scope, node->func_def.param_names[i], SEAL_VALUE_INT(i));
+    hashmap_insert(&loc_scope.loctable, node->func_def.param_names[i], SEAL_VALUE_INT(i));
   }
 
   svalue_t func_obj = {
@@ -531,66 +573,67 @@ static void compile_func_def(cout_t* cout, ast_t* node, hashmap_t* scope, struct
     }
   };
 
-  compile_node(cout, node->func_def.comp, &loc_scope, &func_bc);
-  EMIT(&func_bc, OP_PUSH_NULL);
-  EMIT(&func_bc, OP_HALT);
-  func_obj.as.func.as.userdef.bytecode = func_bc.bytecodes;
-  //func_obj.as.func.as.userdef.bytecode_size = func_bc.size;
-  func_obj.as.func.as.userdef.local_size = loc_scope.filled; /* assign size of locals */
+  compile_node(cout, node->func_def.comp, &loc_scope);
+  EMIT(&loc_scope.bc, OP_PUSH_NULL);
+  EMIT(&loc_scope.bc, OP_HALT);
+  func_obj.as.func.as.userdef.bytecode = loc_scope.bc.bytecodes;
+  func_obj.as.func.as.userdef.const_pool = loc_scope.cp.vals;
+  func_obj.as.func.as.userdef.label_pool = loc_scope.lp.addrs;
+  func_obj.as.func.as.userdef.local_size = loc_scope.loctable.filled; /* assign size of locals */
 
-  EMIT(bc, OP_PUSH_CONST); /* push function object to constant pool */
-  PUSH_CONST(cout, func_obj);
-  SET_16BITS_INDEX(bc, CONST_IDX(cout));
+  EMIT(&s->bc, OP_PUSH_CONST); /* push function object to constant pool */
+  PUSH_CONST(&s->cp, func_obj);
+  SET_16BITS_INDEX(&s->bc, CONST_IDX(&s->cp));
 
   bool is_anonym = node->func_def.name == NULL;
 
   if (!is_anonym) {
-    EMIT(bc, OP_SET_GLOBAL); /* set function object to global */
-    PUSH_CONST(cout, SEAL_VALUE_STRING_STATIC(node->func_def.name));
-    SET_16BITS_INDEX(bc, CONST_IDX(cout));
-    EMIT(bc, OP_POP);
+    EMIT(&s->bc, OP_SET_GLOBAL); /* set function object to global */
+    PUSH_CONST(&s->cp, SEAL_VALUE_STRING_STATIC(node->func_def.name));
+    SET_16BITS_INDEX(&s->bc, CONST_IDX(&s->cp));
+    EMIT(&s->bc, OP_POP);
   }
 }
-static void compile_return(cout_t* cout, ast_t* node, hashmap_t* scope, struct bytechunk* bc)
+static void compile_return(cout_t* cout, ast_t* node, struct scope *s)
 {
-  compile_node(cout, node->_return.expr, scope, bc);
-  EMIT(bc, OP_HALT);
+  compile_node(cout, node->_return.expr, s);
+  EMIT(&s->bc, OP_HALT);
 }
-static void compile_list(cout_t* cout, ast_t* node, hashmap_t* scope, struct bytechunk* bc)
+static void compile_list(cout_t* cout, ast_t* node, struct scope *s)
 {
   if (node->list.mem_size > 255)
     __compiler_error("maximum number of elements in a list initializer is 255");
   for (int i = 0; i < node->list.mem_size; i++)
-    compile_node(cout, node->list.mems[i], scope, bc);
+    compile_node(cout, node->list.mems[i], s);
 
-  EMIT(bc, OP_GEN_LIST);
-  EMIT(bc, node->list.mem_size);
+  EMIT(&s->bc, OP_GEN_LIST);
+  EMIT(&s->bc, node->list.mem_size);
 }
-static void compile_subscript(cout_t* cout, ast_t* node, hashmap_t* scope, struct bytechunk* bc)
+static void compile_subscript(cout_t* cout, ast_t* node, struct scope *s)
 {
-  compile_node(cout, node->subscript.main, scope, bc);
-  compile_node(cout, node->subscript.index, scope, bc);
-  EMIT(bc, OP_GET_FIELD);
+  compile_node(cout, node->subscript.main, s);
+  compile_node(cout, node->subscript.index, s);
+  EMIT(&s->bc, OP_GET_FIELD);
 }
-static void compile_map(cout_t* cout, ast_t* node, hashmap_t* scope, struct bytechunk* bc)
+static void compile_map(cout_t* cout, ast_t* node, struct scope *s)
 {
   if (node->map.field_size > 255)
     __compiler_error("maximum number of elements in a map initializer is 255");
   for (int i = 0; i < node->map.field_size; i++) {
-    compile_node(cout, node->map.field_vals[i], scope, bc);
-    EMIT(bc, OP_PUSH_CONST); /* push opcode */
-    PUSH_CONST(cout, SEAL_VALUE_STRING_STATIC(node->map.field_names[i])); /* push constant into pool */
-    SET_16BITS_INDEX(bc, CONST_IDX(cout));
+    compile_node(cout, node->map.field_vals[i], s);
+    EMIT(&s->bc, OP_PUSH_CONST); /* push opcode */
+    PUSH_CONST(&s->cp, SEAL_VALUE_STRING_STATIC(node->map.field_names[i])); /* push constant into pool */
+    SET_16BITS_INDEX(&s->bc, CONST_IDX(&s->cp));
   }
 
-  EMIT(bc, OP_GEN_MAP);
-  EMIT(bc, node->map.field_size);
+  EMIT(&s->bc, OP_GEN_MAP);
+  EMIT(&s->bc, node->map.field_size);
 }
-static void compile_memacc(cout_t* cout, ast_t* node, hashmap_t* scope, struct bytechunk* bc)
+static void compile_memacc(cout_t* cout, ast_t* node, struct scope *s)
 {
-  compile_node(cout, node->memacc.main, scope, bc);
-  EMIT(bc, OP_PUSH_CONST); /* push opcode */
-  PUSH_CONST(cout, SEAL_VALUE_STRING_STATIC(node->memacc.mem->var_ref.name)); /* push constant into pool */
-  SET_16BITS_INDEX(bc, CONST_IDX(cout));
-  EMIT(bc, OP_GET_FIELD);
+  compile_node(cout, node->memacc.main, s);
+  EMIT(&s->bc, OP_PUSH_CONST); /* push opcode */
+  PUSH_CONST(&s->cp, SEAL_VALUE_STRING_STATIC(node->memacc.mem->var_ref.name)); /* push constant into pool */
+  SET_16BITS_INDEX(&s->bc, CONST_IDX(&s->cp));
+  EMIT(&s->bc, OP_GET_FIELD);
 }
