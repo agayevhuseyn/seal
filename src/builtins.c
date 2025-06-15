@@ -120,7 +120,7 @@ svalue_t __seal_len(seal_byte argc, svalue_t* argv)
   if (!IS_STRING(argv[0]) && !IS_LIST(argv[0]))
     BUILTIN_FUNC_ARG_ERR("len", 0, VAL_TYPE(argv[0]), SEAL_STRING | SEAL_LIST);
 
-  return SEAL_VALUE_INT(IS_STRING(argv[0]) ? strlen(AS_STRING(argv[0])) : AS_LIST(argv[0])->size);
+  return SEAL_VALUE_INT(IS_STRING(argv[0]) ? argv[0].as.string->size : AS_LIST(argv[0])->size);
 }
 svalue_t __seal_int(seal_byte argc, svalue_t* argv)
 {
