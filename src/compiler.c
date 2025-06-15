@@ -99,14 +99,12 @@ void compile(cout_t* cout, ast_t* node)
   //cout->bc.bytecodes = SEAL_CALLOC(START_BYTECODE_CAP, sizeof(seal_byte));
 
   ///* skip address offset stack */
-  //cout->skip_addr_offset_stack = SEAL_CALLOC(UNCOND_JMP_MAX_SIZE, sizeof(size_t));
+  cout->skip_addr_offset_stack = SEAL_CALLOC(UNCOND_JMP_MAX_SIZE, sizeof(size_t));
 
-  //cout->stop_addr_offset_stack = SEAL_CALLOC(UNCOND_JMP_MAX_SIZE, sizeof(size_t));
+  cout->stop_addr_offset_stack = SEAL_CALLOC(UNCOND_JMP_MAX_SIZE, sizeof(size_t));
 
-  //cout->skip_size = 0;
-  //cout->stop_size = 0;
-  //cout->bc.size = 0;
-  //cout->bc.cap  = START_BYTECODE_CAP;
+  cout->skip_size = 0;
+  cout->stop_size = 0;
 
   struct h_entry entries[LOCAL_MAX];
   hashmap_init_static(&main_scope.loctable, entries, LOCAL_MAX);
