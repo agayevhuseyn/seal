@@ -11,10 +11,11 @@
 #define SEAL_LIST        (1 << 5)    /* 00100000 */
 #define SEAL_MAP         (1 << 6)    /* 01000000 */
 #define SEAL_FUNC        (1 << 7)    /* 10000000 */
+#define SEAL_MOD         (1 << 8)   /* 100000000 */
 #define SEAL_NUMBER      (SEAL_INT | SEAL_FLOAT)    /* 00000110 */
 #define SEAL_ITERABLE    (SEAL_STRING | SEAL_LIST)  /* 00000110 */
 #define SEAL_ANY         (SEAL_NULL | SEAL_INT | SEAL_FLOAT | SEAL_STRING | \
-                          SEAL_BOOL | SEAL_LIST | SEAL_MAP | SEAL_FUNC)  /* 11111111 */
+                          SEAL_BOOL | SEAL_LIST | SEAL_MAP | SEAL_FUNC | SEAL_MOD)  /* 111111111 */
 
 
 typedef int seal_type;
@@ -75,6 +76,14 @@ struct seal_map {
   shashmap_insert(AS_MAP(s)->map, k, v); \
 } while (0)
 
+struct vm;
+
+struct seal_module {
+  shashmap_t *globals;
+  struct vm *vm;
+  const char *name;
+};
+
 struct svalue {
   seal_type type;
   union {
@@ -85,6 +94,7 @@ struct svalue {
     struct seal_func func;
     struct seal_list *list;
     struct seal_map *map;
+    struct seal_module *mod;
   } as;
 };
 
