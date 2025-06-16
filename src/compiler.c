@@ -640,10 +640,13 @@ static void compile_memacc(cout_t* cout, ast_t* node, struct scope *s)
 static void compile_include(cout_t *cout, ast_t *node, struct scope *s)
 {
   EMIT(&s->bc, OP_PUSH_CONST); /* push opcode */
-  PUSH_CONST(&s->cp, SEAL_VALUE_STRING_STATIC(node->include.name)); /* push constant into pool */
+  PUSH_CONST(&s->cp, SEAL_VALUE_STRING_STATIC(node->include.name)); /* push module name into pool */
   SET_16BITS_INDEX(&s->bc, CONST_IDX(&s->cp));
 
   EMIT(&s->bc, OP_INCLUDE);
   EMIT(&s->bc, OP_SET_GLOBAL);
+  if (node->include.alias)
+    PUSH_CONST(&s->cp, SEAL_VALUE_STRING_STATIC(node->include.alias)); /* push alias name into pool */
+
   SET_16BITS_INDEX(&s->bc, CONST_IDX(&s->cp));
 }
