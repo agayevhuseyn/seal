@@ -78,6 +78,9 @@ static void __print_single(svalue_t s)
     printf("}");
     break;
   }
+  case SEAL_MOD:
+    printf("module: %s (%p)", s.as.mod->name, s.as.mod->vm);
+    break;
   default:
     printf("UNRECOGNIZED DATA TYPE TO PRINT ");
   }
