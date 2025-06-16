@@ -79,7 +79,6 @@ struct seal_map {
 struct vm;
 
 struct seal_module {
-  shashmap_t *globals;
   struct vm *vm;
   const char *name;
 };
@@ -188,6 +187,7 @@ static inline bool shashmap_insert(shashmap_t* hashmap, const char* key, svalue_
 #define AS_FUNC(val)   ((val).as.func)
 #define AS_LIST(val)   ((val).as.list)
 #define AS_MAP(val)    ((val).as.map)
+#define AS_MOD(val)    ((val).as.mod)
 
 #define VAL_TYPE(val)  ((val).type)
 #define IS_NULL(val)   (VAL_TYPE(val) == SEAL_NULL)
@@ -198,6 +198,7 @@ static inline bool shashmap_insert(shashmap_t* hashmap, const char* key, svalue_
 #define IS_FUNC(val)   (VAL_TYPE(val) == SEAL_FUNC)
 #define IS_LIST(val)   (VAL_TYPE(val) == SEAL_LIST)
 #define IS_MAP(val)    (VAL_TYPE(val) == SEAL_MAP)
+#define IS_MOD(val)    (VAL_TYPE(val) == SEAL_MOD)
 
 
 #define sval(t, mem, val) (svalue_t) { .type = t, .as.mem = val }
