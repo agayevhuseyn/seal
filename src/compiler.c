@@ -152,6 +152,7 @@ static void compile_node(cout_t* cout, ast_t* node, struct scope *s)
         case AST_MAP:
         case AST_SUBSCRIPT:
         case AST_MEMACC:
+        case AST_INCLUDE:
           compile_node(cout, node->comp.stmts[i], s);
           EMIT(&s->bc, OP_POP);
           break;
@@ -183,6 +184,7 @@ static void compile_node(cout_t* cout, ast_t* node, struct scope *s)
   case AST_MAP: compile_map(cout, node, s); break;
   case AST_SUBSCRIPT: compile_subscript(cout, node, s); break;
   case AST_MEMACC: compile_memacc(cout, node, s); break;
+  case AST_INCLUDE: compile_include(cout, node, s); break;
   default:
     printf("%s is not implemented yet\n", hast_type_name(ast_type(node)));
     exit(1);
@@ -634,4 +636,14 @@ static void compile_memacc(cout_t* cout, ast_t* node, struct scope *s)
   PUSH_CONST(&s->cp, SEAL_VALUE_STRING_STATIC(node->memacc.mem->var_ref.name)); /* push constant into pool */
   SET_16BITS_INDEX(&s->bc, CONST_IDX(&s->cp));
   EMIT(&s->bc, OP_GET_FIELD);
+}
+static void compile_include(cout_t *cout, ast_t *node, struct scope *s)
+{
+  EMIT(&s->bc, OP_PUSH_CONST); /* push opcode */
+  PUSH_CONST(&s->cp, SEAL_VALUE_STRING_STATIC(node->include.name)); /* push constant into pool */
+  SET_16BITS_INDEX(&s->bc, CONST_IDX(&s->cp));
+
+  EMIT(&s->bc, OP_INCLUDE);
+  EMIT(&s->bc, OP_SET_GLOBAL);
+  SET_16BITS_INDEX(&s->bc, CONST_IDX(&s->cp));
 }

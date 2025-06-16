@@ -100,5 +100,6 @@ static void compile_list(cout_t*, ast_t*, struct scope*);
 static void compile_subscript(cout_t*, ast_t*, struct scope*);
 static void compile_map(cout_t*, ast_t*, struct scope*);
 static void compile_memacc(cout_t*, ast_t*, struct scope*);
+static void compile_include(cout_t*, ast_t*, struct scope*);
 
 #endif /* SEAL_COMPILER_H */
