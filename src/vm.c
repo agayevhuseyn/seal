@@ -1,6 +1,7 @@
 #include "vm.h"
 #include "builtins.h"
 #include "gc.h"
+#include "parser.h"
 
 #define FETCH(lf) (*lf->ip++)
 #define PUSH(vm, val) do { \
@@ -186,6 +187,59 @@ struct seal_string* str_concat(const char* l, const char* r)
   }; \
   hashmap_insert(map, str, func); \
 } while (0)
+
+static hashmap_t mod_cache;
+
+void init_mod_cache()
+{
+  hashmap_init(&mod_cache, 256);
+}
+
+#define RUN_FILE(path, vm_p) do { \
+  ast_t* root; \
+  lexer_t lexer; \
+  init_lexer(&lexer, path); \
+  lexer_get_tokens(&lexer); \
+  parser_t parser; \
+  init_parser(&parser, &lexer); \
+  root = parser_parse(&parser); \
+  cout_t cout; \
+  compile(&cout, root); \
+  vm_t vm; \
+  init_vm(&vm, &cout); \
+  svalue_t locals[cout.main_scope_local_size]; \
+  struct local_frame main_frame = { \
+    .locals = locals, \
+    .bytecodes = vm.bytecodes, \
+    .ip = vm.bytecodes, \
+    .label_pool = cout.labels, \
+    .const_pool = cout.const_pool \
+  }; \
+  eval_vm(&vm, &main_frame); \
+  *(vm_p) = vm; \
+} while (0)
+
+svalue_t insert_mod_cache(const char *name)
+{
+  struct h_entry *e = hashmap_search(&mod_cache, name);
+  if (e->key)
+    return e->val;
+
+  //if (strcmp(name, "math") == 0)
+
+  svalue_t val = {
+    .type = SEAL_MOD,
+    .as.mod = SEAL_CALLOC(1, sizeof(struct seal_module))
+  };
+  val.as.mod->vm = SEAL_CALLOC(1, sizeof(vm_t));
+  val.as.mod->name = name;
+  hashmap_insert_e(&mod_cache, e, name, val);
+  char path[256];
+  sprintf(path, "./%s.seal", name);
+  RUN_FILE(path, val.as.mod->vm);
+
+  return val;
+}
 
 void init_vm(vm_t* vm, cout_t* cout)
 {
@@ -462,6 +516,19 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
         }
       }
 
+      if (IS_MOD(left)) {
+        if (IS_STRING(right)) {
+          struct h_entry *e = hashmap_search(&AS_MOD(left)->vm->globals, AS_STRING(right));
+          if (e == NULL || e->key == NULL)
+            ERROR("\'%s\' key is not found", AS_STRING(right));
+
+          PUSH(vm, e->val);
+          gc_decref(left);
+          gc_decref(right);
+          break;
+        }
+      }
+
       if (!IS_LIST(left) && !IS_STRING(left))
         ERROR("subscript requires list or string as base");
       if (!IS_INT(right))
@@ -543,6 +610,10 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
       PUSH(vm, left);
       break;
     }
+    case OP_INCLUDE:
+      left = POP(vm);
+      PUSH(vm, insert_mod_cache(AS_STRING(left)));
+      break;
     default:
       fprintf(stderr, "unrecognized op type: %d\n", op);
       return;

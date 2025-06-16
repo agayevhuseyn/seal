@@ -32,6 +32,9 @@ struct vm {
  //struct local_frame* lf; /* local frame for function calls */
 };
 
+void init_mod_cache();
+svalue_t insert_mod_cache(const char*);
+
 void init_vm(vm_t* vm, cout_t* cout);
 void eval_vm(vm_t* vm, struct local_frame* lf);
 
