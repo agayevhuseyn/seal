@@ -195,7 +195,8 @@ void init_mod_cache()
   hashmap_init(&mod_cache, 256);
 }
 
-#define RUN_FILE(path, vm_p) do { \
+void RUN_FILE(const char *path, vm_t *vm_p)
+{
   ast_t* root; \
   lexer_t lexer; \
   init_lexer(&lexer, path); \
@@ -215,9 +216,9 @@ void init_mod_cache()
     .label_pool = cout.labels, \
     .const_pool = cout.const_pool \
   }; \
-  eval_vm(&vm, &main_frame); \
   *(vm_p) = vm; \
-} while (0)
+  eval_vm(&vm, &main_frame); \
+}
 
 svalue_t insert_mod_cache(const char *name)
 {
