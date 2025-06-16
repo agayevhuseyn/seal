@@ -56,6 +56,8 @@
 #define OP_IN         0x29
 /* map */
 #define OP_GEN_MAP    0x2a
+/* include */
+#define OP_INCLUDE    0x2b
 
 #define PRINT_BYTE(bytecodes, size) for(int i = 0; i < size; i++) { \
     printf("%d ", bytecodes[i]); \
@@ -111,6 +113,7 @@ static inline const char* op_name(int op)
   case OP_GEN_LIST  :  return "OP_GEN_LIST";
   case OP_GET_FIELD :  return "OP_GET_FIELD";
   case OP_GEN_MAP   :  return "OP_GEN_MAP";
+  case OP_INCLUDE   :  return "OP_INCLUDE";
   default           :  return "OP NOT RECOGNIZED";
   }
 }
