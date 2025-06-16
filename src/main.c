@@ -66,6 +66,8 @@ int main(int argc, char** argv)
   if (PRINT_CONST_POOL)
     PRINT_CONST_POOL(cout);
 
+  init_mod_cache(); /* initalize modules cache before running main file */
+
   vm_t vm;
   init_vm(&vm, &cout);
   svalue_t locals[cout.main_scope_local_size];
