@@ -43,8 +43,6 @@
 
 #define ast_type(ast) ast->type
 
-#define SEAL_INCLUDE_LIB 0
-#define SEAL_INCLUDE_SRC 1
 
 typedef struct ast {
   int type;
@@ -159,9 +157,7 @@ typedef struct ast {
     /* others */
     struct {
       const char* name;
-      int type; /* lib or src */
       const char* alias;
-      bool has_alias;
     } include;
   };
 } ast_t;
@@ -510,7 +506,7 @@ static void print_ast(ast_t* node)
               node->line,
               hast_type_name(node->type),
               node->include.name,
-              node->include.has_alias ? node->include.alias : "");
+              node->include.alias ? node->include.alias : "");
       break;
     default:
       fprintf(stderr, "unexpected AST type: \'%d\'\n", node->type);
