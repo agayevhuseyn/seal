@@ -19,7 +19,10 @@ static void __print_single(svalue_t s)
     printf("%lld", AS_INT(s));
     break;
   case SEAL_FLOAT:
-    printf("%f", AS_FLOAT(s));
+    if (AS_FLOAT(s) == (int)AS_FLOAT(s))
+      printf("%.1f", AS_FLOAT(s));
+    else
+      printf("%.15g", AS_FLOAT(s));
     break;
   case SEAL_STRING:
     printf("%s", AS_STRING(s));
