@@ -119,14 +119,13 @@ static void lexer_get_token(lexer_t* lexer)
   token_t* tok = NULL;
 
   switch (c) {
-    case ' ':
-    case '\t':
+    case ' ': case '\t':
       if (!lexer->encountered_word) {
         lexer->cur_indent++;
         encountered_word = false;
       }
       break;
-    case '\n':
+    case '\n': case '\r':
       lexer->cur_indent = 0;
       encountered_word  = false;
       if (lexer->encountered_word && lexer->paren_stack_ptr == 0) {
@@ -265,8 +264,7 @@ static void lexer_get_token(lexer_t* lexer)
     case '}':
       tok = create_token(TOK_RBRACE, NULL, lexer->line);
       break;
-    case '\'':
-    case '\"':
+    case '\'': case '\"':
       tok = lexer_get_string(lexer, c);
       break;
     default:
