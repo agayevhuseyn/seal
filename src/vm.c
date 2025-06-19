@@ -2,12 +2,16 @@
 #include "builtins.h"
 #include "gc.h"
 #include "parser.h"
+#ifdef _WIN32
+#include <windows.h>
+#else
 #include <dlfcn.h>
+#endif
 
 #define FETCH(lf) (*lf->ip++)
 #define PUSH(vm, val) do { \
   if (vm->sp - vm->stack == STACK_SIZE) \
-    ERROR("stack overflow"); \
+    VM_ERROR("stack overflow"); \
   svalue_t loc_val = val; \
   *vm->sp++ = loc_val; \
   gc_incref(loc_val); \
@@ -19,9 +23,9 @@
 #define POP(vm) (*(--(vm->sp)))
 #define JUMP(lf, addr) (lf->ip = &lf->bytecodes[lf->label_pool[addr]])
 #define GET_CONST(lf, i) (lf->const_pool[i])
-#define ERROR(...) (fprintf(stderr, __VA_ARGS__), fprintf(stderr, "\n"), exit(EXIT_FAILURE))
-#define ERROR_UNRY_OP(op, val) ERROR("\'%s\' unary operator is not supported for \'%s\'", #op, seal_type_name(val.type))
-#define ERROR_BIN_OP(op, left, right) ERROR("\'%s\' operator is not supported for \'%s\' and \'%s\'", #op, seal_type_name(left.type), seal_type_name(right.type))
+#define VM_ERROR(...) (fprintf(stderr, __VA_ARGS__), fprintf(stderr, "\n"), exit(EXIT_FAILURE))
+#define ERROR_UNRY_OP(op, val) VM_ERROR("\'%s\' unary operator is not supported for \'%s\'", #op, seal_type_name(val.type))
+#define ERROR_BIN_OP(op, left, right) VM_ERROR("\'%s\' operator is not supported for \'%s\' and \'%s\'", #op, seal_type_name(left.type), seal_type_name(right.type))
 
 #define PUSH_NULL(vm)        PUSH(vm, (svalue_t) { .type = SEAL_NULL })
 #define PUSH_INT(vm, val)    PUSH(vm, sval(SEAL_INT, _int, val))
@@ -39,7 +43,7 @@
   IS_STRING(val) ? true : \
   IS_BOOL(val) ? AS_BOOL(val) : \
   IS_LIST(val) ? AS_LIST(val)->size > 0 : \
-  (ERROR("cannot convert to bool type"), -1))
+  (VM_ERROR("cannot convert to bool type"), -1))
 
 /* macros for seal functions */
 #define IS_FUNC_VARARG(val)    (AS_FUNC(val).is_vararg)
@@ -230,26 +234,66 @@ svalue_t insert_mod_cache(const char *name)
   if (e->key)
     return e->val;
 
+  int srch_curdir = 0;
   char path[256];
-  sprintf(path, "./%s.so", name);
   FILE *f;
+  const char *env = ".";
+  svalue_t val = SEAL_VALUE_NULL;
+search:
+
+  sprintf(path, "%s/%s%s.%s", env, srch_curdir ? ".seal/" : "", name,
+#ifdef _WIN32
+      "dll"
+#else
+      "so"
+#endif
+      );
   if ((f = fopen(path, "r")) != NULL) {
     fclose(f);
+#ifdef _WIN32
+    void *handle = LoadLibrary(path);
+    if (!handle)
+      VM_ERROR("failed to include \'%s\'", path);
+
+    FARPROC function = GetProcAddress(handle, "seal_init_mod");
+    val = ((svalue_t (*)()) function)();
+#else
     void *handle = dlopen(path, RTLD_LAZY);
-    svalue_t val = ((svalue_t (*)()) dlsym(handle, "seal_init_mod"))();
+    if (!handle)
+      VM_ERROR("failed to include \'%s\'", path);
+
+    val = ((svalue_t (*)()) dlsym(handle, "seal_init_mod"))();
+#endif
     hashmap_insert_e(&mod_cache, e, name, val);
-    return val;
+  } 
+
+  if (IS_NULL(val)) {
+    sprintf(path, "%s/%s%s.seal", env, srch_curdir ? ".seal/" : "", name);
+    if ((f = fopen(path, "r")) != NULL) {
+      fclose(f);
+      val = (svalue_t) {
+        .type = SEAL_MOD,
+        .as.mod = SEAL_CALLOC(1, sizeof(struct seal_module))
+      };
+      val.as.mod->name = name;
+      hashmap_insert_e(&mod_cache, e, name, val);
+      val.as.mod->globals = SEAL_CALLOC(1, sizeof(hashmap_t));
+      RUN_FILE(path, val.as.mod->globals);
+    }
   }
 
-  svalue_t val = {
-    .type = SEAL_MOD,
-    .as.mod = SEAL_CALLOC(1, sizeof(struct seal_module))
-  };
-  val.as.mod->name = name;
-  hashmap_insert_e(&mod_cache, e, name, val);
-  val.as.mod->globals = SEAL_CALLOC(1, sizeof(hashmap_t));
-  sprintf(path, "./%s.seal", name);
-  RUN_FILE(path, val.as.mod->globals);
+  if (IS_NULL(val) && !srch_curdir) {
+#ifdef _WIN32
+    env = getenv("APPDATA");
+#else
+    env = getenv("HOME");
+#endif
+    srch_curdir = 1;
+    goto search;
+  }
+
+  if (IS_NULL(val))
+    VM_ERROR("including \'%s\' failed", path);
 
   return val;
 }
@@ -438,7 +482,7 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
       if (entry && entry->key) {
         PUSH(vm, entry->val);
       } else {
-        ERROR("vm: %s is not defined", sym);
+        VM_ERROR("vm: %s is not defined", sym);
       }
       break;
     case OP_SET_GLOBAL:
@@ -465,10 +509,10 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
 
       svalue_t func = POP(vm);
       if (!IS_FUNC(func))
-        ERROR("calling non-function: \'%s\'", seal_type_name(func.type));
+        VM_ERROR("calling non-function: \'%s\'", seal_type_name(func.type));
 
       if (!IS_FUNC_VARARG(func) && argc != FUNC_ARGC(func) || IS_FUNC_VARARG(func) && argc < FUNC_ARGC(func))
-        ERROR("\'%s\' function expected%s %d argument%s, got %d",
+        VM_ERROR("\'%s\' function expected%s %d argument%s, got %d",
               FUNC_NAME(func),
               IS_FUNC_VARARG(func) ? " at least" : "",
               FUNC_ARGC(func),
@@ -520,7 +564,7 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
         if (IS_STRING(right)) {
           struct sh_entry *e = shashmap_search(AS_MAP(left)->map, AS_STRING(right));
           if (e == NULL || e->key == NULL)
-            ERROR("\'%s\' key is not found", AS_STRING(right));
+            VM_ERROR("\'%s\' key is not found", AS_STRING(right));
 
           PUSH(vm, e->val);
           gc_decref(left);
@@ -533,7 +577,7 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
         if (IS_STRING(right)) {
           struct h_entry *e = hashmap_search(AS_MOD(left)->globals, AS_STRING(right));
           if (e == NULL || e->key == NULL)
-            ERROR("\'%s\' key is not found", AS_STRING(right));
+            VM_ERROR("\'%s\' key is not found", AS_STRING(right));
 
           PUSH(vm, e->val);
           gc_decref(left);
@@ -543,21 +587,21 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
       }
 
       if (!IS_LIST(left) && !IS_STRING(left))
-        ERROR("subscript requires list or string as base");
+        VM_ERROR("subscript requires list or string as base");
       if (!IS_INT(right))
-        ERROR("subscript requires int as field");
+        VM_ERROR("subscript requires int as field");
       if (AS_INT(right) < 0)
-        ERROR("cannot index negative");
+        VM_ERROR("cannot index negative");
       if (IS_STRING(left)) {
         if (AS_INT(right) >= left.as.string->size)
-          ERROR("index exceed size");
+          VM_ERROR("index exceed size");
         char *c = SEAL_CALLOC(2, sizeof(char));
         c[0] = AS_STRING(left)[AS_INT(right)];
         c[1] = '\0';
         PUSH(vm, SEAL_VALUE_STRING(c));
       } else {
         if (AS_INT(right) >= AS_LIST(left)->size)
-          ERROR("index exceed size");
+          VM_ERROR("index exceed size");
         PUSH(vm, AS_LIST(left)->mems[AS_INT(right)]);
       }
       gc_decref(left);
@@ -570,7 +614,7 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
         if (IS_STRING(right)) {
           struct sh_entry *e = shashmap_search(AS_MAP(left)->map, AS_STRING(right));
           if (e == NULL)
-            ERROR("cannot insert, hashmap is full");
+            VM_ERROR("cannot insert, hashmap is full");
           if (e->key != NULL)
             gc_decref(e->val);
           else
@@ -589,13 +633,13 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
       }
 
       if (!IS_LIST(left))
-        ERROR("subscript assign requires only list as base");
+        VM_ERROR("subscript assign requires only list as base");
       if (!IS_INT(right))
-        ERROR("subscript requires int as field");
+        VM_ERROR("subscript requires int as field");
       if (AS_INT(right) < 0)
-        ERROR("cannot index negative");
+        VM_ERROR("cannot index negative");
       if (AS_INT(right) >= AS_LIST(left)->size)
-        ERROR("index exceed size");
+        VM_ERROR("index exceed size");
       gc_decref(AS_LIST(left)->mems[AS_INT(right)]);
       PUSH(vm, AS_LIST(left)->mems[AS_INT(right)] = POP(vm));
       gc_decref(left);
@@ -605,9 +649,9 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
       right = POP(vm);
       left  = POP(vm);
       if (!IS_STRING(right))
-        ERROR("in operator requires string");
+        VM_ERROR("in operator requires string");
       if (!IS_STRING(left))
-        ERROR("leftside must be string when rightside is string");
+        VM_ERROR("leftside must be string when rightside is string");
 
       PUSH_BOOL(vm, strstr(AS_STRING(right), AS_STRING(left)) != NULL);
       gc_decref(left);
