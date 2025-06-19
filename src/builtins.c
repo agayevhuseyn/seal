@@ -19,10 +19,10 @@ static void __print_single(svalue_t s)
     printf("%lld", AS_INT(s));
     break;
   case SEAL_FLOAT:
-    if (AS_FLOAT(s) == (int)AS_FLOAT(s))
+    if (AS_FLOAT(s) == (seal_int)AS_FLOAT(s))
       printf("%.1f", AS_FLOAT(s));
     else
-      printf("%.15g", AS_FLOAT(s));
+      printf("%.16g", AS_FLOAT(s));
     break;
   case SEAL_STRING:
     printf("%s", AS_STRING(s));
@@ -82,7 +82,7 @@ static void __print_single(svalue_t s)
     break;
   }
   case SEAL_MOD:
-    printf("module: %s (%p)", s.as.mod->name, s.as.mod->vm);
+    printf("module: %s (%p)", s.as.mod->name, s.as.mod->globals);
     break;
   default:
     printf("UNRECOGNIZED DATA TYPE TO PRINT ");
