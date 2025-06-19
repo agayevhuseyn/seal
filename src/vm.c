@@ -2,6 +2,7 @@
 #include "builtins.h"
 #include "gc.h"
 #include "parser.h"
+#include <dlfcn.h>
 
 #define FETCH(lf) (*lf->ip++)
 #define PUSH(vm, val) do { \
@@ -195,7 +196,7 @@ void init_mod_cache()
   hashmap_init(&mod_cache, 256);
 }
 
-void RUN_FILE(const char *path, vm_t *vm_p)
+void RUN_FILE(const char *path, hashmap_t *globals)
 {
   ast_t* root; \
   lexer_t lexer; \
@@ -216,8 +217,9 @@ void RUN_FILE(const char *path, vm_t *vm_p)
     .label_pool = cout.labels, \
     .const_pool = cout.const_pool \
   }; \
-  *(vm_p) = vm; \
+  *(globals) = vm.globals; \
   eval_vm(&vm, &main_frame); \
+  *(globals) = vm.globals; \
 }
 
 svalue_t insert_mod_cache(const char *name)
@@ -226,18 +228,26 @@ svalue_t insert_mod_cache(const char *name)
   if (e->key)
     return e->val;
 
-  //if (strcmp(name, "math") == 0)
+  char path[256];
+  sprintf(path, "./%s.so", name);
+  FILE *f;
+  if ((f = fopen(path, "r")) != NULL) {
+    fclose(f);
+    void *handle = dlopen(path, RTLD_LAZY);
+    svalue_t val = ((svalue_t (*)()) dlsym(handle, "seal_init_mod"))();
+    hashmap_insert_e(&mod_cache, e, name, val);
+    return val;
+  }
 
   svalue_t val = {
     .type = SEAL_MOD,
     .as.mod = SEAL_CALLOC(1, sizeof(struct seal_module))
   };
-  val.as.mod->vm = SEAL_CALLOC(1, sizeof(vm_t));
   val.as.mod->name = name;
   hashmap_insert_e(&mod_cache, e, name, val);
-  char path[256];
+  val.as.mod->globals = SEAL_CALLOC(1, sizeof(hashmap_t));
   sprintf(path, "./%s.seal", name);
-  RUN_FILE(path, val.as.mod->vm);
+  RUN_FILE(path, val.as.mod->globals);
 
   return val;
 }
@@ -519,7 +529,7 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
 
       if (IS_MOD(left)) {
         if (IS_STRING(right)) {
-          struct h_entry *e = hashmap_search(&AS_MOD(left)->vm->globals, AS_STRING(right));
+          struct h_entry *e = hashmap_search(AS_MOD(left)->globals, AS_STRING(right));
           if (e == NULL || e->key == NULL)
             ERROR("\'%s\' key is not found", AS_STRING(right));
 
