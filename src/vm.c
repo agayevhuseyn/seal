@@ -147,6 +147,8 @@ struct seal_string* str_concat(const char* l, const char* r)
   case OP_NEG: \
     if (IS_INT(val)) \
       PUSH_INT(vm, -(AS_INT(val))); \
+    else if (IS_FLOAT(val)) \
+      PUSH_FLOAT(vm, -(AS_FLOAT(val))); \
     else \
       ERROR_UNRY_OP(-, val); \
     break; \

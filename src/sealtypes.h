@@ -193,6 +193,7 @@ static inline bool shashmap_insert(shashmap_t* hashmap, const char* key, svalue_
 #define VAL_TYPE(val)  ((val).type)
 #define IS_NULL(val)   (VAL_TYPE(val) == SEAL_NULL)
 #define IS_INT(val)    (VAL_TYPE(val) == SEAL_INT)
+#define IS_NUM(val)    (VAL_TYPE(val) & SEAL_NUMBER)
 #define IS_FLOAT(val)  (VAL_TYPE(val) == SEAL_FLOAT)
 #define IS_STRING(val) (VAL_TYPE(val) == SEAL_STRING)
 #define IS_BOOL(val)   (VAL_TYPE(val) == SEAL_BOOL)
