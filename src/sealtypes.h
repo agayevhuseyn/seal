@@ -76,10 +76,10 @@ struct seal_map {
   shashmap_insert(AS_MAP(s)->map, k, v); \
 } while (0)
 
-struct vm;
+typedef struct hashmap hashmap_t;
 
 struct seal_module {
-  struct vm *vm;
+  hashmap_t *globals;
   const char *name;
 };
 
@@ -182,6 +182,7 @@ static inline bool shashmap_insert(shashmap_t* hashmap, const char* key, svalue_
 
 #define AS_INT(val)    ((val).as._int)
 #define AS_FLOAT(val)  ((val).as._float)
+#define AS_NUM(val)    (IS_INT(val) ? AS_INT(val) : AS_FLOAT(val))
 #define AS_STRING(_val) ((_val).as.string->val)
 #define AS_BOOL(val)   ((val).as._bool)
 #define AS_FUNC(val)   ((val).as.func)
