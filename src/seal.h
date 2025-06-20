@@ -3,5 +3,8 @@
 
 #include "moddef.h"
 #include "vm.h"
+#include "gc.h"
+
+typedef svalue_t seal_value;
 
 #endif /* SEAL_H */
