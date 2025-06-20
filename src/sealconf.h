@@ -1,5 +1,5 @@
-#ifndef SEAL_H
-#define SEAL_H
+#ifndef SEALCONF_H
+#define SEALCONF_H
 
 #include <stdlib.h>
 #include <stdbool.h>
@@ -20,4 +20,4 @@ typedef double    seal_float;
 typedef uint8_t   seal_byte;
 typedef uint16_t  seal_word;
 
-#endif /* SEAL_H */
+#endif /* SEALCONF_H */
