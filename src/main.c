@@ -76,7 +76,8 @@ int main(int argc, char** argv)
     .bytecodes = vm.bytecodes,
     .ip = vm.bytecodes,
     .label_pool = cout.labels,
-    .const_pool = cout.const_pool
+    .const_pool = cout.const_pool,
+    .globals = &vm.globals
   };
   eval_vm(&vm, &main_frame);
   if (PRINT_STACK)
