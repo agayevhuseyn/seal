@@ -16,25 +16,35 @@ void seal_parse_args(const char *mod_name,
   va_start(vargs, typev);
 
   for (int i = 0; i < typec; i++) {
+
+    svalue_t *ps = va_arg(vargs, svalue_t*);
+
+    *ps = argv[i];
+
     int type = VAL_TYPE(argv[i]);
     if (!(type & typev[i])) {
       MOD_ERROR(mod_name,
                 func_name,
                 "expected argument %d to be \'%s\', got \'%s\'",
                 i,
-                seal_type_name(typev[i]),
+                typev[i] == SEAL_PTR ? va_arg(vargs, const char*) : seal_type_name(typev[i]),
                 seal_type_name(type));
+    } else if (type == SEAL_PTR) {
+      const char *ptr_name = va_arg(vargs, const char*);
+      if (!STR_EQ(ptr_name, AS_PTR(*ps).name))
+        MOD_ERROR(mod_name,
+                  func_name,
+                  "expected argument %d to be \'%s\', got \'%s\'",
+                  i,
+                  AS_PTR(*ps).name,
+                  ptr_name);
     }
-
-    svalue_t *ps = va_arg(vargs, svalue_t*);
-
-    *ps = argv[i];
   }
 
   va_end(vargs);
 }
 
-svalue_t seal_map_get_field(const char *libname, const char *func_name, svalue_t *map, const char *key)
+svalue_t seal_map_get_field(const char *mod_name, const char *func_name, svalue_t *map, const char *key)
 {
   return SEAL_VALUE_NULL;
 }

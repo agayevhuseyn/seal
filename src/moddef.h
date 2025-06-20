@@ -6,6 +6,7 @@
 #include <stdarg.h>
 
 #define PARAM_TYPES(...) ((seal_type[]) { __VA_ARGS__ })
+#define STR_EQ(s1, s2) (strcmp(s1, s2) == 0)
 
 #define MOD_REGISTER_FUNC(mod, _name, str, _argc, _is_vararg) do { \
   svalue_t func = { \
@@ -37,6 +38,6 @@ void seal_parse_args(const char *mod_name,
                     seal_byte typec,
                     int *typev,
                     ...);
-svalue_t seal_map_get_field(const char*, const char*, svalue_t*, const char*);
+svalue_t seal_map_get_field(const char *mod_name, const char *func_name, svalue_t *map, const char *key);
 
 #endif /* MODDEF_H */
