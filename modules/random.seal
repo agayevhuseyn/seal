@@ -1,0 +1,12 @@
+include random
+$next = 1
+
+define srand(seed)
+  $next = seed
+
+define rand()
+  $next = $next * 1103515245 + 12345
+  result = ($next / 65536) % 32768
+  if result < 0
+    return -result
+  return result
