@@ -6,3 +6,5 @@ TODO.txt
 *.exe
 seal_visitor
 *.swp
+*.so
+*.dll
