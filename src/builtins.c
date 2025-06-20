@@ -84,6 +84,9 @@ static void __print_single(svalue_t s)
   case SEAL_MOD:
     printf("module: %s (%p)", s.as.mod->name, s.as.mod->globals);
     break;
+  case SEAL_PTR:
+    printf("%s: %p", s.as.ptr.name, s.as.ptr.ptr);
+    break;
   default:
     printf("UNRECOGNIZED DATA TYPE TO PRINT ");
   }
