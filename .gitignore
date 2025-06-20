@@ -10,3 +10,4 @@ seal_visitor
 *.dll
 !modules/*.seal
 *.json
+*.txt
