@@ -1,3 +1,12 @@
+/* IO Module
+ * Provides core I/O functions for use in programs.
+ * Includes functions: File, open, close, read, write
+ *
+ * Author: Huseyn Aghayev
+ * Language: Seal
+ * Created: 2025-06-21
+ */
+
 include sealio as io
 
 define File(path, mode)
