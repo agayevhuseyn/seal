@@ -12,10 +12,11 @@
 #define SEAL_MAP         (1 << 6)    /* 01000000 */
 #define SEAL_FUNC        (1 << 7)    /* 10000000 */
 #define SEAL_MOD         (1 << 8)   /* 100000000 */
+#define SEAL_PTR         (1 << 9)  /* 1000000000 */
 #define SEAL_NUMBER      (SEAL_INT | SEAL_FLOAT)    /* 00000110 */
 #define SEAL_ITERABLE    (SEAL_STRING | SEAL_LIST)  /* 00000110 */
 #define SEAL_ANY         (SEAL_NULL | SEAL_INT | SEAL_FLOAT | SEAL_STRING | \
-                          SEAL_BOOL | SEAL_LIST | SEAL_MAP | SEAL_FUNC | SEAL_MOD)  /* 111111111 */
+                          SEAL_BOOL | SEAL_LIST | SEAL_MAP | SEAL_FUNC | SEAL_MOD | SEAL_PTR)  /* 1111111111 */
 
 
 typedef int seal_type;
@@ -84,6 +85,11 @@ struct seal_module {
   const char *name;
 };
 
+struct seal_pointer {
+  void *ptr;
+  const char *name;
+};
+
 struct svalue {
   seal_type type;
   union {
@@ -95,6 +101,7 @@ struct svalue {
     struct seal_list *list;
     struct seal_map *map;
     struct seal_module *mod;
+    struct seal_pointer ptr;
   } as;
 };
 
@@ -190,6 +197,7 @@ static inline bool shashmap_insert(shashmap_t* hashmap, const char* key, svalue_
 #define AS_LIST(val)   ((val).as.list)
 #define AS_MAP(val)    ((val).as.map)
 #define AS_MOD(val)    ((val).as.mod)
+#define AS_PTR(val)    ((val).as.ptr)
 
 #define VAL_TYPE(val)  ((val).type)
 #define IS_NULL(val)   (VAL_TYPE(val) == SEAL_NULL)
@@ -202,6 +210,7 @@ static inline bool shashmap_insert(shashmap_t* hashmap, const char* key, svalue_
 #define IS_LIST(val)   (VAL_TYPE(val) == SEAL_LIST)
 #define IS_MAP(val)    (VAL_TYPE(val) == SEAL_MAP)
 #define IS_MOD(val)    (VAL_TYPE(val) == SEAL_MOD)
+#define IS_PTR(val)    (VAL_TYPE(val) == SEAL_PTR)
 
 
 #define sval(t, mem, val) (svalue_t) { .type = t, .as.mem = val }
@@ -210,6 +219,7 @@ static inline bool shashmap_insert(shashmap_t* hashmap, const char* key, svalue_
 #define SEAL_VALUE_FALSE  sval(SEAL_BOOL, _bool, false)
 #define SEAL_VALUE_INT(val)    sval(SEAL_INT, _int, val)
 #define SEAL_VALUE_FLOAT(val)  sval(SEAL_FLOAT, _float, val)
+#define SEAL_VALUE_PTR(val, _name)    sval(SEAL_PTR, ptr, ((struct seal_pointer) {.ptr = val, .name = _name }))
 
 
 static inline svalue_t SEAL_VALUE_STRING(const char* val)
