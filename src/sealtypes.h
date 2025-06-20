@@ -20,6 +20,7 @@
 
 typedef int seal_type;
 typedef struct svalue svalue_t;
+typedef struct hashmap hashmap_t;
 
 struct seal_func {
   enum {
@@ -33,6 +34,7 @@ struct seal_func {
       seal_word *label_pool;
       seal_byte  argc;
       seal_byte  local_size;
+      hashmap_t *globals;
     } userdef;
     struct {
       svalue_t (*cfunc)(seal_byte argc, svalue_t* argv);
@@ -76,7 +78,6 @@ struct seal_map {
   shashmap_insert(AS_MAP(s)->map, k, v); \
 } while (0)
 
-typedef struct hashmap hashmap_t;
 
 struct seal_module {
   hashmap_t *globals;
