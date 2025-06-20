@@ -202,30 +202,42 @@ void init_mod_cache()
   hashmap_init(&mod_cache, 256);
 }
 
-void RUN_FILE(const char *path, hashmap_t *globals)
+static void set_all_functions_global(hashmap_t *globals)
 {
-  ast_t* root; \
-  lexer_t lexer; \
-  init_lexer(&lexer, path); \
-  lexer_get_tokens(&lexer); \
-  parser_t parser; \
-  init_parser(&parser, &lexer); \
-  root = parser_parse(&parser); \
-  cout_t cout; \
-  compile(&cout, root); \
-  vm_t vm; \
-  init_vm(&vm, &cout); \
-  svalue_t locals[cout.main_scope_local_size]; \
-  struct local_frame main_frame = { \
-    .locals = locals, \
-    .bytecodes = vm.bytecodes, \
-    .ip = vm.bytecodes, \
-    .label_pool = cout.labels, \
-    .const_pool = cout.const_pool \
-  }; \
-  *(globals) = vm.globals; \
-  eval_vm(&vm, &main_frame); \
-  *(globals) = vm.globals; \
+  for (int i = 0; i < globals->cap; i++) {
+    struct h_entry *e = &globals->entries[i];
+    if (IS_USERDEF_FUNC(e->val)) {
+      AS_USERDEF_FUNC(e->val).globals = globals;
+    }
+  }
+}
+
+static void RUN_FILE(const char *path, hashmap_t *globals)
+{
+  ast_t* root;
+  lexer_t lexer;
+  init_lexer(&lexer, path);
+  lexer_get_tokens(&lexer);
+  parser_t parser;
+  init_parser(&parser, &lexer);
+  root = parser_parse(&parser);
+  cout_t cout;
+  compile(&cout, root);
+  vm_t vm;
+  init_vm(&vm, &cout);
+  svalue_t locals[cout.main_scope_local_size];
+  struct local_frame main_frame = {
+    .locals = locals,
+    .bytecodes = vm.bytecodes,
+    .ip = vm.bytecodes,
+    .label_pool = cout.labels,
+    .const_pool = cout.const_pool,
+    .globals = &vm.globals
+  };
+  *(globals) = vm.globals;
+  eval_vm(&vm, &main_frame);
+  *(globals) = vm.globals;
+  set_all_functions_global(globals);
 }
 
 svalue_t insert_mod_cache(const char *name)
@@ -478,7 +490,7 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
       addr = FETCH(lf) << 8;
       addr |= FETCH(lf);
       sym = AS_STRING(GET_CONST(lf, addr));
-      entry = hashmap_search(&vm->globals, sym);
+      entry = hashmap_search(lf->globals, sym);
       if (entry && entry->key) {
         PUSH(vm, entry->val);
       } else {
@@ -489,7 +501,7 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
       DUP(vm);
       addr = FETCH(lf) << 8;
       addr |= FETCH(lf);
-      hashmap_insert(&vm->globals, AS_STRING(GET_CONST(lf, addr)), POP(vm));
+      hashmap_insert(lf->globals, AS_STRING(GET_CONST(lf, addr)), POP(vm));
       break;
     case OP_GET_LOCAL:
       addr = FETCH(lf);
@@ -532,7 +544,8 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
           .ip = AS_USERDEF_FUNC(func).bytecode,
           .bytecodes = AS_USERDEF_FUNC(func).bytecode,
           .const_pool = AS_USERDEF_FUNC(func).const_pool,
-          .label_pool = AS_USERDEF_FUNC(func).label_pool
+          .label_pool = AS_USERDEF_FUNC(func).label_pool,
+          .globals = AS_USERDEF_FUNC(func).globals ? AS_USERDEF_FUNC(func).globals : &vm->globals
         };
         for (int i = 0; i < argc; i++) {
           SET_LOCAL((&func_lf), i, argv[i]);

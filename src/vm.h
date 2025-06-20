@@ -18,6 +18,7 @@ struct local_frame {
   seal_byte* bytecodes;
   svalue_t *const_pool;
   seal_word *label_pool;
+  hashmap_t *globals;
 };
 
 struct vm {
