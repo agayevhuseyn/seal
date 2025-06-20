@@ -569,6 +569,7 @@ static void compile_func_def(cout_t* cout, ast_t* node, struct scope *s)
       .name = node->func_def.name,
       .as.userdef = {
         .argc = node->func_def.param_size,
+        .globals = NULL
       }
     }
   };
