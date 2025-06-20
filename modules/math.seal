@@ -1,4 +1,35 @@
+/* Math Module
+ * Provides core mathematical operations and constants for use in programs.
+ * Includes symbols: pi, e, sqrt, cbrt, pow, sin, cos, tan,
+ * asin, acos, atan, atan2, abs
+ *
+ * Author: Huseyn Aghayev
+ * Language: Seal
+ * Created: 2025-06-21
+ */
+
 include sealmath as math
 
+$pi = 3.1415926535897932
+$e  = 2.7182818284590452
 
-print(math.sqrt(16))
+$sqrt = math.sqrt
+$cbrt = math.cbrt
+$pow  = math.pow
+$sin  = math.sin
+$cos  = math.cos
+$tan  = math.tan
+$asin = math.asin
+$acos = math.acos
+$atan = math.atan
+$atan2 = math.atan2
+
+
+define abs(n)
+  if n < 0
+    return -n
+
+  return n
+
+
+
