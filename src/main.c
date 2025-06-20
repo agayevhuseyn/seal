@@ -1,5 +1,5 @@
 #include "ast.h"
-#include "seal.h"
+#include "sealconf.h"
 
 #include "lexer.h"
 #include "parser.h"

@@ -1,7 +1,7 @@
 #ifndef SEAL_PARSER_H
 #define SEAL_PARSER_H
 
-#include "seal.h"
+#include "sealconf.h"
 
 #include "lexer.h"
 #include "ast.h"

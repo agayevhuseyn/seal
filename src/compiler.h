@@ -1,7 +1,7 @@
 #ifndef SEAL_COMPILER_H
 #define SEAL_COMPILER_H
 
-#include "seal.h"
+#include "sealconf.h"
 #include "ast.h"
 #include "sealtypes.h"
 #include "bytecode.h"

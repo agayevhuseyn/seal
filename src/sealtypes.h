@@ -1,7 +1,7 @@
 #ifndef SEAL_TYPES_H
 #define SEAL_TYPES_H
 
-#include "seal.h"
+#include "sealconf.h"
 
 #define SEAL_NULL        (1 << 0)    /* 00000001 */
 #define SEAL_INT         (1 << 1)    /* 00000010 */

@@ -1,7 +1,7 @@
 #ifndef SEAL_TOKEN_H
 #define SEAL_TOKEN_H
 
-#include "seal.h"
+#include "sealconf.h"
 
 #define TOK_EOF     0    /* "end of file" */
 /* keywords */

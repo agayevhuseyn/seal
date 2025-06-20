@@ -1,7 +1,7 @@
 #ifndef SEAL_VM_H
 #define SEAL_VM_H
 
-#include "seal.h"
+#include "sealconf.h"
 #include "compiler.h"
 #include "sealtypes.h"
 #include "hashmap.h"

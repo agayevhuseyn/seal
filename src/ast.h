@@ -1,7 +1,7 @@
 #ifndef SEAL_AST_H
 #define SEAL_AST_H
 
-#include "seal.h"
+#include "sealconf.h"
 
 #include "token.h"
 

@@ -1,7 +1,7 @@
 #ifndef SEAL_HASHMAP_H
 #define SEAL_HASHMAP_H
 
-#include "seal.h"
+#include "sealconf.h"
 #include "sealtypes.h"
 
 #define __hashmap_error(...) do { \

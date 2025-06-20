@@ -1,7 +1,7 @@
 #ifndef SEAL_GC_H
 #define SEAL_GC_H
 
-#include "seal.h"
+#include "sealconf.h"
 #include "sealtypes.h"
 
 void gc_decref(svalue_t);

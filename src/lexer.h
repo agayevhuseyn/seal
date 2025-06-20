@@ -1,7 +1,7 @@
 #ifndef SEAL_LEXER_H
 #define SEAL_LEXER_H
 
-#include "seal.h"
+#include "sealconf.h"
 
 #include "token.h"
 

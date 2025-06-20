@@ -1,7 +1,7 @@
 #ifndef SEAL_BYTECODE_H
 #define SEAL_BYTECODE_H
 
-#include "seal.h"
+#include "sealconf.h"
 
 /* essential */
 #define OP_HALT       0x00
