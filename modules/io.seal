@@ -1,0 +1,19 @@
+include sealio as io
+
+define File(path, mode)
+  file = {
+    handler = io.open(path, mode),
+    mode = mode,
+    path = path
+  }
+
+  file.read = define(self)
+    return io.read(self.handler)
+
+  file.close = define(self)
+    io.close(self.handler)
+
+  file.write = define(self, stream)
+    io.write(self.handler, stream)
+
+  return file

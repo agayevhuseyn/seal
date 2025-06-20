@@ -1,0 +1,4 @@
+include sealmath as math
+
+
+print(math.sqrt(16))
