@@ -6,7 +6,6 @@
  * Language: Seal
  * Created: 2025-06-21
  */
-
 include sealio as io
 
 define File(path, mode)

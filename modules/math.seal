@@ -30,6 +30,3 @@ define abs(n)
     return -n
 
   return n
-
-
-
