@@ -565,6 +565,8 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
         sorted[i] = POP(vm);
       }
       for (int i = size - 1; i >= 0; i--) {
+        if (IS_USERDEF_FUNC(sorted[i]))
+          AS_USERDEF_FUNC(sorted[i]).globals = lf->globals;
         LIST_PUSH(left, sorted[i]);
       }
       PUSH(vm, left);
@@ -634,6 +636,10 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
             AS_MAP(left)->map->filled++;
 
           e->val = POP(vm);
+
+          if (IS_USERDEF_FUNC(e->val))
+            AS_USERDEF_FUNC(e->val).globals = lf->globals;
+
           e->key = AS_STRING(right);
           e->hash = shash_str(AS_STRING(right));
           e->is_tombstone = true;
@@ -675,7 +681,11 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
       left = SEAL_VALUE_MAP();
       for (int i = 0; i < size; i++) {
         const char *key = AS_STRING(POP(vm));
-        MAP_INSERT(left, key, POP(vm)); 
+        right = POP(vm);
+        if (IS_USERDEF_FUNC(right))
+          AS_USERDEF_FUNC(right).globals = lf->globals;
+
+        MAP_INSERT(left, key, right); 
       }
       PUSH(vm, left);
       break;
