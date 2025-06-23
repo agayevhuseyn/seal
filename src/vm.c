@@ -349,8 +349,11 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
     case OP_PUSH_CONST:
       idx = FETCH(lf) << 8;
       idx |= FETCH(lf);
-      PUSH(vm, GET_CONST(lf, idx));
       left = GET_CONST(lf, idx);
+      if (IS_FUNC(left) && IS_USERDEF_FUNC(left)) {
+        AS_USERDEF_FUNC(left).globals = lf->globals;
+      }
+      PUSH(vm, left);
       break;
     case OP_PUSH_INT:
       idx = FETCH(lf) << 8;
@@ -565,8 +568,6 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
         sorted[i] = POP(vm);
       }
       for (int i = size - 1; i >= 0; i--) {
-        if (IS_USERDEF_FUNC(sorted[i]))
-          AS_USERDEF_FUNC(sorted[i]).globals = lf->globals;
         LIST_PUSH(left, sorted[i]);
       }
       PUSH(vm, left);
@@ -637,8 +638,7 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
 
           e->val = POP(vm);
 
-          if (IS_USERDEF_FUNC(e->val))
-            AS_USERDEF_FUNC(e->val).globals = lf->globals;
+
 
           e->key = AS_STRING(right);
           e->hash = shash_str(AS_STRING(right));
@@ -682,8 +682,7 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
       for (int i = 0; i < size; i++) {
         const char *key = AS_STRING(POP(vm));
         right = POP(vm);
-        if (IS_USERDEF_FUNC(right))
-          AS_USERDEF_FUNC(right).globals = lf->globals;
+
 
         MAP_INSERT(left, key, right); 
       }
