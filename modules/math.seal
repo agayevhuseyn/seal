@@ -10,6 +10,7 @@
 
 include sealmath as math
 
+
 $pi = 3.1415926535897932
 $e  = 2.7182818284590452
 
@@ -26,7 +27,7 @@ $atan2 = math.atan2
 
 
 define abs(n)
-  if n < 0
-    return -n
+    if n < 0
+        return -n
 
-  return n
+    return n
