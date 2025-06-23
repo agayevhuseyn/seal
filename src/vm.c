@@ -206,7 +206,7 @@ static void set_all_functions_global(hashmap_t *globals)
 {
   for (int i = 0; i < globals->cap; i++) {
     struct h_entry *e = &globals->entries[i];
-    if (IS_USERDEF_FUNC(e->val)) {
+    if (e->key && IS_FUNC(e->val) && IS_USERDEF_FUNC(e->val)) {
       AS_USERDEF_FUNC(e->val).globals = globals;
     }
   }
