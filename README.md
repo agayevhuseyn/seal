@@ -14,7 +14,7 @@ cd seal
 
 ## Seal home page
 
-https://agayevhuseyn.github.io/seal-web
+https://www.seallang.org
 
 ## Hello, Seal!
 
