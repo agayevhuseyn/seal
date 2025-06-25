@@ -1,71 +1,67 @@
 include sealstring as string
 
 
-define ascii(c)
-  return string.ascii(c)
-
-
-define char(i)
-  return string.char(i)
+$ascii = string.ascii(c)
+$char = string.char(i)
 
 
 define isnum(c)
-  i = ascii(c)
-  return i >= ascii('0') and i <= ascii('9')
+    i = ascii(c)
+    return i >= ascii('0') and i <= ascii('9')
 
 
 define isalpha(c)
-  i = ascii(c)
-  return ((i >= ascii('a') and i <= ascii('z') or
-          (i >= ascii('A') and i <= ascii('Z'))))
+    i = ascii(c)
+    return ((i >= ascii('a') and i <= ascii('z') or
+            (i >= ascii('A') and i <= ascii('Z'))))
 
 
 define isalnum(c)
-  return isnum(c) or isalpha(c)
+    return isnum(c) or isalpha(c)
 
 
 define islower(c)
-  i = ascii(c)
-  return i >= ascii('a') and i <= ascii('z')
+    i = ascii(c)
+    return i >= ascii('a') and i <= ascii('z')
 
 
 define isupper(c)
-  i = ascii(c)
-  return i >= ascii('A') and i <= ascii('Z')
+    i = ascii(c)
+    return i >= ascii('A') and i <= ascii('Z')
 
 
 define lower(s)
-  res = ''
-  i = 0
-  while i < len(s)
-    c = s[i]
-    if islower(c) or !isalpha(c)
-      res += c
-      i += 1
-      skip
+    res = ''
+    i = 0
+    while i < len(s)
+        c = s[i]
+        if islower(c) or !isalpha(c)
+            res += c
+            i += 1
+            skip
 
     res += char(ascii(c) + 32)
 
     i += 1
 
-  return res
+    return res
 
 
 define upper(s)
-  res = ''
-  i = 0
-  while i < len(s)
-    c = s[i]
-    if isupper(c) or !isalpha(c)
-      res += c
-      i += 1
-      skip
+    res = ''
+    i = 0
+    while i < len(s)
+        c = s[i]
+        if isupper(c) or !isalpha(c)
+            res += c
+            i += 1
+            skip
 
-    res += char(ascii(c) - 32)
+        res += char(ascii(c) - 32)
 
-    i += 1
+        i += 1
 
-  return res
+    return res
 
 
 define swapcase(s)
