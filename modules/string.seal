@@ -1,8 +1,8 @@
 include sealstring as string
 
 
-$ascii = string.ascii(c)
-$char = string.char(i)
+$ascii = string.ascii
+$char = string.char
 
 
 define isnum(c)
