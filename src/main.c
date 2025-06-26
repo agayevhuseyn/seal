@@ -5,8 +5,9 @@
 #include "parser.h"
 #include "vm.h"
 
-#define USAGE(prog_name) (fprintf(stderr, "seal: usage: %s filename.seal\n", prog_name))
+#define USAGE(prog_name) (fprintf(stdout, "seal: usage: %s filename.seal\n", prog_name))
 #define PRINT_FLAGS() (fprintf(stderr, "seal: flags: -pt (print tokens), -pa (print AST), -po (print opcodes), -pb (print bytes), -pc (print constant pool)\n"))
+#define PRINT_VERSION() (fprintf(stdout, "Seal %s\n", VERSION))
 
 int main(int argc, char** argv)
 {
@@ -14,6 +15,11 @@ int main(int argc, char** argv)
     USAGE(argv[0]);
     return EXIT_FAILURE;
   }
+  if (strcmp(argv[1], "-v") == 0 || strcmp(argv[1], "--version") == 0) {
+    PRINT_VERSION();
+    return EXIT_SUCCESS;
+  }
+
   /* FLAGS */
   bool PRINT_TOKS = false;
   bool PRINT_AST  = false;
@@ -23,17 +29,17 @@ int main(int argc, char** argv)
   bool PRINT_STACK = false;
 
   for (int i = 2; i < argc; i++) {
-    if (strcmp("-pt", argv[i]) == 0) {
+    if (strcmp(argv[i], "-pt") == 0) {
       PRINT_TOKS = true;
-    } else if (strcmp("-pa", argv[i]) == 0) {
+    } else if (strcmp(argv[i], "-pa") == 0) {
       PRINT_AST = true;
-    } else if (strcmp("-po", argv[i]) == 0) {
+    } else if (strcmp(argv[i], "-po") == 0) {
       PRINT_OP  = true;
-    } else if (strcmp("-pb", argv[i]) == 0) {
+    } else if (strcmp(argv[i], "-pb") == 0) {
       PRINT_BYTE = true;
-    } else if (strcmp("-pc", argv[i]) == 0) {
+    } else if (strcmp(argv[i], "-pc") == 0) {
       PRINT_CONST_POOL = true;
-    } else if (strcmp("-ps", argv[i]) == 0) {
+    } else if (strcmp(argv[i], "-ps") == 0) {
       PRINT_STACK = true;
     }else {
       PRINT_FLAGS();
