@@ -247,13 +247,23 @@ svalue_t insert_mod_cache(const char *name)
     return e->val;
 
   int srch_curdir = 0;
-  char path[256];
+  char path[256], *dir_name;
   FILE *f;
   const char *env = ".";
   svalue_t val = SEAL_VALUE_NULL;
+
+  dir_name =
+#ifdef _WIN32
+  "Seal"
+#else
+  ".seal"
+#endif
+  "/lib/"
+  ;
+
 search:
 
-  sprintf(path, "%s/%s%s.%s", env, srch_curdir ? ".seal/" : "", name,
+  sprintf(path, "%s/%s%s.%s", env, srch_curdir ? dir_name : "", name,
 #ifdef _WIN32
       "dll"
 #else
@@ -280,7 +290,7 @@ search:
   } 
 
   if (IS_NULL(val)) {
-    sprintf(path, "%s/%s%s.seal", env, srch_curdir ? ".seal/" : "", name);
+    sprintf(path, "%s/%s%s.seal", env, srch_curdir ? dir_name : "", name);
     if ((f = fopen(path, "r")) != NULL) {
       fclose(f);
       val = (svalue_t) {
@@ -296,7 +306,7 @@ search:
 
   if (IS_NULL(val) && !srch_curdir) {
 #ifdef _WIN32
-    env = getenv("APPDATA");
+    env = getenv("ProgramFiles");
 #else
     env = getenv("HOME");
 #endif
