@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include <stdint.h>
 
+#define VERSION "0.0.1"
+
 #define SEAL_MALLOC(size)       malloc(size)
 #define SEAL_CALLOC(n, size)    calloc(n, size)
 #define SEAL_REALLOC(ptr, size) realloc(ptr, size)
