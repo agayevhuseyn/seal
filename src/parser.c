@@ -428,6 +428,8 @@ static ast_t* parser_parse_while(parser_t* parser, bool is_func)
 }
 static ast_t* parser_parse_for(parser_t* parser, bool is_func)
 {
+  return NULL;
+  /*
   parser_eat(parser, TOK_FOR);
 
   bool has_to = false;
@@ -482,6 +484,7 @@ static ast_t* parser_parse_for(parser_t* parser, bool is_func)
   }
 
   return ast;
+  */
 }
 static ast_t* parser_parse_func_def(parser_t* parser, bool can_be_global)
 {
