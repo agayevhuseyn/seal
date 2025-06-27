@@ -3,85 +3,85 @@
 
 #include "sealconf.h"
 
-#define TOK_EOF     0    /* "end of file" */
-/* keywords */
-#define TOK_IF      1    // if
-#define TOK_THEN    2    // then
-#define TOK_ELSE    3    // else
-#define TOK_DO      4    // do
-#define TOK_WHILE   5    // while
-#define TOK_FOR     6    // for
-#define TOK_IN      7    // in
-#define TOK_TO      8    // to
-#define TOK_BY      9    // by
-#define TOK_SKIP    10   // skip
-#define TOK_STOP    11   // stop
-#define TOK_INCLUDE 12   // include
-#define TOK_AS      13   // as
-#define TOK_DEFINE  14   // define
-#define TOK_RETURN  15   // return
-#define TOK_TYPEOF  16   // typeof
-#define TOK_AND     17   // and
-#define TOK_OR      18   // or
-#define TOK_NOT     19   // not
-#define TOK_TRUE    20   // true
-#define TOK_FALSE   21   // false
-#define TOK_NULL    22   // null
-#define TOK_ID      23   // identifier
-#define TOK_INT     24   // integer value
-#define TOK_FLOAT   25   // floating value
-#define TOK_STRING  26   // string value
-/* non-words */
-#define TOK_DOLLAR  27   // $
-#define TOK_PERIOD  28   // .
-#define TOK_DPERIOD 29   // ..
-#define TOK_COLON   30   // :
-#define TOK_COMMA   31   // ,
-#define TOK_PLUS    32   // +
-#define TOK_MINUS   33   // -
-#define TOK_MUL     34   // *
-#define TOK_DIV     35   // /
-#define TOK_MOD     36   // %
-#define TOK_BAND    37   // &
-#define TOK_BOR     38   // |
-#define TOK_XOR     39   // ^
-#define TOK_SHL     40   // <<
-#define TOK_SHR     41   // >>
-#define TOK_BNOT    42   // ~
-#define TOK_INC     43   // ++
-#define TOK_DEC     44   // ++
-#define TOK_ASSIGN  45   // =
-#define TOK_PLUS_ASSIGN   46   // +=
-#define TOK_MINUS_ASSIGN  47   // -=
-#define TOK_MUL_ASSIGN    48   // *=
-#define TOK_DIV_ASSIGN    49   // /=
-#define TOK_MOD_ASSIGN    50   // %=
-#define TOK_BAND_ASSIGN   51   // &=
-#define TOK_BOR_ASSIGN    52   // |=
-#define TOK_XOR_ASSIGN    53   // ^=
-#define TOK_SHL_ASSIGN    54   // <<=
-#define TOK_SHR_ASSIGN    55   // >>=
-#define TOK_EQ      56   // ==
-#define TOK_NE      57   // !=
-#define TOK_GT      58   // >
-#define TOK_GE      59   // >=
-#define TOK_LT      60   // <
-#define TOK_LE      61   // <=
-/* parenthesis */
-#define TOK_LPAREN  62   // (
-#define TOK_RPAREN  63   // )
-#define TOK_LBRACK  64   // [
-#define TOK_RBRACK  65   // ]
-#define TOK_LBRACE  66   // {
-#define TOK_RBRACE  67   // }
-/* block-related */
-#define TOK_NEWL    68   // \n
-#define TOK_INDENT  69   // \t or \s
-#define TOK_DEDENT  70   // <-\t or \s
+enum {
+  TOK_EOF     ,   /* "end of file" */
+  /* keywords */
+  TOK_IF      ,   // if
+  TOK_THEN    ,   // then
+  TOK_ELSE    ,   // else
+  TOK_DO      ,   // do
+  TOK_WHILE   ,   // while
+  TOK_FOR     ,   // for
+  TOK_IN      ,   // in
+  TOK_SKIP    ,   // skip
+  TOK_STOP    ,   // stop
+  TOK_INCLUDE ,   // include
+  TOK_AS      ,   // as
+  TOK_DEFINE  ,   // define
+  TOK_RETURN  ,   // return
+  TOK_TYPEOF  ,   // typeof
+  TOK_AND     ,   // and
+  TOK_OR      ,   // or
+  TOK_NOT     ,   // not
+  TOK_TRUE    ,   // true
+  TOK_FALSE   ,   // false
+  TOK_NULL    ,   // null
+  TOK_ID      ,   // identifier
+  TOK_STRING  ,   // string value
+  /* non-words */
+  TOK_INT     ,   // integer value
+  TOK_FLOAT   ,   // floating value
+  TOK_DOLLAR  ,   // $
+  TOK_PERIOD  ,   // .
+  TOK_DPERIOD ,   // ..
+  TOK_COLON   ,   // :
+  TOK_COMMA   ,   // ,
+  TOK_PLUS    ,   // +
+  TOK_MINUS   ,   // -
+  TOK_MUL     ,   // *
+  TOK_DIV     ,   // /
+  TOK_MOD     ,   // %
+  TOK_BAND    ,   // &
+  TOK_BOR     ,   // |
+  TOK_XOR     ,   // ^
+  TOK_SHL     ,   // <<
+  TOK_SHR     ,   // >>
+  TOK_BNOT    ,   // ~
+  TOK_INC     ,   // ++
+  TOK_DEC     ,   // ++
+  TOK_ASSIGN  ,   // =
+  TOK_PLUS_ASSIGN   ,   // +=
+  TOK_MINUS_ASSIGN  ,   // -=
+  TOK_MUL_ASSIGN    ,   // *=
+  TOK_DIV_ASSIGN    ,   // /=
+  TOK_MOD_ASSIGN    ,   // %=
+  TOK_BAND_ASSIGN   ,   // &=
+  TOK_BOR_ASSIGN    ,   // |=
+  TOK_XOR_ASSIGN    ,   // ^=
+  TOK_SHL_ASSIGN    ,   // <<=
+  TOK_SHR_ASSIGN    ,   // >>=
+  TOK_EQ      ,   // ==
+  TOK_NE      ,   // !=
+  TOK_GT      ,   // >
+  TOK_GE      ,   // >=
+  TOK_LT      ,   // <
+  TOK_LE      ,   // <=
+  /* parenthesis */
+  TOK_LPAREN  ,   // (
+  TOK_RPAREN  ,   // )
+  TOK_LBRACK  ,   // [
+  TOK_RBRACK  ,   // ]
+  TOK_LBRACE  ,   // {
+  TOK_RBRACE  ,   // }
+  /* block-related */
+  TOK_NEWL    ,   // \n
+  TOK_INDENT  ,   // \t or \s
+  TOK_DEDENT  ,   // <-\t or \s
 
-#define TOK_LAST TOK_DEDENT    // last token
+  TOK_LAST = TOK_DEDENT ,// last token
 
-#define TOK_SIZE TOK_LAST + 1  // number of tokens
+  TOK_SIZE = TOK_DEDENT + 1,// number of tokens
+};
 
 typedef struct {
   int type;
@@ -100,8 +100,6 @@ static inline const char* token_type_name(int type)
     case TOK_WHILE  : return "TOK_WHILE";
     case TOK_FOR    : return "TOK_FOR";
     case TOK_IN     : return "TOK_IN";
-    case TOK_TO     : return "TOK_TO";
-    case TOK_BY     : return "TOK_BY";
     case TOK_SKIP   : return "TOK_SKIP";
     case TOK_STOP   : return "TOK_STOP";
     case TOK_INCLUDE: return "TOK_INCLUDE";
@@ -178,8 +176,6 @@ static inline const char* htoken_type_name(int type)
     case TOK_WHILE  : return "while";
     case TOK_FOR    : return "for";
     case TOK_IN     : return "in";
-    case TOK_TO     : return "to";
-    case TOK_BY     : return "by";
     case TOK_SKIP   : return "skip";
     case TOK_STOP   : return "stop";
     case TOK_INCLUDE: return "include";
