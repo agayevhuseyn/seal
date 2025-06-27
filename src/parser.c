@@ -343,7 +343,7 @@ static ast_t* parser_parse_if(parser_t* parser, bool can_be_ternary, bool is_fun
     parser_eat(parser, TOK_NEWL);
     parser_eat(parser, TOK_INDENT);
 
-    ast->_if.comp = parser_parse_statements(parser, is_func, true, is_loop, false);
+    ast->_if.comp = parser_parse_statements(parser, is_func, true, is_loop);
 
     parser_eat(parser, TOK_DEDENT);
   }
@@ -371,7 +371,7 @@ static ast_t* parser_parse_else(parser_t* parser, bool is_func, bool is_loop)
     parser_advance(parser); // newl
     parser_eat(parser, TOK_INDENT);
 
-    ast->_else.comp = parser_parse_statements(parser, is_func, true, is_loop, false);
+    ast->_else.comp = parser_parse_statements(parser, is_func, true, is_loop);
 
     parser_eat(parser, TOK_DEDENT);
   } else { // inline
@@ -389,7 +389,7 @@ static ast_t* parser_parse_dowhile(parser_t* parser, bool is_func)
     parser_advance(parser); // newl
     parser_eat(parser, TOK_INDENT);
 
-    ast->_while.comp = parser_parse_statements(parser, is_func, false, true, false);
+    ast->_while.comp = parser_parse_statements(parser, is_func, false, true);
 
     parser_eat(parser, TOK_DEDENT);
     parser_eat(parser, TOK_NEWL);
@@ -443,7 +443,7 @@ static ast_t* parser_parse_for(parser_t* parser, bool is_func)
     parser_eat(parser, TOK_NEWL);
     parser_eat(parser, TOK_INDENT);
 
-    ast->_for.comp = parser_parse_statements(parser, is_func, false, true, false);
+    ast->_for.comp = parser_parse_statements(parser, is_func, false, true);
 
     parser_eat(parser, TOK_DEDENT);
   }
@@ -488,7 +488,7 @@ static ast_t* parser_parse_func_def(parser_t* parser, bool can_be_global)
     parser_eat(parser, TOK_NEWL);
     parser_eat(parser, TOK_INDENT);
 
-    ast->func_def.comp = parser_parse_statements(parser, true, false, false, false);
+    ast->func_def.comp = parser_parse_statements(parser, true, false, false);
 
     parser_eat(parser, TOK_DEDENT);
   } else {

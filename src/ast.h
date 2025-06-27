@@ -396,20 +396,7 @@ static void print_ast(ast_t* node)
                 node->line,
                 hast_type_name(node->type),
                 node->_for.it_name);
-      if (node->_for.is_numerical) {
-        printf("numerical: start:\n");
-        print_ast(node->_for.start);
-        if (node->_for.end) {
-          printf("end:\n");
-          print_ast(node->_for.end);
-        }
-        if (node->_for.step) {
-          printf("step:\n");
-          print_ast(node->_for.step);
-        }
-      } else {
-        print_ast(node->_for.ited);
-      }
+      print_ast(node->_for.ited);
       printf("body:\n");
       print_ast(node->_for.comp);
       break;
