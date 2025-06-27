@@ -1,6 +1,6 @@
 # What is Seal?
 
-Seal is an interpreted dynamically typed programming language. Simplicity, minimal syntax, quick development time with less lines of code are main purposes of the language.
+Seal is a high-level, dynamic programming language designed to make programming fun. It has a simple and concise syntax that's easy to read and write.
 ## Installation
 
 Clone the repo and run "build.sh"
