@@ -93,28 +93,27 @@ inline void init_parser(parser_t* parser, lexer_t* lexer)
 
 inline ast_t* parser_parse(parser_t* parser)
 {
-  return parser_parse_statements(parser, false, false, false, false);
+  return parser_parse_statements(parser, false, false, false);
 }
 
 /* parsing statement */
 static ast_t* parser_parse_statements(parser_t* parser,
                                       bool is_func,
                                       bool is_ifelse,
-                                      bool is_loop,
-                                      bool is_inline)
+                                      bool is_loop)
 {
   ast_t* ast = static_create_ast(AST_COMP, parser_line(parser));
 
   ast->comp.stmt_size = 1;
   ast->comp.stmts = SEAL_CALLOC(1, sizeof(ast_t*));
-  ast->comp.stmts[0] = parser_parse_statement(parser, is_func, is_ifelse, is_loop, is_inline);
+  ast->comp.stmts[0] = parser_parse_statement(parser, is_func, is_ifelse, is_loop, false);
 
   while (!parser_is_end(parser) && parser_match(parser, TOK_NEWL)) {
     parser_eat(parser, TOK_NEWL);
 
     ast->comp.stmt_size++;
     ast->comp.stmts = SEAL_REALLOC(ast->comp.stmts, ast->comp.stmt_size * sizeof(ast_t*));
-    ast->comp.stmts[ast->comp.stmt_size - 1] = parser_parse_statement(parser, is_func, is_ifelse, is_loop, is_inline);
+    ast->comp.stmts[ast->comp.stmt_size - 1] = parser_parse_statement(parser, is_func, is_ifelse, is_loop, false);
   }
 
   bool is_global_scope = !is_func && !is_ifelse && !is_loop;
@@ -419,7 +418,7 @@ static ast_t* parser_parse_while(parser_t* parser, bool is_func)
     parser_eat(parser, TOK_NEWL);
     parser_eat(parser, TOK_INDENT);
 
-    ast->_while.comp = parser_parse_statements(parser, is_func, false, true, false);
+    ast->_while.comp = parser_parse_statements(parser, is_func, false, true);
 
     parser_eat(parser, TOK_DEDENT);
   }
@@ -428,52 +427,18 @@ static ast_t* parser_parse_while(parser_t* parser, bool is_func)
 }
 static ast_t* parser_parse_for(parser_t* parser, bool is_func)
 {
-  return NULL;
-  /*
   parser_eat(parser, TOK_FOR);
 
-  bool has_to = false;
-  bool has_by = false;
-  bool is_numerical = false;
-
-  for (int i = 0; !parser_is_end(parser); i++) {
-    token_t* tok = parser_peek_offset(parser, i);
-    if (tok->type == TOK_NEWL) break;
-    if (tok->type == TOK_TO) {
-      has_to = true;
-      is_numerical = true;
-    } else if (tok->type == TOK_BY) {
-      has_by = true;
-      is_numerical = true;
-    }
-  }
-
   ast_t* ast = static_create_ast(AST_FOR, parser_line(parser));
-  ast->_for.is_numerical = is_numerical;
-  ast->_for.start = NULL;
-  ast->_for.end   = NULL;
-  ast->_for.step  = NULL;
 
   ast->_for.it_name = parser_eat(parser, TOK_ID)->val;
   parser_eat(parser, TOK_IN);
 
-  if (is_numerical) {
-    ast->_for.start = parser_parse_expr(parser);
-    if (has_to) {
-      parser_eat(parser, TOK_TO);
-      ast->_for.end = parser_parse_expr(parser);
-    }
-    if (has_by) {
-      parser_eat(parser, TOK_BY);
-      ast->_for.step = parser_parse_expr(parser);
-    }
-  } else {
-    ast->_for.ited = parser_parse_expr(parser);
-  }
+  ast->_for.ited = parser_parse_expr(parser);
 
   if (parser_match(parser, TOK_DO)) { // inline for
     parser_advance(parser); // 'do'
-    ast->_for.comp = parser_parse_statement(parser, is_func, false, true, true);
+    ast->_for.comp = parser_parse_inline_statement(parser, is_func, false, true);
   } else {
     parser_eat(parser, TOK_NEWL);
     parser_eat(parser, TOK_INDENT);
@@ -484,7 +449,6 @@ static ast_t* parser_parse_for(parser_t* parser, bool is_func)
   }
 
   return ast;
-  */
 }
 static ast_t* parser_parse_func_def(parser_t* parser, bool can_be_global)
 {

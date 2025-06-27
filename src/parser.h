@@ -22,8 +22,7 @@ ast_t* parser_parse(parser_t*);
 static ast_t* parser_parse_statements(parser_t* parser,
                                       bool is_func,
                                       bool is_ifelse,
-                                      bool is_loop,
-                                      bool is_inline);
+                                      bool is_loop);
 static ast_t* parser_parse_statement(parser_t* parser,
                                      bool is_func,
                                      bool is_ifelse,
