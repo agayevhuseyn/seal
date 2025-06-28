@@ -21,6 +21,7 @@ seal_value __seal_io_close(seal_byte argc, seal_value *argv)
 
   seal_value file_ptr;
   seal_parse_args(MOD_NAME, FUNC_NAME, argc, argv, 1, PARAM_TYPES(SEAL_PTR), &file_ptr, FILE_NAME);
+  fclose(AS_PTR(file_ptr).ptr);
 
   return SEAL_VALUE_NULL;
 }
