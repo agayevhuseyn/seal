@@ -32,53 +32,38 @@ define isupper(c)
 
 define lower(s)
     res = ''
-    i = 0
-    while i < len(s)
-        c = s[i]
+    for c in s
         if islower(c) or !isalpha(c)
             res += c
-            i += 1
             skip
 
-    res += char(ascii(c) + 32)
-
-    i += 1
+        res += char(ascii(c) + 32)
 
     return res
 
 
 define upper(s)
     res = ''
-    i = 0
-    while i < len(s)
-        c = s[i]
+    for c in s
         if isupper(c) or !isalpha(c)
             res += c
-            i += 1
             skip
 
         res += char(ascii(c) - 32)
-
-        i += 1
 
     return res
 
 
 define swapcase(s)
     res = ''
-    i = 0
-    while i < len(s)
-        c = s[i]
+    for c in s
         if !isalpha(c)
             res += c
-            i += 1
             skip
 
-    if islower(c)
-        res += char(ascii(c) - 32)
-    else
-        res += char(ascii(c) + 32)
-
-    i += 1
+        if islower(c)
+            res += char(ascii(c) - 32)
+        else
+            res += char(ascii(c) + 32)
 
     return res
