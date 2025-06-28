@@ -25,4 +25,15 @@ define File(path, mode)
     file.write = define(self, stream)
         io.write(self.handler, stream)
 
+    file.readlines = define(self)
+        lines = []
+        line = ''
+        for c in self..read()
+            line += c
+            if c == '\n'
+                push(lines, line)
+                line = ''
+
+        return lines
+
     return file
