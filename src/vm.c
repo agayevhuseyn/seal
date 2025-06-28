@@ -422,11 +422,15 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
       right = POP(vm);
       left  = POP(vm);
       BITWISE_OP(vm, left, right, &);
+      gc_decref(left);
+      gc_decref(right);
       break;
     case OP_OR:
       right = POP(vm);
       left  = POP(vm);
       BITWISE_OP(vm, left, right, |);
+      gc_decref(left);
+      gc_decref(right);
       break;
     case OP_XOR:
       right = POP(vm);
@@ -447,11 +451,15 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
       right = POP(vm);
       left  = POP(vm);
       EQUAL_OP(vm, left, right, ==);
+      gc_decref(left);
+      gc_decref(right);
       break;
     case OP_NE:
       right = POP(vm);
       left  = POP(vm);
       EQUAL_OP(vm, left, right, !=);
+      gc_decref(left);
+      gc_decref(right);
       break;
     case OP_GT:
       right = POP(vm);
