@@ -85,6 +85,7 @@ static void compile_node(cout_t*, ast_t*, struct scope*); /* compile any node in
 static void compile_if(cout_t*, ast_t*, struct scope*);
 static void compile_while(cout_t*, ast_t*, struct scope*);
 static void compile_dowhile(cout_t*, ast_t*, struct scope*);
+static void compile_for(cout_t*, ast_t*, struct scope*);
 static inline void compile_skip(cout_t*, struct scope*);
 static inline void compile_stop(cout_t*, struct scope*);
 static void compile_unary(cout_t*, ast_t*, struct scope*);

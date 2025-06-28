@@ -170,6 +170,7 @@ static void compile_node(cout_t* cout, ast_t* node, struct scope *s)
   case AST_IF: compile_if(cout, node, s); break;
   case AST_WHILE: compile_while(cout, node, s); break;
   case AST_DOWHILE: compile_dowhile(cout, node, s); break;
+  case AST_FOR: compile_for(cout, node, s); break;
   case AST_SKIP: compile_skip(cout, s); break;
   case AST_STOP: compile_stop(cout, s); break;
   case AST_UNARY: compile_unary(cout, node, s); break;
@@ -297,6 +298,37 @@ static void compile_dowhile(cout_t* cout, ast_t* node, struct scope *s)
 
   EMIT(&s->bc, OP_JTRUE);
   SET_16BITS_INDEX(&s->bc, start);
+}
+static void compile_for(cout_t *cout, ast_t *node, struct scope *s)
+{
+  compile_node(cout, node->_for.ited, s);
+  EMIT(&s->bc, OP_PUSH_INT);
+  SET_16BITS_INDEX(&s->bc, 1);  
+  EMIT(&s->bc, OP_PUSH_INT);
+  SET_16BITS_INDEX(&s->bc, 0);  
+
+  const char *it_name = node->_for.it_name;
+  struct h_entry *e = hashmap_search(&s->loctable, it_name);
+  if (e == NULL)
+    __compiler_error("maximum number of locals is %d", LOCAL_MAX);
+  if (e->key == NULL)
+    hashmap_insert_e(&s->loctable, e, it_name, SEAL_VALUE_INT((&s->loctable)->filled));
+
+  EMIT(&s->bc, OP_FOR_PREP);
+  size_t end_addr_offs = CUR_ADDR_OFFSET(&s->bc);
+  EMIT_DUMMY(&s->bc, 2);
+
+  PUSH_LABEL(&s->lp, CUR_IDX(&s->bc));
+  seal_word start_addr = LABEL_IDX(&s->lp);
+  compile_node(cout, node->_for.comp, s);
+
+  PUSH_LABEL(&s->lp, CUR_IDX(&s->bc));
+  REPLACE_16BITS_INDEX(s->bc.bytecodes + end_addr_offs, LABEL_IDX(&s->lp));
+
+
+  EMIT(&s->bc, OP_FOR_NEXT);
+  EMIT(&s->bc, e->val.as._int); /* push slot index of local table */
+  SET_16BITS_INDEX(&s->bc, start_addr);
 }
 static inline void compile_skip(cout_t* cout, struct scope *s)
 {
