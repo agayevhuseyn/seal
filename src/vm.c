@@ -705,9 +705,9 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
       break;
     case OP_FOR_PREP:
       /*
-       * *(sp - 1) -> iterator
-       * *(sp - 2) -> step
-       * *(sp - 3) -> iterated
+       * *(sp - 1) -> iterator (in integer)
+       * *(sp - 2) -> step (in integer)
+       * *(sp - 3) -> iterated (generic)
        *
        * subtract step from iterator before loop
        * then jump to FOR_NEXT instruction
@@ -718,17 +718,57 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
       JUMP(lf, addr);
       break;
     case OP_FOR_NEXT:
-       AS_INT(*(vm->sp - 1)) += AS_INT(*(vm->sp - 2));
-       if (AS_INT(*(vm->sp - 1)) >= AS_INT(*(vm->sp - 3))) {
-         vm->sp -= 3;
-         lf->ip += 3;
-       } else {
-         SET_LOCAL(lf, FETCH(lf), *(vm->sp - 1));
-         addr = FETCH(lf) << 8;
-         addr |= FETCH(lf);
-         JUMP(lf, addr);
-       }
-       break;
+      left = *(vm->sp - 3);
+      AS_INT(*(vm->sp - 1)) += AS_INT(*(vm->sp - 2));
+      switch (VAL_TYPE(left)) {
+      case SEAL_INT:
+        if (AS_INT(*(vm->sp - 1)) >= AS_INT(left)) {
+          goto finish_loop;
+        } else {
+          SET_LOCAL(lf, FETCH(lf), *(vm->sp - 1));
+          addr = FETCH(lf) << 8;
+          addr |= FETCH(lf);
+          JUMP(lf, addr);
+        }
+        break;
+      case SEAL_STRING:
+        if (AS_INT(*(vm->sp - 1)) >= left.as.string->size) {
+          goto finish_loop;
+        } else {
+          char *c = SEAL_CALLOC(2, sizeof(char));
+          c[0] = AS_STRING(left)[AS_INT(*(vm->sp - 1))];
+          c[1] = '\0';
+          right = SEAL_VALUE_STRING(c);
+          gc_incref(right);
+          idx = FETCH(lf);
+          gc_decref(GET_LOCAL(lf, idx));
+          SET_LOCAL(lf, idx, right);
+          addr = FETCH(lf) << 8;
+          addr |= FETCH(lf);
+          JUMP(lf, addr);
+        }
+        break;
+      case SEAL_LIST:
+        if (AS_INT(*(vm->sp - 1)) >= AS_LIST(left)->size) {
+          goto finish_loop;
+        } else {
+          right = AS_LIST(left)->mems[AS_INT(*(vm->sp - 1))];
+          gc_incref(right);
+          idx = FETCH(lf);
+          gc_decref(GET_LOCAL(lf, idx));
+          SET_LOCAL(lf, idx, right);
+          addr = FETCH(lf) << 8;
+          addr |= FETCH(lf);
+          JUMP(lf, addr);
+        }
+        break;
+      }
+      break;
+finish_loop:
+      gc_decref(*(vm->sp - 3));
+      vm->sp -= 3;
+      lf->ip += 3;
+      break;
     default:
       fprintf(stderr, "unrecognized op type: %d\n", op);
       return;
