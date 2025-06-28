@@ -3,61 +3,66 @@
 
 #include "sealconf.h"
 
-/* essential */
-#define OP_HALT       0x00
-#define OP_PUSH_INT   0x02
-#define OP_PUSH_NULL  0x03
-#define OP_PUSH_TRUE  0x04
-#define OP_PUSH_FALSE 0x05
-#define OP_PUSH_CONST 0x06
-#define OP_POP        0x07
-#define OP_DUP        0x08
-#define OP_SWAP       0x09
-#define OP_JUMP       0x0a
-#define OP_JTRUE      0x0b
-#define OP_JFALSE     0x0c
-#define OP_CALL       0x0d
-/* variable */
-#define OP_GET_GLOBAL 0x0e
-#define OP_SET_GLOBAL 0x0f
-#define OP_GET_LOCAL  0x10
-#define OP_SET_LOCAL  0x11
-/* arithmetic */
-#define OP_ADD        0x12
-#define OP_SUB        0x13
-#define OP_MUL        0x14
-#define OP_DIV        0x15
-#define OP_MOD        0x16
-/* bitwise binary */
-#define OP_AND        0x17
-#define OP_OR         0x18
-#define OP_XOR        0x19
-#define OP_SHL        0x1a
-#define OP_SHR        0x1b
-/* comparison */
-#define OP_GT         0x1c
-#define OP_GE         0x1d
-#define OP_LT         0x1e
-#define OP_LE         0x1f
-/* equality */
-#define OP_EQ         0x20
-#define OP_NE         0x21
-/* unary */
-#define OP_NOT        0x22
-#define OP_NEG        0x23
-#define OP_TYPOF      0x24
-#define OP_BNOT       0x25
-/* list */
-#define OP_GEN_LIST   0x26
-/* iterable */
-#define OP_GET_FIELD  0x27
-#define OP_SET_FIELD  0x28
-/* membership */
-#define OP_IN         0x29
-/* map */
-#define OP_GEN_MAP    0x2a
-/* include */
-#define OP_INCLUDE    0x2b
+enum {
+  /* essential */
+  OP_HALT       ,
+  OP_PUSH_INT   ,
+  OP_PUSH_NULL  ,
+  OP_PUSH_TRUE  ,
+  OP_PUSH_FALSE ,
+  OP_PUSH_CONST ,
+  OP_POP        ,
+  OP_DUP        ,
+  OP_SWAP       ,
+  OP_JUMP       ,
+  OP_JTRUE      ,
+  OP_JFALSE     ,
+  OP_CALL       ,
+  /* variable */
+  OP_GET_GLOBAL ,
+  OP_SET_GLOBAL ,
+  OP_GET_LOCAL  ,
+  OP_SET_LOCAL  ,
+  /* arithmetic */
+  OP_ADD        ,
+  OP_SUB        ,
+  OP_MUL        ,
+  OP_DIV        ,
+  OP_MOD        ,
+  /* bitwise binary */
+  OP_AND        ,
+  OP_OR         ,
+  OP_XOR        ,
+  OP_SHL        ,
+  OP_SHR        ,
+  /* comparison */
+  OP_GT         ,
+  OP_GE         ,
+  OP_LT         ,
+  OP_LE         ,
+  /* equality */
+  OP_EQ         ,
+  OP_NE         ,
+  /* unary */
+  OP_NOT        ,
+  OP_NEG        ,
+  OP_TYPOF      ,
+  OP_BNOT       ,
+  /* list */
+  OP_GEN_LIST   ,
+  /* iterable */
+  OP_GET_FIELD  ,
+  OP_SET_FIELD  ,
+  /* membership */
+  OP_IN         ,
+  /* map */
+  OP_GEN_MAP    ,
+  /* include */
+  OP_INCLUDE    ,
+  /* for loop */
+  OP_FOR_PREP,
+  OP_FOR_NEXT
+};
 
 #define PRINT_BYTE(bytecodes, size) for(int i = 0; i < size; i++) { \
     printf("%d ", bytecodes[i]); \
@@ -114,6 +119,8 @@ static inline const char* op_name(int op)
   case OP_GET_FIELD :  return "OP_GET_FIELD";
   case OP_GEN_MAP   :  return "OP_GEN_MAP";
   case OP_INCLUDE   :  return "OP_INCLUDE";
+  case OP_FOR_PREP  :  return "OP_FOR_PREP";
+  case OP_FOR_NEXT  :  return "OP_FOR_NEXT";
   default           :  return "OP NOT RECOGNIZED";
   }
 }
