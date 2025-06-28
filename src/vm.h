@@ -55,7 +55,7 @@ static void print_stack(vm_t* vm)
         printf("%f\n", val.as._float);
         break;
       case SEAL_STRING:
-        printf("%s\n", val.as.string);
+        printf("%s\n", val.as.string->val);
         break;
       case SEAL_BOOL:
         printf("%s\n", val.as._bool ? "true" : "false");
