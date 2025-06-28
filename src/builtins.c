@@ -12,6 +12,35 @@
                 name, arg_i, seal_type_name(expected), seal_type_name(given)); \
 } while (0)
 
+static void __print_string_no_escseq(const char *s)
+{
+  while (*s) {
+    switch (*s) {
+    case '\\':
+      printf("%s", "\\\\");
+      break;
+    case '\n':
+      printf("%s", "\\n");
+      break;
+    case '\t':
+      printf("%s", "\\t");
+      break;
+    case '\'':
+      printf("%s", "\\'");
+      break;
+    case '\"':
+      printf("%s", "\\\"");
+      break;
+    case 'b':
+      printf("%s", "\\b");
+      break;
+    default:
+      printf("%c", *s);
+    }
+    s++;
+  }
+}
+
 static void __print_single(svalue_t s)
 {
   switch (s.type) {
@@ -39,15 +68,19 @@ static void __print_single(svalue_t s)
   case SEAL_LIST:
     printf("[");
     for (int i = 0; i < AS_LIST(s)->size; i++) {
-      if (IS_STRING(AS_LIST(s)->mems[i]))
+      svalue_t mem = AS_LIST(s)->mems[i];
+
+      if (IS_STRING(mem))
         printf("\'");
 
-      if (IS_LIST(AS_LIST(s)->mems[i]) && AS_LIST(s) == AS_LIST(AS_LIST(s)->mems[i]))
+      if (IS_LIST(mem) && AS_LIST(s) == AS_LIST(mem))
         printf("[...]");
+      else if (IS_STRING(mem))
+        __print_string_no_escseq(AS_STRING(mem));
       else
-        __print_single(AS_LIST(s)->mems[i]);
+        __print_single(mem);
 
-      if (IS_STRING(AS_LIST(s)->mems[i]))
+      if (IS_STRING(mem))
         printf("\'");
 
       if (i < AS_LIST(s)->size - 1)
@@ -64,16 +97,14 @@ static void __print_single(svalue_t s)
         continue;
       left--;
       printf("%s: ", e.key);
-      if (IS_STRING(e.val))
+      if (IS_STRING(e.val)) {
         printf("\'");
-
-      //if (IS_LIST(AS_LIST(s)->mems[i]) && AS_LIST(s) == AS_LIST(AS_LIST(s)->mems[i]))
-      //  printf("[...]");
-      //else
-      __print_single(e.val);
-
-      if (IS_STRING(e.val))
+        __print_string_no_escseq(AS_STRING(e.val));
         printf("\'");
+      } else {
+        __print_single(e.val);
+      }
+
 
       if (left)
         printf(", ");
