@@ -143,7 +143,7 @@ static inline void print_op(seal_byte* bytes, size_t byte_size, seal_word* label
       printf("%d", idx);
     }
     break;
-    case OP_JUMP: case OP_JFALSE: case OP_JTRUE: case OP_GET_GLOBAL: case OP_SET_GLOBAL: {
+    case OP_JUMP: case OP_JFALSE: case OP_JTRUE: case OP_GET_GLOBAL: case OP_SET_GLOBAL: case OP_FOR_PREP: {
       seal_byte left  = bytes[i++];
       seal_byte right = bytes[i++];
       seal_word idx  = (left << 8) | right;
@@ -158,6 +158,12 @@ static inline void print_op(seal_byte* bytes, size_t byte_size, seal_word* label
     case OP_CALL:
       printf("%d", bytes[i++]);   
       break;
+    case OP_FOR_NEXT:
+      printf("%d, ", bytes[i++]);
+      seal_byte left  = bytes[i++];
+      seal_byte right = bytes[i++];
+      seal_word idx  = (left << 8) | right;
+      printf("%d", idx);
     }
     printf("\n");
   }
