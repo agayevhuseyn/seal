@@ -703,6 +703,32 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
       left = POP(vm);
       PUSH(vm, insert_mod_cache(AS_STRING(left)));
       break;
+    case OP_FOR_PREP:
+      /*
+       * *(sp - 1) -> iterator
+       * *(sp - 2) -> step
+       * *(sp - 3) -> iterated
+       *
+       * subtract step from iterator before loop
+       * then jump to FOR_NEXT instruction
+       */
+      AS_INT(*(vm->sp - 1)) -= AS_INT(*(vm->sp - 2));
+      addr = FETCH(lf) << 8;
+      addr |= FETCH(lf);
+      JUMP(lf, addr);
+      break;
+    case OP_FOR_NEXT:
+       AS_INT(*(vm->sp - 1)) += AS_INT(*(vm->sp - 2));
+       if (AS_INT(*(vm->sp - 1)) >= AS_INT(*(vm->sp - 3))) {
+         vm->sp -= 3;
+         lf->ip += 3;
+       } else {
+         SET_LOCAL(lf, FETCH(lf), *(vm->sp - 1));
+         addr = FETCH(lf) << 8;
+         addr |= FETCH(lf);
+         JUMP(lf, addr);
+       }
+       break;
     default:
       fprintf(stderr, "unrecognized op type: %d\n", op);
       return;
