@@ -597,10 +597,13 @@ void eval_vm(vm_t* vm, struct local_frame* lf)
       if (IS_MAP(left)) {
         if (IS_STRING(right)) {
           struct sh_entry *e = shashmap_search(AS_MAP(left)->map, AS_STRING(right));
-          if (e == NULL || e->key == NULL)
-            VM_ERROR("\'%s\' key is not found", AS_STRING(right));
+          if (e == NULL || e->key == NULL) {
+            /* VM_ERROR("\'%s\' key is not found", AS_STRING(right)); */
+            PUSH(vm, SEAL_VALUE_NULL);
+          } else {
+            PUSH(vm, e->val);
+          }
 
-          PUSH(vm, e->val);
           gc_decref(left);
           gc_decref(right);
           break;
