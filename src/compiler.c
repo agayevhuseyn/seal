@@ -28,6 +28,7 @@
   } while (0)
 
 #define CUR_IDX(bc) ((bc)->size) /* returns index of current empty byte */
+#define LAST_OPCODE(bc) ((bc)->bytecodes[(bc)->size - 1]) /* returns last pushed opcode */
 #define CUR_ADDR(bc) (&((bc)->bytecodes[CUR_IDX(bc)])) /* returns address of current empty byte */
 #define CUR_ADDR_OFFSET(bc) (&((bc)->bytecodes[CUR_IDX(bc)]) - (bc)->bytecodes) /* returns address of current empty byte */
 
@@ -301,6 +302,9 @@ static void compile_dowhile(cout_t* cout, ast_t* node, struct scope *s)
 }
 static void compile_for(cout_t *cout, ast_t *node, struct scope *s)
 {
+  size_t skip_start_size = cout->skip_size;
+  size_t stop_start_size = cout->stop_size;
+
   compile_node(cout, node->_for.ited, s);
   EMIT(&s->bc, OP_PUSH_INT);
   SET_16BITS_INDEX(&s->bc, 1);  
@@ -329,6 +333,27 @@ static void compile_for(cout_t *cout, ast_t *node, struct scope *s)
   EMIT(&s->bc, OP_FOR_NEXT);
   EMIT(&s->bc, e->val.as._int); /* push slot index of local table */
   SET_16BITS_INDEX(&s->bc, start_addr);
+
+  if (skip_start_size < cout->skip_size) {
+    for (int i = skip_start_size; i < cout->skip_size; i++) {
+      REPLACE_16BITS_INDEX(s->bc.bytecodes + cout->skip_addr_offset_stack[i], LABEL_IDX(&s->lp));
+    }
+  }
+  cout->skip_size = skip_start_size;
+  if (stop_start_size < cout->stop_size) {
+    PUSH_LABEL(&s->lp, CUR_IDX(&s->bc));
+    for (int i = stop_start_size; i < cout->stop_size; i++) {
+      REPLACE_16BITS_INDEX(s->bc.bytecodes + cout->stop_addr_offset_stack[i], LABEL_IDX(&s->lp));
+      if (LAST_OPCODE(&s->bc) != OP_FOR_STOP)
+        EMIT(&s->bc, OP_FOR_STOP);
+      /*
+      EMIT(&s->bc, OP_POP);
+      EMIT(&s->bc, OP_POP);
+      EMIT(&s->bc, OP_POP);
+      */
+    }
+  }
+  cout->stop_size = stop_start_size;
 }
 static inline void compile_skip(cout_t* cout, struct scope *s)
 {
