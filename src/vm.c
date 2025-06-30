@@ -783,6 +783,10 @@ finish_loop:
       vm->sp -= 3;
       lf->ip += 3;
       break;
+    case OP_FOR_STOP:
+      gc_decref(*(vm->sp - 3));
+      vm->sp -= 3;
+      break;
     default:
       fprintf(stderr, "unrecognized op type: %d\n", op);
       return;
