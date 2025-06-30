@@ -110,6 +110,7 @@ struct seal_string* str_concat(const char* l, const char* r)
 #define EQUAL_OP_BOOL(vm, left, right, op)   PUSH_BOOL(vm, AS_BOOL(left) op AS_BOOL(right))
 #define EQUAL_OP_INT(vm, left, right, op)    PUSH_BOOL(vm, AS_INT(left) op AS_INT(right))
 #define EQUAL_OP_FLOAT(vm, left, right, op)  PUSH_BOOL(vm, AS_FLOAT(left) op AS_FLOAT(right))
+#define EQUAL_OP_NULL(vm, left, right, op)   PUSH_BOOL(vm, VAL_TYPE(left) op VAL_TYPE(right))
 #define EQUAL_OP_INT_AND_FLOAT(vm, left, right, op) \
   PUSH_BOOL(vm, (IS_INT(left) ? AS_INT(left) : AS_FLOAT(left)) op (IS_INT(right) ? AS_INT(right) : AS_FLOAT(right)))
 
@@ -124,6 +125,8 @@ struct seal_string* str_concat(const char* l, const char* r)
     EQUAL_OP_STRING(vm, left, right, op); \
   else if (IS_BOOL(left) && IS_BOOL(right)) \
     EQUAL_OP_BOOL(vm, left, right, op); \
+  else if (IS_NULL(left) || IS_NULL(right)) \
+    EQUAL_OP_NULL(vm, left, right, op); \
   else \
     ERROR_BIN_OP(op, left, right); \
 } while (0)
