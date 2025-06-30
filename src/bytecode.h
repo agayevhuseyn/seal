@@ -61,7 +61,8 @@ enum {
   OP_INCLUDE    ,
   /* for loop */
   OP_FOR_PREP,
-  OP_FOR_NEXT
+  OP_FOR_NEXT,
+  OP_FOR_STOP
 };
 
 #define PRINT_BYTE(bytecodes, size) for(int i = 0; i < size; i++) { \
@@ -121,6 +122,7 @@ static inline const char* op_name(int op)
   case OP_INCLUDE   :  return "OP_INCLUDE";
   case OP_FOR_PREP  :  return "OP_FOR_PREP";
   case OP_FOR_NEXT  :  return "OP_FOR_NEXT";
+  case OP_FOR_STOP  :  return "OP_FOR_STOP";
   default           :  return "OP NOT RECOGNIZED";
   }
 }
