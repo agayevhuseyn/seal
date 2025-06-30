@@ -13,7 +13,7 @@ seal_value __seal_io_open(seal_byte argc, seal_value *argv)
 
   FILE *fp = fopen(AS_STRING(path), AS_STRING(file_mode));
 
-  return SEAL_VALUE_PTR(fp, FILE_NAME);
+  return fp ? SEAL_VALUE_PTR(fp, FILE_NAME) : SEAL_VALUE_NULL;
 }
 seal_value __seal_io_close(seal_byte argc, seal_value *argv)
 {

@@ -10,11 +10,17 @@ include sealio as io
 
 
 define File(path, mode)
-    file = {
-        handler = io.open(path, mode),
+    fp = io.open(path, mode)
+
+    if fp == null
+        return null
+
+    file = { 
         mode = mode,
         path = path
     }
+
+    file.handler = fp
 
     file.read = define(self)
         return io.read(self.handler)
