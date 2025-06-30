@@ -1,9 +1,0 @@
-// format.seal
-
-const
-  name = readln()
-  formatted = format('Your name is %', name)
-
-writeln(formatted)
-
-writeln(format('% %% percent', 20))

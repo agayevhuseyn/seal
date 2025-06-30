@@ -12,7 +12,7 @@
 */
 
 if /* comment */ true // allowed
-  writeln('seal')
+    print('seal')
 
 /*
   ignored

@@ -1,5 +1,7 @@
-const list = []
-for c in 'seal'
-  push(list, c)
+// list.seal
 
-writeln(list) // ['s', 'e', 'a', 'l']
+list = []
+for c in 'seal'
+    push(list, c)
+
+print(list) // ['s', 'e', 'a', 'l']

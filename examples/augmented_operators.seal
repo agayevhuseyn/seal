@@ -1,19 +1,20 @@
-var i = 0, max = 100
+i = 0
+max = 100
 
 while i < max
-  // loop body
-  // ...
+    // loop body
+    // ...
 
-  i += 1
+    i += 1
 
-writeln(i -= -1)
-writeln(i *= -1)
-writeln(i /= -2)
-writeln(i %= 3)
-writeln(i ^= 3)
+print(i -= -1)
+print(i *= -1)
+print(i /= -2)
+print(i %= 3)
+print(i ^= 3)
 
-var copy = ''
+copy = ''
 for c in 'Seal'
-  copy += c
+    copy += c
 
-writeln(copy)
+print(copy)

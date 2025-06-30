@@ -22,7 +22,7 @@
 // logical operations
 !true // not
 not true // also not
-!!! not ! not true // mixed usage of 'not' allowed
+!!! not ! not true // mixed usage of 'not' is allowed
 false and true // and (right will not be evaluated)
 true or false // or (right will not be evaluated)
 // 'and' has higher precedence order than 'or'
