@@ -1,6 +1,6 @@
 #!/bin/bash
 
-REQ_FILES="../src/moddef.c ../src/gc.c"
+REQ_FILES="../src/moddef.c"
 INC_FLAGS="-I ./ -I ../src"
 MOD=$1
 shift
